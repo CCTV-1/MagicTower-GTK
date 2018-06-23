@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.22.1 -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkAdjustment" id="attack_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="blue_key_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="defense_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="experience_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkGrid" id="game_end_menu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="row_homogeneous">True</property>
+    <property name="column_homogeneous">True</property>
+    <child>
+      <object class="GtkButton" id="restart_game_button">
+        <property name="label" translatable="yes">重新游戏</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton">
+        <property name="label" translatable="yes">加载存档</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="exit_game_button_1">
+        <property name="label" translatable="yes">退出游戏</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">2</property>
+        <property name="top_attach">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="story_text_label">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">剧情文本</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+        <property name="width">3</property>
+        <property name="height">2</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkGrid" id="game_menu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="row_homogeneous">True</property>
+    <property name="column_homogeneous">True</property>
+    <child>
+      <object class="GtkButton" id="resume_game_button">
+        <property name="label" translatable="yes">继续游戏</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+        <property name="width">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton">
+        <property name="label" translatable="yes">保存存档</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">1</property>
+        <property name="width">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="exit_game_button_2">
+        <property name="label" translatable="yes">退出游戏</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">7</property>
+        <property name="width">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton">
+        <property name="label" translatable="yes">读取存档</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">2</property>
+        <property name="width">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton">
+        <property name="label" translatable="yes">预留按钮</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">6</property>
+        <property name="width">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">背景音乐</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
+        <property name="width">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">寻路指示</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">4</property>
+        <property name="width">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">测试模式</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">5</property>
+        <property name="width">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkSwitch" id="music_setting_button">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="active">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">3</property>
+        <property name="top_attach">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkSwitch" id="path_line_setting_button">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="active">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">3</property>
+        <property name="top_attach">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkSwitch" id="test_mode_setting_button">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">3</property>
+        <property name="top_attach">5</property>
+      </packing>
+    </child>
+  </object>
+  <object class="GtkWindow" id="game_window">
+    <property name="can_focus">False</property>
+    <property name="title" translatable="yes">MagicTower</property>
+    <property name="resizable">False</property>
+    <child>
+      <placeholder/>
+    </child>
+    <child>
+      <object class="GtkGrid" id="game_grid">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <child>
+          <object class="GtkDrawingArea" id="tower_area">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkDrawingArea" id="info_area">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAdjustment" id="gold_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="level_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="life_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="red_key_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="yellow_key_range">
+    <property name="upper">4294967295</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkWindow" id="test_mode_window">
+    <property name="can_focus">False</property>
+    <property name="title" translatable="yes">测试窗口</property>
+    <property name="resizable">False</property>
+    <property name="deletable">False</property>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
+    <child>
+      <object class="GtkGrid" id="test_func_grid">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="row_homogeneous">True</property>
+        <property name="column_homogeneous">True</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">层数</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="apply_modify_button">
+            <property name="label" translatable="yes">应用修改</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">7</property>
+            <property name="width">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">攻击</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">生命</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">等级</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">红钥匙</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">蓝钥匙</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">黄钥匙</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">经验</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">金币</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">横坐标</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">纵坐标</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="x_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="y_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="life_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">life_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="level_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">level_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="attack_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">attack_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="layer_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="gold_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">gold_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">3</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="experience_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">experience_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">3</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="blue_key_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">blue_key_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">3</property>
+            <property name="top_attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="yellow_key_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">yellow_key_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">3</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="red_key_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">red_key_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">3</property>
+            <property name="top_attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">防御</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinButton" id="defense_spin_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="adjustment">defense_range</property>
+          </object>
+          <packing>
+            <property name="left_attach">3</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="synchronize_data_button">
+            <property name="label" translatable="yes">同步数据</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">6</property>
+            <property name="width">4</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
