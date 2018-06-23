@@ -559,7 +559,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         //uint32_t uint32_t uint32_t uint32_t
@@ -594,25 +594,29 @@ namespace MagicTower
             {
                 json_t * true_event_node = json_object_get( root , "true" );
                 std::shared_ptr<char> true_event_json(
-                    json_dumps( true_event_node , 0 ),
+                    json_dumps( true_event_node , JSON_INDENT( 4 ) ),
                     []( char * event_json ){ free( event_json ); }
                 );
                 trigger_custom_event( game_object , true_event_json );
-                json_object_set( root , "true" , json_string( true_event_json.get() ) );
-                event_json.reset( json_dumps( root , 0 ) );
+                json_t * new_true_event_node = json_loads( true_event_json.get() , 0 , &json_error );
+                json_object_set( root , "true" , new_true_event_node );
+                event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
                 g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:%s" , event_json.get() );
+                json_decref( new_true_event_node );
             }
             else
             {
                 json_t * false_event_node = json_object_get( root , "false" );
                 std::shared_ptr<char> false_event_json(
-                    json_dumps( false_event_node , 0 ),
+                    json_dumps( false_event_node , JSON_INDENT( 4 ) ),
                     []( char * event_json ){ free( event_json ); }
                 );
                 trigger_custom_event( game_object , false_event_json );
-                json_object_set( root , "false" , json_string( false_event_json.get() ) );
-                event_json.reset( json_dumps( root , 0 ) );
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s" , event_json.get() );
+                json_t * new_false_event_node = json_loads( false_event_json.get() , 0 , &json_error );
+                json_object_set( root , "false" , new_false_event_node );
+                event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:%s" , event_json.get() );
+                json_decref( new_false_event_node );
             }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
@@ -626,7 +630,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         else if ( event_type_string == std::string( "GameWin" ) )
@@ -651,7 +655,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         else if ( event_type_string == std::string( "GameLose" ) )
@@ -676,7 +680,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         //uint32_t uint32_t uint32_t
@@ -720,7 +724,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         //uint32_t
@@ -755,7 +759,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         //uint32_t
@@ -791,7 +795,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         //uint32_t
@@ -827,7 +831,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         //json_object
@@ -847,7 +851,7 @@ namespace MagicTower
                 return false;
             }
             std::shared_ptr<char> commodity_json(
-                json_dumps( argumens_node , 0 ),
+                json_dumps( argumens_node , JSON_INDENT( 4 ) ),
                 []( char * commodity_json ){ free( commodity_json ); }
             );
             if ( shopping( game_object , commodity_json.get() ) == false )
@@ -867,7 +871,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json.reset( json_dumps( root , 0 ) );
+            event_json.reset( json_dumps( root , JSON_INDENT( 4 ) ) );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content %s" , event_json.get() );
         }
         else if ( event_type_string == std::string( "None" ) )
@@ -1429,7 +1433,7 @@ namespace MagicTower
                 json_decref( root );
                 return commodity_grid;
             }
-            const char * commodity_content = json_dumps( commodity_node , 0 );
+            const char * commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
             std::string button_label = deserialize_commodity_content( commodity_content );
             GtkWidget * commodity_button = gtk_button_new_with_label( button_label.c_str() );
             gtk_widget_set_name( commodity_button , commodity_content );
