@@ -529,6 +529,7 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
             MagicTower::open_game_menu( game_object );
             break;
         }
+        case GDK_KEY_s:
         case GDK_KEY_S:
         {
             if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU )
