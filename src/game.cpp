@@ -464,6 +464,13 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
         );
         draw_text( widget , cairo , game_object->info_font , 0*i , MagicTower::TOWER_GRID_SIZE*i , text );
     }
+    
+    std::shared_ptr<gchar> test(
+        g_strdup_printf( "%s" , "游戏菜单(ESC)\n商店菜单(S/s)" )
+        ,[]( gchar * text ){ g_free( text ); }
+    );
+    draw_text( widget , cairo , game_object->info_font , 0 , MagicTower::TOWER_GRID_SIZE*( 
+                sizeof( base_text)/sizeof( const gchar * ) ) , test , 2 );
     return TRUE;
 }
 
@@ -494,6 +501,8 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
     {
         case GDK_KEY_Left:
         {
+            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
+                break;
             ( game_object->hero ).x -= 1;
             bool flags = MagicTower::trigger_collision_event( game_object );
             if ( flags == false )
@@ -502,6 +511,8 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
         }
         case GDK_KEY_Right:
         {
+            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
+                break;
             ( game_object->hero ).x += 1;
             bool flags = MagicTower::trigger_collision_event( game_object );
             if ( flags == false )
@@ -510,6 +521,8 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
         }
         case GDK_KEY_Up:
         {
+            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
+                break;
             ( game_object->hero ).y -= 1;
             bool flags = MagicTower::trigger_collision_event( game_object );
             if ( flags == false )
@@ -518,6 +531,8 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
         }
         case GDK_KEY_Down:
         {
+            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
+                break;
             ( game_object->hero ).y += 1;
             bool flags = MagicTower::trigger_collision_event( game_object );
             if ( flags == false )
@@ -536,105 +551,6 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
                 MagicTower::close_store_menu( game_object );
             else
                 MagicTower::open_store_menu( game_object );
-            break;
-        }
-        case GDK_KEY_F1:
-        {
-            if ( game_object->shop_unlock_value < 3 )
-            {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "商店未解锁" );
-                break;
-            }
-            if ( ( game_object->hero ).gold >= 25 )
-            {
-                ( game_object->hero ).life += 800;
-                ( game_object->hero ).gold -= 25;
-            }
-            else
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "连25金币都没有还想买东西？" );
-            break;
-        }
-        case GDK_KEY_F2:
-        {
-            if ( game_object->shop_unlock_value < 3 )
-            {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "商店未解锁" );
-                break;
-            }
-            if ( ( game_object->hero ).gold >= 25 )
-            {
-                ( game_object->hero ).attack += 4;
-                ( game_object->hero ).gold -= 25;
-            }
-            else
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "连25金币都没有还想买东西？" );
-            break;
-        }
-        case GDK_KEY_F3:
-        {
-            if ( game_object->shop_unlock_value < 3 )
-            {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "商店未解锁" );
-                break;
-            }
-            if ( ( game_object->hero ).gold >= 25 )
-            {
-                ( game_object->hero ).defense += 4;
-                ( game_object->hero ).gold -= 25;
-            }
-            else
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "连25金币都没有还想买东西？" );
-            break;
-        }
-        case GDK_KEY_F4:
-        {
-            if ( game_object->shop_unlock_value < 4 )
-            {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "商店未解锁" );
-                break;
-            }
-            if ( ( game_object->hero ).experience >= 100 )
-            {
-                ( game_object->hero ).level += 1;
-                ( game_object->hero ).life += 1000;
-                ( game_object->hero ).attack += 10;
-                ( game_object->hero ).defense += 10;
-                ( game_object->hero ).experience -= 100;
-            }
-            else
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "连100经验值都没有还想买东西？" );
-            break;
-        }
-        case GDK_KEY_F5:
-        {
-            if ( game_object->shop_unlock_value < 4 )
-            {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "商店未解锁" );
-                break;
-            }
-            if ( ( game_object->hero ).experience >= 30 )
-            {
-                ( game_object->hero ).attack += 5;
-                ( game_object->hero ).experience -= 30;
-            }
-            else
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "连30经验值都没有还想买东西？" );
-            break;
-        }
-        case GDK_KEY_F6:
-        {
-            if ( game_object->shop_unlock_value < 4 )
-            {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "商店未解锁" );
-                break;
-            }
-            if ( ( game_object->hero ).experience >= 30 )
-            {
-                ( game_object->hero ).defense += 5;
-                ( game_object->hero ).experience -= 30;
-            }
-            else
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "连30经验值都没有还想买东西？" );
             break;
         }
         default :
