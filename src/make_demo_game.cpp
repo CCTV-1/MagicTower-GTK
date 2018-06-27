@@ -392,7 +392,6 @@ int main ()
         new_tower.HEIGHT++;
     }
     std::string map_str = dump_tower_map( new_tower );
-    std::cout << map_str << std::endl;
     towers.HEIGHT = new_tower.HEIGHT;
     towers.maps.swap( new_tower.maps );
     db.set_tower_info( towers , 0 );
