@@ -35,9 +35,8 @@ static gboolean test_switch( GtkWidget * widget , gboolean state , gpointer data
 
 static void gdk_pixbuff_free( GdkPixbuf * pixbuf );
 static void make_info_basic_frame( MagicTower::Tower& towers , std::shared_ptr<GdkPixbuf> );
-static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object ,
-    double x , double y , std::uint32_t monster_id );
 static void draw_box( cairo_t * cairo , double x , double y , double width , double height , std::int32_t animation_value );
+static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object , double x , double y , std::uint32_t monster_id );
 static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<PangoFontDescription> font_desc , double x , double y , std::shared_ptr<gchar> text , int mode = 0 );
 static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_object , std::shared_ptr<gchar> text , double x , double y );
 
@@ -144,7 +143,7 @@ int main( int argc , char * argv[] )
         towers , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true , 0 , 0 , 0 , 0
     };
 
-    //test mode window handler
+    //test mode window signal handler
     g_signal_connect( G_OBJECT( apply_modify_button ) , "clicked" , G_CALLBACK( apply_game_data ) , &game_object );
     g_signal_connect( G_OBJECT( synchronize_data_button ) , "clicked" , G_CALLBACK( sync_game_data ) , &game_object );
 
@@ -239,11 +238,8 @@ static gboolean test_switch( GtkWidget * widget , gboolean state , gpointer data
         gtk_widget_show_all( GTK_WIDGET( test_func_grid ) );
         gtk_widget_show_all( GTK_WIDGET( test_mode_window ) );
     }
-    else
-    {
-        if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-            gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
-    }
+    else if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
+        gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
     return FALSE;
 }
 
@@ -271,7 +267,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     //GDK coordinate origin : Top left corner,left -> right x add,up -> down y add.
-    auto draw_grid = [ &game_object , cairo ]( std::uint32_t x , std::uint32_t y , const char * image_type , std::int32_t image_id )
+    auto draw_grid = [ &game_object , cairo ]( std::uint32_t x , std::uint32_t y , const char * image_type , std::uint32_t image_id )
     {
         std::shared_ptr<char> image_file_name(
             g_strdup_printf( IMAGE_RESOURCES_PATH"%s%" PRIu32 ".png" , image_type , image_id ) ,
@@ -340,7 +336,10 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
     }
 
     //draw path line
-    if ( ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH ) && !( game_object->path.empty() ) && game_object->draw_path == true )
+    if ( ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH ) &&
+         !( game_object->path.empty() ) &&
+         ( game_object->draw_path == true )
+       )
     {
         cairo_save( cairo );
         cairo_set_source_rgba( cairo , 1 , 0.2 , 0.2 , 1.0 );
@@ -764,7 +763,7 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( co
             gdk_pixbuf_new_from_file_at_size( image_file_name.get() , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL )
             , gdk_pixbuff_free
         );
-        image_resource.insert( std::pair< std::string , std::shared_ptr<GdkPixbuf> >( std::string(image_file_name.get()) , image_pixbuf ) );
+        image_resource.insert( std::pair< std::string , std::shared_ptr<GdkPixbuf> >( std::string( image_file_name.get() ) , image_pixbuf ) );
     }
     return image_resource;
 }

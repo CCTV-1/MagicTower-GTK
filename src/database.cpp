@@ -16,15 +16,6 @@
 
 namespace MagicTower
 {
-/*     DataBase::DataBase()
-    {
-        this->db_filename = std::string( "magictower.db" );
-        this->sqlite3_error_code = sqlite3_open_v2( this->db_filename.c_str() , &( this->db_handler ) 
-            , SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE , NULL );
-        if ( sqlite3_error_code != SQLITE_OK )
-            throw sqlite_open_failure( sqlite3_error_code , std::string( this->db_filename.c_str() ) );
-    } */
-
     DataBase::DataBase( const char * filename )
     {
         this->db_filename = std::string( filename );
