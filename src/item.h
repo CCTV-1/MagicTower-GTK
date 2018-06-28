@@ -21,6 +21,7 @@ enum ITEM_TYPE:std::uint32_t
     CHANGE_BLUE_KEY,
     CHANGE_RED_KEY,
     CHANGE_ALL_KEY,
+    CHANGE_ALL_ABILITY
 };
 
 /* 
@@ -74,6 +75,9 @@ inline std::string dump_item_info( Item& item )
             break;
         case ITEM_TYPE::CHANGE_ALL_KEY:
             item_str += "\n物品能力: 所有钥匙各";
+            break;
+        case ITEM_TYPE::CHANGE_ALL_ABILITY:
+            item_str += "\n物品能力: 全属性各加1/";
             break;
         default:
             item_str += "\n物品能力: 未知能力";

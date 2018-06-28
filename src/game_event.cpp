@@ -409,6 +409,13 @@ namespace MagicTower
                 hero.red_key += item.ability_value;
                 break;
             }
+            case ITEM_TYPE::CHANGE_ALL_ABILITY:
+            {
+                hero.life += hero.life/item.ability_value;
+                hero.attack += hero.attack/item.ability_value;
+                hero.defense += hero.defense/item.ability_value;
+                break;
+            }
             default :
             {
                 break;
