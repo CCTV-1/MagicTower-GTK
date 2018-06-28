@@ -16,14 +16,14 @@
 
 namespace MagicTower
 {
-    DataBase::DataBase()
+/*     DataBase::DataBase()
     {
         this->db_filename = std::string( "magictower.db" );
         this->sqlite3_error_code = sqlite3_open_v2( this->db_filename.c_str() , &( this->db_handler ) 
             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE , NULL );
         if ( sqlite3_error_code != SQLITE_OK )
             throw sqlite_open_failure( sqlite3_error_code , std::string( this->db_filename.c_str() ) );
-    }
+    } */
 
     DataBase::DataBase( const char * filename )
     {
@@ -32,6 +32,7 @@ namespace MagicTower
             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE , NULL );
         if ( sqlite3_error_code != SQLITE_OK )
             throw sqlite_open_failure( sqlite3_error_code , std::string( this->db_filename.c_str() ) );
+        create_tables();
     }
 
     DataBase::~DataBase()
@@ -52,6 +53,87 @@ namespace MagicTower
         {
             exit( sqlite3_error_code );
         }
+    }
+
+    void DataBase::create_tables()
+    {
+        const char * create_table_sqls[] = 
+        {
+            R"(
+                CREATE TABLE IF NOT EXISTS tower (
+                    id      INTEGER  PRIMARY KEY AUTOINCREMENT,
+                    length  INT (32),
+                    width   INT (32),
+                    height  INT (32),
+                    content BLOB
+                );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS stores (
+                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                    usability BOOLEAN DEFAULT (0),
+                    name      TEXT,
+                    content   TEXT
+                );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS stairs (
+                    id     INTEGER  PRIMARY KEY AUTOINCREMENT,
+                    type   INT (32),
+                    layers INT (32),
+                    x      INT (32),
+                    y      INT (32) 
+                );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS monster (
+                    id         INTEGER  PRIMARY KEY AUTOINCREMENT,
+                    type       INT (32),
+                    type_value INT (32),
+                    name       TEXT,
+                    level      INT (32),
+                    life       INT (32),
+                    attack     INT (32),
+                    defense    INT (32),
+                    gold       INT (32),
+                    experience INT (32) 
+                );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS item (
+                    id    INTEGER  PRIMARY KEY AUTOINCREMENT,
+                    name  TEXT,
+                    type  INT (32),
+                    value INT (32) 
+                );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS hero (
+                    id         INTEGER  PRIMARY KEY AUTOINCREMENT,
+                    layers     INT (32),
+                    x          INT (32),
+                    y          INT (32),
+                    level      INT (32),
+                    life       INT (32),
+                    attack     INT (32),
+                    defense    INT (32),
+                    gold       INT (32),
+                    experience INT (32),
+                    yellow_key INT (32),
+                    blue_key   INT (32),
+                    red_key    INT (32) 
+                );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS events (
+                    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_position TEXT,
+                    event_content  TEXT
+                );
+            )"
+        };
+        for ( size_t i = 0 ; i < sizeof( create_table_sqls )/sizeof( const char * ) ; i++ )
+            sqlite3_exec( this->db_handler , create_table_sqls[i] , NULL , NULL , NULL );
     }
 
     Hero DataBase::get_hero_info( std::size_t archive_id )
@@ -392,10 +474,12 @@ namespace MagicTower
         return stores;
     }
 
-/*     sqlite document:
+/*  
+sqlite document:
     The initial "INSERT" keyword can be replaced by "REPLACE" or "INSERT OR action" to specify an alternative constraint conflict
     resolution algorithm to use during that one INSERT command. For compatibility with MySQL,
-    the parser allows the use of the single keyword REPLACE as an alias for "INSERT OR REPLACE". */
+    the parser allows the use of the single keyword REPLACE as an alias for "INSERT OR REPLACE".
+*/
 
     void DataBase::set_hero_info( const Hero& hero , std::size_t archive_id )
     {

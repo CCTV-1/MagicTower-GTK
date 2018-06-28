@@ -123,8 +123,7 @@ private:
 class DataBase
 {
 public:
-    DataBase();
-    DataBase( const char * filename );
+    DataBase( const char * filename = "magictower.db" );
     ~DataBase();
 
     Hero get_hero_info( std::size_t archive_id );
@@ -149,6 +148,7 @@ protected:
     DataBase& operator=( const DataBase& )=delete;
     DataBase& operator=( const DataBase&& )=delete;
 private:
+    void create_tables();
     std::string db_filename;
     int sqlite3_error_code;
     sqlite3 * db_handler;
