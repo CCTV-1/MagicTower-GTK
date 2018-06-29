@@ -565,7 +565,7 @@ sqlite document:
     void DataBase::set_item_list( const std::vector<Item>& items )
     {
         const char sql_statement[] = "INSERT OR REPLACE INTO item(id,name"
-            ",type,value) VALUES( ? , ? , ? , ? , ? )";
+            ",type,value) VALUES( ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
 
@@ -613,8 +613,8 @@ sqlite document:
 
     void DataBase::set_monster_list( const std::vector<Monster>& monsters )
     {
-        const char sql_statement[] = "INSERT OR REPLACE INTO item(id,type,type_value,name"
-            ",level,life,attack,defense,gold,experience) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO monster(id,type,type_value,name"
+            ",level,life,attack,defense,gold,experience) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
 
@@ -624,7 +624,7 @@ sqlite document:
             throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 9 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 10 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_bind_count_failure( std::string( sql_statement ) );
@@ -668,7 +668,7 @@ sqlite document:
 
     void DataBase::set_stairs_list( const std::vector<Stairs>& stairs )
     {
-        const char sql_statement[] = "INSERT OR REPLACE INTO item(id,type,layers,x,y) VALUES( ? , ? , ? , ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO stairs(id,type,layers,x,y) VALUES( ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
 
@@ -715,4 +715,50 @@ sqlite document:
         }
     }
 
+    void DataBase::set_store_list( std::vector<Store>& stores )
+    {
+        const char sql_statement[] = "INSERT OR REPLACE INTO stores(usability,name,content) VALUES( ? , ? , ? )";
+        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
+        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
+
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+        }
+        
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 3 )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw sqlite_bind_count_failure( std::string( sql_statement ) );
+        }
+
+        for( auto& store : stores )
+        {
+            sqlite3_bind_int( this->sql_statement_handler , 1 , store.usability );
+            sqlite3_bind_text( this->sql_statement_handler , 2 , store.name.c_str() , store.name.size()  , SQLITE_STATIC );
+            sqlite3_bind_text( this->sql_statement_handler , 3 , store.content.c_str() , store.content.size() , SQLITE_STATIC );
+
+            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
+            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_DONE )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            }
+            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_OK )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            }
+            sqlite3_clear_bindings( this->sql_statement_handler );
+        }
+
+        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+        }
+    }
 }

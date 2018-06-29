@@ -141,6 +141,7 @@ public:
     void set_item_list( const std::vector<Item>& items );
     void set_monster_list( const std::vector<Monster>& monsters );
     void set_stairs_list( const std::vector<Stairs>& stairs );
+    void set_store_list( std::vector<Store>& stores );
 
 protected:
     DataBase( const DataBase& )=delete;
