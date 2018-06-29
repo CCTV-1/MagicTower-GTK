@@ -57,7 +57,7 @@ CREATE TABLE events (
     event_content  TEXT
 );
 */
-        std::map< MagicTower::event_position_t , std::shared_ptr<char> >custom_events;
+        std::map< MagicTower::event_position_t , std::string >custom_events;
         MagicTower::Music& music;
         MagicTower::Hero hero;
         MagicTower::Tower towers;
@@ -93,7 +93,7 @@ CREATE TABLE events (
 
     bool change_floor( struct GameEnvironment * game_object , std::uint32_t stair_id );
 
-    bool trigger_custom_event( struct GameEnvironment * game_object , std::shared_ptr<char>& event_string_ptr );
+    bool trigger_custom_event( struct GameEnvironment * game_object , std::string& event_string_ptr );
 
     //if can't move return false.
     bool trigger_collision_event( struct GameEnvironment * game_object );

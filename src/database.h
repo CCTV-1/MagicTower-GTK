@@ -129,7 +129,7 @@ public:
     Hero get_hero_info( std::size_t archive_id );
     Tower get_tower_info( std::size_t archive_id );
 
-    std::map<event_position_t , std::shared_ptr<char> > get_custom_events();
+    std::map<event_position_t , std::string> get_custom_events();
     std::vector<Stairs> get_stairs_list();
     std::vector<Store> get_store_list();
     std::vector<Item> get_item_list();
@@ -142,6 +142,7 @@ public:
     void set_monster_list( const std::vector<Monster>& monsters );
     void set_stairs_list( const std::vector<Stairs>& stairs );
     void set_store_list( std::vector<Store>& stores );
+    void set_custom_events( std::map<event_position_t , std::string& > custom_events );
 
 protected:
     DataBase( const DataBase& )=delete;
