@@ -755,7 +755,7 @@ sqlite document:
         }
     }
 
-    void DataBase::set_custom_events( std::map<event_position_t , std::string& > custom_events )
+    void DataBase::set_custom_events( std::map<event_position_t , std::string>& custom_events )
     {
         const char sql_statement[] = "INSERT OR REPLACE INTO events(event_position,event_content) VALUES( ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 

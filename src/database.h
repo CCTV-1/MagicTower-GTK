@@ -142,7 +142,7 @@ public:
     void set_monster_list( const std::vector<Monster>& monsters );
     void set_stairs_list( const std::vector<Stairs>& stairs );
     void set_store_list( std::vector<Store>& stores );
-    void set_custom_events( std::map<event_position_t , std::string& > custom_events );
+    void set_custom_events( std::map<event_position_t , std::string>& custom_events );
 
 protected:
     DataBase( const DataBase& )=delete;
