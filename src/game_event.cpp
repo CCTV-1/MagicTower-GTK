@@ -450,6 +450,13 @@ namespace MagicTower
         Hero& hero = game_object->hero;
         Tower& tower = game_object->towers;
 
+        if ( hero.x >= tower.LENGTH )
+            return false;
+        if ( hero.y >= tower.WIDTH )
+            return false;
+        if ( hero.layers >= tower.HEIGHT )
+            return false;
+
         auto grid = get_tower_grid( tower , hero.layers , hero.x , hero.y );
         switch( grid.type )
         {
