@@ -25,7 +25,8 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
     static gboolean do_shopping( GtkWidget * widget , gpointer data );
     static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content );
-    static std::string deserialize_commodity_content( const char * );
+    static std::string deserialize_commodity_content( const char * content );
+    static gboolean remove_tips( gpointer data );
 
     // Helpers for TowerGridLocation
     bool operator==( TowerGridLocation a , TowerGridLocation b )
@@ -242,18 +243,21 @@ namespace MagicTower
         auto grid = get_tower_grid( tower , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
         if ( grid.type != GRID_TYPE::IS_DOOR )
             return false;
-        
+
         bool status = true;
         switch( grid.id )
         {
             case 1:
                 ( hero.yellow_key >= 1 ) ? hero.yellow_key-- : status = false;
+                set_grid_type( game_object , position );
                 break;
             case 2:
                 ( hero.blue_key >= 1 ) ? hero.blue_key-- : status = false;
+                set_grid_type( game_object , position );
                 break;
             case 3:
                 ( hero.red_key >= 1 ) ? hero.red_key-- : status = false;
+                set_grid_type( game_object , position );
                 break;
             default :
                 status = false;
@@ -267,6 +271,12 @@ namespace MagicTower
     {
         auto grid = get_tower_grid( game_object->towers , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
         return ( grid.id == type_id );
+    }
+
+    void set_tips( struct GameEnvironment * game_object , std::shared_ptr<gchar> tips_content )
+    {
+        game_object->tips_content = tips_content;
+        g_timeout_add( 1000 , remove_tips , game_object );
     }
 
     void set_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
@@ -334,15 +344,16 @@ namespace MagicTower
         Hero& hero = game_object->hero;
         Monster& monster = game_object->monsters[ monster_id - 1 ];
         std::int64_t damage = get_combat_damage( game_object , monster_id );
-        if ( damage < 0 )
-        {
-            //cant_combat_messge();
+        if ( ( damage < 0 ) || ( damage >= hero.life ) )
             return false;
-        }
-        hero.life =  hero.life - damage ;
+        hero.life =  hero.life - damage;
         hero.gold = hero.gold + monster.gold;
         hero.experience = hero.experience + monster.experience;
-
+        std::shared_ptr<gchar> tips( 
+            g_strdup_printf( "击杀%s 获取金币 %u 经验 %u" , monster.name.c_str() , monster.gold , monster.experience ),
+            []( char * content ){ g_free( content ); }
+        );
+        set_tips( game_object , tips );
         return true;
     }
 
@@ -356,6 +367,11 @@ namespace MagicTower
         {
             case ITEM_TYPE::CHANGE_LEVEL:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 等级提升 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.level += item.ability_value;
                 hero.life += 1000*item.ability_value;
                 hero.attack += 7*item.ability_value;
@@ -364,46 +380,91 @@ namespace MagicTower
             }
             case ITEM_TYPE::CHANGE_LIFE:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 生命增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.life += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_ATTACK:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 攻击提升 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.attack += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_DEFENSE:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 防御提升 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.defense += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_GOLD:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 金币增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.gold += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_EXPERIENCE:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 经验值增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.experience += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_YELLOW_KEY:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 黄钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.yellow_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_BLUE_KEY:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 蓝钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.blue_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_RED_KEY:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 红钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.red_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_ALL_KEY:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 各类钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.yellow_key += item.ability_value;
                 hero.blue_key += item.ability_value;
                 hero.red_key += item.ability_value;
@@ -411,6 +472,11 @@ namespace MagicTower
             }
             case ITEM_TYPE::CHANGE_ALL_ABILITY:
             {
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "获得 %s , 全属性提升百分之 %d" , item.item_name.c_str() , item.ability_value  ),
+                    []( gchar * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
                 hero.life += hero.life/item.ability_value;
                 hero.attack += hero.attack/item.ability_value;
                 hero.defense += hero.defense/item.ability_value;
@@ -472,9 +538,7 @@ namespace MagicTower
             }
             case GRID_TYPE::IS_DOOR:
             {
-                status = open_door( game_object , { hero.x , hero.y , hero.layers } );
-                if ( status == true )
-                    set_grid_type( game_object , { hero.x , hero.y , hero.layers } );
+                open_door( game_object , { hero.x , hero.y , hero.layers } );
                 status = false;
                 break;
             }
@@ -521,7 +585,6 @@ namespace MagicTower
     {
         json_error_t json_error;
         json_t * root = json_loads( event_json.c_str() , 0 , &json_error );
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger event content:\n%s" , event_json.c_str() );
         json_t * type_node = json_object_get( root , "event_type" );
         if( !json_is_string( type_node ) )
         {
@@ -529,7 +592,6 @@ namespace MagicTower
             return false;
         }
         std::string event_type_string( json_string_value( type_node ) );
-        //uint32_t uint32_t uint32_t
         if ( event_type_string == std::string( "SetGridType" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -573,10 +635,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
-        //uint32_t uint32_t uint32_t uint32_t
         else if ( event_type_string == std::string( "CheckGridType" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -612,7 +671,6 @@ namespace MagicTower
                 json_t * new_true_event_node = json_loads( true_event_json.c_str() , 0 , &json_error );
                 json_object_set( root , "true" , new_true_event_node );
                 event_json = json_dumps( root , JSON_INDENT( 4 ) );
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
                 json_decref( new_true_event_node );
             }
             else
@@ -622,8 +680,6 @@ namespace MagicTower
                 trigger_custom_event( game_object , false_event_json );
                 json_t * new_false_event_node = json_loads( false_event_json.c_str() , 0 , &json_error );
                 json_object_set( root , "false" , new_false_event_node );
-                event_json = json_dumps( root , JSON_INDENT( 4 ) );
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
                 json_decref( new_false_event_node );
             }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
@@ -638,8 +694,6 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
         else if ( event_type_string == std::string( "GameWin" ) )
         {
@@ -664,7 +718,6 @@ namespace MagicTower
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
             event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
         else if ( event_type_string == std::string( "GameLose" ) )
         {
@@ -688,10 +741,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
-        //uint32_t uint32_t uint32_t
         else if ( event_type_string == std::string( "MoveHero" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -732,10 +782,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
-        //uint32_t
         else if ( event_type_string == std::string( "GetItem" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -767,10 +814,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
-        //uint32_t
         else if ( event_type_string == std::string( "UnlockStore" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -790,7 +834,14 @@ namespace MagicTower
             json_t * argumens = json_array_get( argumens_node , 0 );
             json_int_t arg = json_integer_value( argumens );
             if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
+            {
                 game_object->store_list[ arg ].usability = true;
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "解锁商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ),
+                    []( char * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
+            }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
@@ -803,10 +854,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
-        //uint32_t
         else if ( event_type_string == std::string( "lockStore" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -826,7 +874,14 @@ namespace MagicTower
             json_t * argumens = json_array_get( argumens_node , 0 );
             json_int_t arg = json_integer_value( argumens );
             if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
+            {
                 game_object->store_list[ arg ].usability = false;
+                std::shared_ptr<gchar> tips(
+                    g_strdup_printf( "锁定商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ),
+                    []( char * content ){ g_free( content ); }
+                );
+                set_tips( game_object , tips );
+            }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
@@ -839,10 +894,7 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
-        //json_object
         else if ( event_type_string == std::string( "Shopping" ) )
         {
             json_t * usability_node = json_object_get( root , "usability" ); 
@@ -879,8 +931,6 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "trigger end event content:\n%s" , event_json.c_str() );
         }
         else if ( event_type_string == std::string( "None" ) )
         {
@@ -888,7 +938,7 @@ namespace MagicTower
         }
         else
         {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unknown event type ignore" );
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unknown event type ignore event" );
         }
 
         json_decref( root );
@@ -1099,7 +1149,6 @@ namespace MagicTower
             game_object->game_status == GAME_STATUS::GAME_MENU  ||
             game_object->game_status == GAME_STATUS::STORE_MENU )
 			return ;
-        game_object->game_status = GAME_STATUS::STORE_MENU;
         GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
 
 	    GtkWidget * notebook = gtk_notebook_new();
@@ -1111,7 +1160,13 @@ namespace MagicTower
 	        GtkWidget * store_content = make_commodity_grid( game_object , store.content );
             gtk_notebook_append_page( GTK_NOTEBOOK( notebook ) , store_content , store_label );
         }
-
+        if ( gtk_notebook_get_n_pages( GTK_NOTEBOOK( notebook ) ) == 0 )
+        {
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "没有被解锁的商店" );
+            gtk_widget_destroy( notebook );
+            return ;
+        }
+        game_object->game_status = GAME_STATUS::STORE_MENU;
 	    gtk_notebook_set_scrollable( GTK_NOTEBOOK( notebook ) , TRUE );
 	    gtk_notebook_popup_enable( GTK_NOTEBOOK( notebook ) );
 
@@ -1137,7 +1192,7 @@ namespace MagicTower
     void open_game_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   || 
+			game_object->game_status == GAME_STATUS::GAME_WIN   ||
             game_object->game_status == GAME_STATUS::GAME_MENU  ||
             game_object->game_status == GAME_STATUS::STORE_MENU )
 			return ;
@@ -1154,7 +1209,7 @@ namespace MagicTower
     void game_win( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN  || 
+			 game_object->game_status == GAME_STATUS::GAME_WIN  ||
              game_object->game_status == GAME_STATUS::GAME_MENU ||
              game_object->game_status == GAME_STATUS::STORE_MENU )
 			return ;
@@ -1172,7 +1227,7 @@ namespace MagicTower
     void game_lose( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   || 
+			game_object->game_status == GAME_STATUS::GAME_WIN   ||
             game_object->game_status == GAME_STATUS::GAME_MENU  ||
             game_object->game_status == GAME_STATUS::STORE_MENU )
 			return ;
@@ -1290,35 +1345,35 @@ namespace MagicTower
         if ( root == NULL )
         {
             json_decref( root );
-            return std::string( "" );
+            return std::string( "无效按钮" );
         }
 
         json_t * price_type_node = json_object_get( root , "price_type" );
         if ( !json_is_string( price_type_node ) )
         {
             json_decref( root );
-            return std::string( "" );
+            return std::string( "无效按钮" );
         }
         std::string price_type( json_string_value( price_type_node ) );
         json_t * price_node = json_object_get( root , "price" );
         if ( !json_is_integer( price_node ) )
         {
             json_decref( root );
-            return std::string( "" );
+            return std::string( "无效按钮" );
         }
         json_int_t price_value = json_integer_value( price_node );
         json_t * commodity_type_node = json_object_get( root , "commodity_type" );
         if ( !json_is_string( commodity_type_node ) )
         {
             json_decref( root );
-            return std::string( "" );
+            return std::string( "无效按钮" );
         }
         std::string commodity_type( json_string_value( commodity_type_node ) );
         json_t * commodity_value_node = json_object_get( root , "commodity_value" );
         if ( !json_is_integer( commodity_value_node ) )
         {
             json_decref( root );
-            return std::string( "" );
+            return std::string( "无效按钮" );
         }
         json_int_t commodity_value = json_integer_value( commodity_value_node );
 
@@ -1365,8 +1420,8 @@ namespace MagicTower
         }
         else
         {
-                json_decref( root );
-                return std::string( "" );
+            json_decref( root );
+            return std::string( "无效按钮" );
         }
 
         deserialize_string += "购买";
@@ -1408,7 +1463,7 @@ namespace MagicTower
         }
         else
         {
-            return std::string( "" );
+            return std::string( "无效按钮" );
         }
 
         return deserialize_string;
@@ -1453,4 +1508,10 @@ namespace MagicTower
         return commodity_grid;
     }
 
+    static gboolean remove_tips( gpointer data )
+    {
+        MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
+        game_object->tips_content.reset();
+        return FALSE;
+    }
 }

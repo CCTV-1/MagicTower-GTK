@@ -49,6 +49,7 @@ namespace MagicTower
         std::shared_ptr<GdkPixbuf> info_frame;
         std::shared_ptr<PangoFontDescription> damage_font;
         std::shared_ptr<PangoFontDescription> info_font;
+        std::shared_ptr<gchar> tips_content;
         std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource;
 /* 
 CREATE TABLE events (
@@ -79,6 +80,8 @@ CREATE TABLE events (
     bool open_door( struct GameEnvironment * game_object , event_position_t position );
 
     bool check_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id );
+
+    void set_tips( struct GameEnvironment * game_object , std::shared_ptr<gchar> tips_content );
 
     void set_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id = GRID_TYPE::IS_FLOOR );
 
