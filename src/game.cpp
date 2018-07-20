@@ -378,18 +378,8 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
 
     if ( game_object->tips_content )
         draw_tips( cairo , game_object );
-
-    /*     //draw dialog box
-    if ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG )
-    {
-        draw_box( cairo , 0 , MagicTower::TOWER_GRID_SIZE*( game_object->towers.WIDTH - 4 ) , 
-            MagicTower::TOWER_GRID_SIZE*( game_object->towers.LENGTH ) , MagicTower::TOWER_GRID_SIZE*4 , game_object->animation_value );
-        const gchar * str = "对话框测试文字";
-        std::shared_ptr<gchar> text( g_strdup_printf( str ) , []( gchar * text ){ g_free( text ); } );
-        if ( game_object->animation_value >= 10 )
-            draw_text( widget , cairo , game_object->info_font , 0 , MagicTower::TOWER_GRID_SIZE*( game_object->towers.WIDTH - 4 ) , text , 2 );
-    }
-    else  */if ( game_object->game_status == MagicTower::GAME_STATUS::REVIEW_DETAIL )
+    
+    if ( game_object->game_status == MagicTower::GAME_STATUS::REVIEW_DETAIL )
     {
         std::int32_t x , y;
         std::string detail_str;
@@ -487,8 +477,8 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
     if ( ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG ) &&
        ( game_object->animation_value < 10 ) )
     {
-            game_object->animation_value = 0;
-            return FALSE;
+        game_object->animation_value = 0;
+        return FALSE;
     }
     else if ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG )
     {
@@ -662,12 +652,7 @@ static gboolean draw_loop( gpointer data )
         game_object->game_status != MagicTower::GAME_STATUS::REVIEW_DETAIL && 
         game_object->game_status != MagicTower::GAME_STATUS::STORE_MENU )
         return TRUE;
-    if ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG )
-    {
-        //when draw animation don't equal zero 
-        if ( game_object->animation_value < 10 )
-            game_object->animation_value++;
-    }
+    
     GtkWidget * info_area  = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "info_area"  ) );
     GtkWidget * tower_area = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
     gtk_widget_queue_draw( info_area );
