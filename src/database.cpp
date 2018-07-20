@@ -557,6 +557,8 @@ sqlite document:
 
     void DataBase::set_item_list( const std::vector<Item>& items )
     {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
+
         const char sql_statement[] = "INSERT OR REPLACE INTO item(id,name"
             ",type,value) VALUES( ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
@@ -597,6 +599,8 @@ sqlite document:
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
 
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
+
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -606,6 +610,8 @@ sqlite document:
 
     void DataBase::set_monster_list( const std::vector<Monster>& monsters )
     {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
+
         const char sql_statement[] = "INSERT OR REPLACE INTO monster(id,type,type_value,name"
             ",level,life,attack,defense,gold,experience) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
@@ -652,6 +658,8 @@ sqlite document:
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
 
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
+
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -661,6 +669,8 @@ sqlite document:
 
     void DataBase::set_stairs_list( const std::vector<Stairs>& stairs )
     {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
+
         const char sql_statement[] = "INSERT OR REPLACE INTO stairs(id,type,layers,x,y) VALUES( ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
@@ -701,6 +711,8 @@ sqlite document:
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
 
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
+
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -710,6 +722,8 @@ sqlite document:
 
     void DataBase::set_store_list( std::vector<Store>& stores )
     {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
+
         const char sql_statement[] = "INSERT OR REPLACE INTO stores(usability,name,content) VALUES( ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
@@ -748,6 +762,8 @@ sqlite document:
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
 
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
+
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -757,6 +773,8 @@ sqlite document:
 
     void DataBase::set_custom_events( std::map<event_position_t , std::string>& custom_events )
     {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
+
         const char sql_statement[] = "INSERT OR REPLACE INTO events(event_position,event_content) VALUES( ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
@@ -800,7 +818,9 @@ sqlite document:
             }
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
-
+        
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
+        
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
