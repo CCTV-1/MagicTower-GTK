@@ -9,9 +9,12 @@
 #include <tuple>
 #include <memory>
 
+//ignore in gcc-8+ gtk library warning:unnecessary parentheses in declaration of '*'
+#pragma GCC diagnostic ignored "-Wparentheses"
 #include <gtk/gtk.h>
 #include <jansson.h>
 
+#include "database.h"
 #include "music.h"
 #include "hero.h"
 #include "item.h"
@@ -108,6 +111,10 @@ CREATE TABLE events (
     void open_store_menu( struct GameEnvironment * game_object );
     
     void close_store_menu( struct GameEnvironment * game_object );
+
+    void save_game_status( struct GameEnvironment * game_object , size_t save_id );
+
+    void load_game_status( struct GameEnvironment * game_object , size_t save_id );
 
     void game_win( struct GameEnvironment * game_object );
 

@@ -3,6 +3,7 @@
 #include <cinttypes>
 
 #include <map>
+#include <memory>
 #include <set>
 #include <array>
 #include <vector>
@@ -10,6 +11,8 @@
 #include <queue>
 #include <tuple>
 #include <algorithm>
+
+#include <sys/stat.h>
 
 #include <glib.h>
 
@@ -271,6 +274,80 @@ namespace MagicTower
     {
         auto grid = get_tower_grid( game_object->towers , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
         return ( grid.id == type_id );
+    }
+
+    void save_game_status( struct GameEnvironment * game_object , size_t save_id )
+    {
+        if ( g_file_test( "../save" , G_FILE_TEST_EXISTS ) == FALSE )
+            g_mkdir_with_parents( "../save" , S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
+        std::shared_ptr<gchar> db_name(
+            g_strdup_printf( "../save/%zd.db" , save_id ) ,
+            []( gchar * str ){ g_free( str ); }
+        );
+        std::shared_ptr<gchar> fail_tips(
+            g_strdup_printf( "保存存档 %zd 失败" , save_id ) ,
+            []( gchar * str ){ g_free( str ); }
+        );
+        try
+        {
+            MagicTower::DataBase db( db_name.get() );
+            db.set_tower_info( game_object->towers , 0 );
+            db.set_hero_info( game_object->hero , 0 );
+            db.set_stairs_list( game_object->stairs );
+            db.set_store_list( game_object->store_list );
+            db.set_monster_list( game_object->monsters );
+            db.set_item_list( game_object->items );
+            db.set_custom_events( game_object->custom_events );
+        }
+        catch ( ... )
+        {
+            set_tips( game_object , fail_tips );
+            return ;
+        }
+        std::shared_ptr<gchar> tips(
+            g_strdup_printf( "保存存档 %zd 成功" , save_id ) ,
+            []( gchar * str ){ g_free( str ); }
+        );
+        set_tips( game_object , tips );
+    }
+
+    void load_game_status( struct GameEnvironment * game_object , size_t save_id )
+    {
+        std::shared_ptr<gchar> db_name(
+            g_strdup_printf( "../save/%zd.db" , save_id ) ,
+            []( gchar * str ){ g_free( str ); }
+        );
+        std::shared_ptr<gchar> fail_tips(
+            g_strdup_printf( "读取存档 %zd 失败" , save_id ) ,
+            []( gchar * str ){ g_free( str ); }
+        );
+        if ( g_file_test( db_name.get() , G_FILE_TEST_EXISTS ) == FALSE )
+        {
+            fail_tips.reset( g_strdup_printf( "读取存档 %zd 不存在" , save_id ) );
+            set_tips( game_object , fail_tips );
+            return ;
+        }
+        try
+        {
+            MagicTower::DataBase db( db_name.get() );
+            game_object->towers = db.get_tower_info( 0 );
+            game_object->hero = db.get_hero_info( 0 );
+            game_object->stairs = db.get_stairs_list();
+            game_object->store_list = db.get_store_list();
+            game_object->monsters = db.get_monster_list();
+            game_object->items = db.get_item_list();
+            game_object->custom_events = db.get_custom_events();
+        }
+        catch ( ... )
+        {
+            set_tips( game_object , fail_tips );
+            return ;
+        }
+        std::shared_ptr<gchar> tips(
+            g_strdup_printf( "读取存档 %zd 成功" , save_id ) ,
+            []( gchar * str ){ g_free( str ); }
+        );
+        set_tips( game_object , tips );
     }
 
     void set_tips( struct GameEnvironment * game_object , std::shared_ptr<gchar> tips_content )

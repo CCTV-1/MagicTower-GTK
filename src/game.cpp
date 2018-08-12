@@ -11,8 +11,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <glib/gstdio.h>
 
-#include "database.h"
-#include "music.h"
 #include "game_event.h"
 
 
@@ -546,6 +544,16 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
                 MagicTower::close_store_menu( game_object );
             else
                 MagicTower::open_store_menu( game_object );
+            break;
+        }
+        case GDK_KEY_F1:
+        {
+            MagicTower::save_game_status( game_object , 1 );
+            break;
+        }
+        case GDK_KEY_F2:
+        {
+            MagicTower::load_game_status( game_object , 1 );
             break;
         }
         default :
