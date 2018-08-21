@@ -123,7 +123,7 @@ private:
 class DataBase
 {
 public:
-    DataBase( const char * filename = "magictower.db" );
+    DataBase( std::string filename = std::string( "magictower.db" ) );
     ~DataBase();
 
     Hero get_hero_info( std::size_t archive_id );

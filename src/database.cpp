@@ -16,9 +16,8 @@
 
 namespace MagicTower
 {
-    DataBase::DataBase( const char * filename )
+    DataBase::DataBase( std::string filename ): db_filename(filename)
     {
-        this->db_filename = std::string( filename );
         this->sqlite3_error_code = sqlite3_open_v2( this->db_filename.c_str() , &( this->db_handler ) 
             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE , NULL );
         if ( sqlite3_error_code != SQLITE_OK )
@@ -28,6 +27,7 @@ namespace MagicTower
 
     DataBase::~DataBase()
     {
+        sqlite3_exec( this->db_handler , "VACUUM" , NULL , NULL , NULL );
         this->sqlite3_error_code = sqlite3_close( db_handler );
         while( this->sqlite3_error_code == SQLITE_BUSY )
         {
@@ -130,7 +130,7 @@ namespace MagicTower
     Hero DataBase::get_hero_info( std::size_t archive_id )
     {
         Hero hero;
-        char sql_statement[] = "SELECT layers,x,y,level,life,attack,defense,gold,experience,yellow_key,"
+        const char sql_statement[] = "SELECT layers,x,y,level,life,attack,defense,gold,experience,yellow_key,"
         "blue_key,red_key FROM hero WHERE id = ?";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
@@ -188,7 +188,7 @@ namespace MagicTower
         std::uint32_t WIDTH = 0;
         std::vector<struct TowerGrid> maps;
 
-        char sql_statement[] = "SELECT length,width,height,content FROM tower WHERE id = ?";
+        const char sql_statement[] = "SELECT length,width,height,content FROM tower WHERE id = ?";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
         if ( this->sqlite3_error_code != SQLITE_OK )
@@ -200,7 +200,7 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_int_failure( 1 ,archive_id , this->sqlite3_error_code , std::string( sql_statement ) );
+            throw sqlite_bind_int_failure( 1 , archive_id , this->sqlite3_error_code , std::string( sql_statement ) );
         }
 
         //id should be unique,so hero will not be repeat setting
@@ -467,7 +467,7 @@ sqlite document:
 
     void DataBase::set_hero_info( const Hero& hero , std::size_t archive_id )
     {
-        char sql_statement[] = "INSERT OR REPLACE INTO hero(id,layers,x,y,level,life,attack,defense,"
+        const char sql_statement[] = "INSERT OR REPLACE INTO hero(id,layers,x,y,level,life,attack,defense,"
             "gold,experience,yellow_key,blue_key,red_key) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
@@ -498,7 +498,6 @@ sqlite document:
         sqlite3_bind_int( this->sql_statement_handler , 12 , hero.blue_key );
         sqlite3_bind_int( this->sql_statement_handler , 13 , hero.red_key );
 
-
         //UPDATE not return data so sqlite3_step not return SQLITE_ROW
         this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_DONE )
@@ -516,7 +515,7 @@ sqlite document:
 
     void DataBase::set_tower_info( const Tower& tower , std::size_t archive_id )
     {
-        char sql_statement[] = "INSERT OR REPLACE INTO tower(id,length,width,height,content) VALUES( ? , ? , ? , ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO tower(id,length,width,height,content) VALUES( ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
 
@@ -724,7 +723,7 @@ sqlite document:
     {
         sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
 
-        const char sql_statement[] = "INSERT OR REPLACE INTO stores(usability,name,content) VALUES( ? , ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO stores(id,usability,name,content) VALUES( ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
 
@@ -734,17 +733,19 @@ sqlite document:
             throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 3 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 4 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_bind_count_failure( std::string( sql_statement ) );
         }
 
+        std::int64_t id = 1;
         for( auto& store : stores )
         {
-            sqlite3_bind_int( this->sql_statement_handler , 1 , store.usability );
-            sqlite3_bind_text( this->sql_statement_handler , 2 , store.name.c_str() , store.name.size()  , SQLITE_STATIC );
-            sqlite3_bind_text( this->sql_statement_handler , 3 , store.content.c_str() , store.content.size() , SQLITE_STATIC );
+            sqlite3_bind_int64( this->sql_statement_handler , 1 , id );
+            sqlite3_bind_int( this->sql_statement_handler , 2 , store.usability );
+            sqlite3_bind_text( this->sql_statement_handler , 3 , store.name.c_str() , store.name.size()  , SQLITE_STATIC );
+            sqlite3_bind_text( this->sql_statement_handler , 4 , store.content.c_str() , store.content.size() , SQLITE_STATIC );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
             this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
@@ -760,6 +761,8 @@ sqlite document:
                 throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
             }
             sqlite3_clear_bindings( this->sql_statement_handler );
+
+            id++;
         }
 
         sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
@@ -775,7 +778,7 @@ sqlite document:
     {
         sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , NULL , NULL , NULL );
 
-        const char sql_statement[] = "INSERT OR REPLACE INTO events(event_position,event_content) VALUES( ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO events(id,event_position,event_content) VALUES( ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , NULL );
 
@@ -785,12 +788,13 @@ sqlite document:
             throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 2 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 3 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_bind_count_failure( std::string( sql_statement ) );
         }
 
+        std::int64_t id = 1;
         for( auto& custom_event : custom_events )
         {
             std::uint32_t x = std::get<0>( custom_event.first );
@@ -800,8 +804,9 @@ sqlite document:
             position_str += std::to_string( x ) + std::string( "," );
             position_str += std::to_string( y ) + std::string( "," );
             position_str += std::to_string( z );
-            sqlite3_bind_text( this->sql_statement_handler , 1 , position_str.c_str() , position_str.size() , SQLITE_STATIC );
-            sqlite3_bind_text( this->sql_statement_handler , 2 , custom_event.second.c_str() , custom_event.second.size() , SQLITE_STATIC );
+            sqlite3_bind_int64( this->sql_statement_handler , 1 , id );
+            sqlite3_bind_text( this->sql_statement_handler , 2 , position_str.c_str() , position_str.size() , SQLITE_STATIC );
+            sqlite3_bind_text( this->sql_statement_handler , 3 , custom_event.second.c_str() , custom_event.second.size() , SQLITE_STATIC );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
             this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
@@ -817,6 +822,8 @@ sqlite document:
                 throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
             }
             sqlite3_clear_bindings( this->sql_statement_handler );
+
+            id++;
         }
         
         sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , NULL , NULL , NULL );
