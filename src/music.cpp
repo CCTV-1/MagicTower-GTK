@@ -18,7 +18,7 @@ Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const ch
     this->pipeline = gst_pipeline_new( "audio-player" );
     this->source = gst_element_factory_make( "uridecodebin" , "source" );
     this->conver = gst_element_factory_make( "audioconvert" , "conver" );
-    this->sink   = gst_element_factory_make( "playsink" , "play-sink"  );
+    this->sink   = gst_element_factory_make( "directsoundsink" , "sink"  );
     this->play_id = 0;
     this->mode = PLAY_MODE::SIGLE_CYCLE;
     if( this->pipeline == NULL || this->source == NULL || this->conver == NULL || this->sink == NULL )
