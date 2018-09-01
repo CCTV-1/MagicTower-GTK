@@ -124,8 +124,14 @@ void Music::play_pause()
     gst_element_set_state( this->pipeline , GST_STATE_PAUSED );
 }
 
+void Music::play_resume()
+{
+    gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
+}
+
 void Music::play_restart()
 {
+    gst_element_set_state( this->pipeline , GST_STATE_READY );
     gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
 }
 

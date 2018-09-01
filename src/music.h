@@ -50,7 +50,8 @@ public:
     gboolean play_next();
     void play_stop();
     void play_pause();
-    void play_restart();
+    void play_restart()
+    void play_resume();
     std::size_t get_play_id();
     void set_play_id( std::size_t play_id );
     GstElement * get_pipeline();

@@ -249,7 +249,7 @@ static gboolean music_switch( GtkWidget * widget , gboolean state , gpointer dat
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     if ( state == true )
-        game_object->music.play_restart();
+        game_object->music.play_resume();
     else
         game_object->music.play_pause();
     return FALSE;
@@ -863,19 +863,19 @@ static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_obje
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
     int widget_width = gtk_widget_get_allocated_width( widget );
-    int widget_heigth = gtk_widget_get_allocated_height( widget );
+    int widget_height = gtk_widget_get_allocated_height( widget );
     std::shared_ptr<cairo_pattern_t> pattern(
-        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_heigth )
+        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_height )
         , []( cairo_pattern_t * pattern ){ cairo_pattern_destroy( pattern ); }
     );
     pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
     int layout_width , layout_height;
     pango_layout_get_pixel_size( layout.get() , &layout_width , &layout_height );
-    cairo_move_to( cairo, 0 , 0 );
+    cairo_move_to( cairo , 0 , 0 );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
-    cairo_rel_line_to( cairo, layout_width , 0 );
-    cairo_rel_line_to( cairo, 0 , layout_height );
-    cairo_rel_line_to( cairo, -1*layout_width , 0 );
+    cairo_rel_line_to( cairo , layout_width , 0 );
+    cairo_rel_line_to( cairo , 0 , layout_height );
+    cairo_rel_line_to( cairo , -1*layout_width , 0 );
     cairo_close_path( cairo );
 
     cairo_set_line_width( cairo , 2 );
@@ -900,9 +900,9 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
     int widget_width = gtk_widget_get_allocated_width( widget );
-    int widget_heigth = gtk_widget_get_allocated_height( widget );
+    int widget_height = gtk_widget_get_allocated_height( widget );
     std::shared_ptr<cairo_pattern_t> pattern(
-        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_heigth )
+        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_height )
         , []( cairo_pattern_t * pattern ){ cairo_pattern_destroy( pattern ); }
     );
     pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
@@ -918,11 +918,11 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
     if ( static_cast<std::uint32_t>( y + layout_height ) > ( game_object->towers.WIDTH )*MagicTower::TOWER_GRID_SIZE)
         y -= layout_height;
 
-    cairo_move_to( cairo, x , y );
+    cairo_move_to( cairo , x , y );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.8 );
-    cairo_rel_line_to( cairo, layout_width , 0 );
-    cairo_rel_line_to( cairo, 0 , layout_height );
-    cairo_rel_line_to( cairo, -1*layout_width , 0 );
+    cairo_rel_line_to( cairo , layout_width , 0 );
+    cairo_rel_line_to( cairo , 0 , layout_height );
+    cairo_rel_line_to( cairo , -1*layout_width , 0 );
     cairo_close_path( cairo );
 
     cairo_set_line_width( cairo , 2 );
@@ -941,11 +941,11 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
 
 static void draw_box( cairo_t * cairo , double x , double y , double width , double height , std::int32_t animation_value )
 {
-    cairo_move_to( cairo, x , y );
+    cairo_move_to( cairo , x , y );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 1.0/10*animation_value );
-    cairo_rel_line_to( cairo, width/10*animation_value , 0 );
-    cairo_rel_line_to( cairo, 0 , height/10*animation_value );
-    cairo_rel_line_to( cairo, -1*width/10*animation_value , 0 );
+    cairo_rel_line_to( cairo , width/10*animation_value , 0 );
+    cairo_rel_line_to( cairo , 0 , height/10*animation_value );
+    cairo_rel_line_to( cairo , -1*width/10*animation_value , 0 );
     cairo_close_path( cairo );
 
     cairo_set_line_width( cairo , 2 );
@@ -963,9 +963,9 @@ static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<Pa
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
     int widget_width = gtk_widget_get_allocated_width( widget );
-    int widget_heigth = gtk_widget_get_allocated_height( widget );
+    int widget_height = gtk_widget_get_allocated_height( widget );
     std::shared_ptr<cairo_pattern_t> pattern(
-        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_heigth )
+        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_height )
         , []( cairo_pattern_t * pattern ){ cairo_pattern_destroy( pattern ); }
     );
     pango_layout_set_font_description( layout.get() , font_desc.get() );
