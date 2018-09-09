@@ -27,6 +27,9 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
     static gboolean do_shopping( GtkWidget * widget , gpointer data );
+    static void set_game_menu( struct GameEnvironment * game_object );
+    static void set_store_menu( struct GameEnvironment * game_object );
+    static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content );
     static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content );
     static std::string deserialize_commodity_content( const char * content );
     static gboolean remove_tips( gpointer data );
@@ -1219,6 +1222,25 @@ namespace MagicTower
         return true;
     }
 
+    void open_store_menu_v2( struct GameEnvironment * game_object )
+    {
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
+			game_object->game_status == GAME_STATUS::GAME_WIN   ||
+            game_object->game_status == GAME_STATUS::GAME_MENU  ||
+            game_object->game_status == GAME_STATUS::STORE_MENU )
+			return ;
+        game_object->game_status = MagicTower::GAME_STATUS::STORE_MENU;
+        game_object->focus_item_id = 0;
+        set_store_menu( game_object );
+    }
+
+    void close_store_menu_v2( struct GameEnvironment * game_object )
+    {
+		if ( game_object->game_status != GAME_STATUS::STORE_MENU )
+			return ;
+        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+    }
+
     void open_store_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
@@ -1266,6 +1288,26 @@ namespace MagicTower
         game_object->game_status = GAME_STATUS::NORMAL;
     }
 
+    void open_game_menu_v2(  struct GameEnvironment * game_object )
+    {
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
+			game_object->game_status == GAME_STATUS::GAME_WIN   ||
+            game_object->game_status == GAME_STATUS::GAME_MENU  ||
+            game_object->game_status == GAME_STATUS::STORE_MENU )
+			return ;
+
+        game_object->game_status = GAME_STATUS::GAME_MENU;
+        game_object->focus_item_id = 0;
+        set_game_menu( game_object );
+    }
+
+    void close_game_menu_v2( struct GameEnvironment * game_object )
+    {
+        if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_MENU )
+            return ;
+        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+    }
+
     void open_game_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
@@ -1281,6 +1323,20 @@ namespace MagicTower
         gtk_container_remove( GTK_CONTAINER( game_window ) , game_grid );
         gtk_container_add( GTK_CONTAINER( game_window ) , game_menu );
         gtk_widget_show( game_menu );
+    }
+
+    void close_game_menu( struct GameEnvironment * game_object )
+    {
+        if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_MENU )
+            return ;
+
+        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+        GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
+        GtkWidget * game_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
+        GtkWidget * game_menu = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_menu" ) );
+        gtk_container_remove( GTK_CONTAINER( game_window ) , game_menu );
+        gtk_container_add( GTK_CONTAINER( game_window ) , game_grid );
+        gtk_widget_show( game_grid );
     }
 
     void game_win( struct GameEnvironment * game_object )
@@ -1317,6 +1373,13 @@ namespace MagicTower
         gtk_container_remove( GTK_CONTAINER( game_window ) , game_grid );
         gtk_container_add( GTK_CONTAINER( game_window ) , game_end_menu );
         gtk_widget_show( game_end_menu );
+    }
+
+    void game_exit( struct GameEnvironment * game_object )
+    {
+        GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
+        gtk_widget_destroy( game_window );
+        gtk_main_quit();
     }
 
     static std::int64_t get_combat_damage_of_last( Hero& hero , Monster& monster )
@@ -1413,6 +1476,95 @@ namespace MagicTower
         const char * commodity_json = gtk_widget_get_name( widget );
         shopping( static_cast<MagicTower::GameEnvironment *>( data ) , commodity_json );
         return TRUE;
+    }
+
+    static void set_game_menu( struct GameEnvironment * game_object )
+    {
+        game_object->menu_items.clear();
+	    game_object->menu_items.push_back({
+	    	"关闭菜单",
+	    	std::bind( close_game_menu_v2 , game_object )
+	    });
+	    game_object->menu_items.push_back({
+	    	"保存存档",
+	    	std::bind( save_game_status , game_object , 1 )
+	    });
+	    game_object->menu_items.push_back({
+	    	"读取存档",
+	    	std::bind( load_game_status , game_object , 1 )
+	    });
+/* 	    game_object->menu_items.push_back({
+	    	"关闭菜单",
+	    	std::bind( close_store_menu_v2 , game_object )
+	    }); */
+	    game_object->menu_items.push_back({
+	    	"退出游戏",
+	    	std::bind( game_exit , game_object )
+	    });
+    }
+
+    static void set_store_menu( struct GameEnvironment * game_object )
+    {
+	    game_object->menu_items.clear();
+	    for ( auto& store : game_object->store_list )
+	    {
+            if ( store.usability != true )
+            {
+                continue;
+            }
+
+	    	game_object->menu_items.push_back({
+	    		store.name,
+	    		std::bind( set_sub_store_menu , game_object , store.content.c_str() )
+	    	});
+	    }
+	    game_object->menu_items.push_back({
+	    	"关闭菜单",
+	    	std::bind( close_store_menu_v2 , game_object )
+	    });
+    }
+
+    static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content )
+    {
+	    game_object->menu_items.clear();
+        game_object->focus_item_id = 0;
+
+        json_error_t json_error;
+        json_t * root = json_loads( item_content , 0 , &json_error );
+        if ( root == NULL )
+        {
+            json_decref( root );
+            return ;
+        }
+        json_t * commodity_list = json_object_get( root , "commoditys" );
+        if ( !json_is_array( commodity_list ) )
+        {
+            json_decref( root );
+            return ;
+        }
+        size_t commodity_size = json_array_size( commodity_list );
+    	game_object->menu_items.push_back({
+    		"返回上级菜单",
+    		std::bind( set_store_menu , game_object )
+    	});
+        for( size_t i = 0 ; i < commodity_size ; i++ )
+        {
+            json_t * commodity_node = json_array_get( commodity_list , i );
+            if ( !json_is_object( commodity_node ) )
+            {
+                json_decref( root );
+                return ;
+            }
+            const char * commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
+    		game_object->menu_items.push_back({
+    			deserialize_commodity_content( commodity_content ),
+    			std::bind( shopping , game_object , commodity_content )
+    		});
+    	}
+    	game_object->menu_items.push_back({
+    		"关闭菜单",
+    		std::bind( close_store_menu_v2 , game_object )
+    	});
     }
 
     std::string deserialize_commodity_content( const char * content )

@@ -4,10 +4,11 @@
 
 #include <cstdint>
 
+#include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <tuple>
-#include <memory>
 
 //ignore in gcc-8+ gtk library warning:unnecessary parentheses in declaration of '*'
 #pragma GCC diagnostic ignored "-Wparentheses"
@@ -46,6 +47,8 @@ namespace MagicTower
         STATUS_COUNT,
     };
 
+    typedef std::vector< std::pair<std::string,std::function< void(void) > > > Menu_t;
+
     struct GameEnvironment
     {
         GtkBuilder * builder;
@@ -61,7 +64,9 @@ CREATE TABLE events (
     event_content  TEXT
 );
 */
-        std::map< MagicTower::event_position_t , std::string >custom_events;
+        std::map< MagicTower::event_position_t , std::string > custom_events;
+        Menu_t& menu_items;
+        std::size_t focus_item_id;
         MagicTower::Music& music;
         MagicTower::Hero hero;
         MagicTower::Tower towers;
@@ -72,7 +77,6 @@ CREATE TABLE events (
         std::vector<MagicTower::Store> store_list;
         std::uint32_t game_status;
         bool draw_path;
-        std::uint32_t shop_unlock_value;
         std::int32_t animation_value;
         int mouse_x;
         int mouse_y;
@@ -106,7 +110,17 @@ CREATE TABLE events (
 
     bool shopping( struct GameEnvironment * game_object , const char * commodity_json );
 
+    void open_game_menu_v2(  struct GameEnvironment * game_object );
+
+    void close_game_menu_v2( struct GameEnvironment * game_object );
+
     void open_game_menu( struct GameEnvironment * game_object );
+
+    void close_game_menu( struct GameEnvironment * game_object );
+
+    void open_store_menu_v2( struct GameEnvironment * game_object );
+    
+    void close_store_menu_v2( struct GameEnvironment * game_object );
 
     void open_store_menu( struct GameEnvironment * game_object );
     
@@ -119,6 +133,8 @@ CREATE TABLE events (
     void game_win( struct GameEnvironment * game_object );
 
     void game_lose( struct GameEnvironment * game_object );
+
+    void game_exit( struct GameEnvironment * game_object );
 }
 
 #endif
