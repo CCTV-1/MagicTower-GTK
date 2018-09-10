@@ -750,7 +750,6 @@ namespace MagicTower
                 trigger_custom_event( game_object , true_event_json );
                 json_t * new_true_event_node = json_loads( true_event_json.c_str() , 0 , &json_error );
                 json_object_set( root , "true" , new_true_event_node );
-                event_json = json_dumps( root , JSON_INDENT( 4 ) );
                 json_decref( new_true_event_node );
             }
             else
@@ -797,7 +796,6 @@ namespace MagicTower
                 json_object_set( root , "usability" , json_false() );
             }
             json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-            event_json = json_dumps( root , JSON_INDENT( 4 ) );
         }
         else if ( event_type_string == std::string( "GameLose" ) )
         {
@@ -1021,6 +1019,7 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unknown event type ignore event" );
         }
 
+        event_json = json_dumps( root , JSON_INDENT( 4 ) );
         json_decref( root );
         return true;
     }
