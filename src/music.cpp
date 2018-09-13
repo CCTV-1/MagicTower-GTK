@@ -192,7 +192,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     /* If our converter is already linked, we have nothing to do here */
     if ( gst_pad_is_linked( sink_pad ) )
     {
-        g_print( "We are already linked. Ignoring.\n" );
+        g_print( "We are already linked. ignoring.\n" );
         goto exit;
     }
     
@@ -216,7 +216,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     exit:
     /* Unreference the new pad's caps, if we got them */
     if ( new_pad_caps != NULL )
-      gst_caps_unref( new_pad_caps );
+        gst_caps_unref( new_pad_caps );
     
     /* Unreference the this->sink pad */
     gst_object_unref( sink_pad );

@@ -277,6 +277,7 @@ namespace MagicTower
         {
             throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
         }
+
         return events;
     }
 

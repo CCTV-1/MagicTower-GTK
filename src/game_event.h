@@ -8,7 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <tuple>
+//#include <tuple>
 
 //ignore in gcc-8+ gtk library warning:unnecessary parentheses in declaration of '*'
 #pragma GCC diagnostic ignored "-Wparentheses"
@@ -109,6 +109,10 @@ CREATE TABLE events (
     bool trigger_collision_event( struct GameEnvironment * game_object );
 
     bool shopping( struct GameEnvironment * game_object , const char * commodity_json );
+
+    void background_music_switch( struct GameEnvironment * game_object );
+
+    void test_window_switch( struct GameEnvironment * game_object );
 
     void open_game_menu_v2(  struct GameEnvironment * game_object );
 

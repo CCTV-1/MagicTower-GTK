@@ -9,7 +9,7 @@
 #include <vector>
 #include <utility>
 #include <queue>
-#include <tuple>
+//#include <tuple>
 #include <algorithm>
 
 #include <sys/stat.h>
@@ -1221,6 +1221,63 @@ namespace MagicTower
         return true;
     }
 
+    void background_music_switch( struct GameEnvironment * game_object )
+    {
+        static bool play_music = true;
+        play_music = !play_music;
+
+        if ( play_music == true )
+            game_object->music.play_resume();
+        else
+            game_object->music.play_pause();
+    }
+
+    void test_window_switch( struct GameEnvironment * game_object )
+    {
+        static bool display_window = false;
+        GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
+        GtkWidget * test_func_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_func_grid" ) );
+        display_window = !display_window;
+
+        if ( display_window == true )
+        {
+            if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
+                return ;
+
+            //sync_game_data( widget , data );
+            GtkWidget * layer_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "layer_spin_button" ) );
+            GtkWidget * x_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "x_spin_button" ) );
+            GtkWidget * y_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "y_spin_button" ) );
+            GtkWidget * level_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "level_spin_button" ) );
+            GtkWidget * life_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "life_spin_button" ) );
+            GtkWidget * attack_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "attack_spin_button" ) );
+            GtkWidget * defense_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "defense_spin_button" ) );
+            GtkWidget * gold_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "gold_spin_button" ) );
+            GtkWidget * experience_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "experience_spin_button" ) );
+            GtkWidget * yellow_key_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "yellow_key_spin_button" ) );
+            GtkWidget * blue_key_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "blue_key_spin_button" ) );
+            GtkWidget * red_key_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "red_key_spin_button" ) );
+
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( layer_spin_button ) , static_cast<gdouble>( game_object->hero.layers ) + 1 );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( x_spin_button ) , static_cast<gdouble>( game_object->hero.x ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( y_spin_button ) , static_cast<gdouble>( game_object->hero.y ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( level_spin_button ) , static_cast<gdouble>( game_object->hero.level ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( life_spin_button ) , static_cast<gdouble>( game_object->hero.life ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( attack_spin_button ) , static_cast<gdouble>( game_object->hero.attack ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( defense_spin_button ) , static_cast<gdouble>( game_object->hero.defense ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( gold_spin_button ) , static_cast<gdouble>( game_object->hero.gold ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( experience_spin_button ) , static_cast<gdouble>( game_object->hero.experience ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( yellow_key_spin_button ) , static_cast<gdouble>( game_object->hero.yellow_key ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( blue_key_spin_button ) , static_cast<gdouble>( game_object->hero.blue_key ) );
+            gtk_spin_button_set_value( GTK_SPIN_BUTTON( red_key_spin_button ) , static_cast<gdouble>( game_object->hero.red_key ) );
+
+            gtk_widget_show_all( GTK_WIDGET( test_func_grid ) );
+            gtk_widget_show_all( GTK_WIDGET( test_mode_window ) );
+        }
+        else if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
+            gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
+    }
+
     void open_store_menu_v2( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
@@ -1480,10 +1537,7 @@ namespace MagicTower
     static void set_game_menu( struct GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
-	    game_object->menu_items.push_back({
-	    	"关闭菜单",
-	    	std::bind( close_game_menu_v2 , game_object )
-	    });
+
 	    game_object->menu_items.push_back({
 	    	"保存存档",
 	    	std::bind( save_game_status , game_object , 1 )
@@ -1492,14 +1546,22 @@ namespace MagicTower
 	    	"读取存档",
 	    	std::bind( load_game_status , game_object , 1 )
 	    });
-/* 	    game_object->menu_items.push_back({
-	    	"关闭菜单",
-	    	std::bind( close_store_menu_v2 , game_object )
-	    }); */
 	    game_object->menu_items.push_back({
+	    	"背景音乐开关",
+	    	std::bind( background_music_switch , game_object )
+	    });
+	    game_object->menu_items.push_back({
+	    	"测试模式开关",
+	    	std::bind( test_window_switch , game_object )
+	    });
+	    game_object->menu_items.push_back({
+	    	"关闭菜单",
+	    	std::bind( close_game_menu_v2 , game_object )
+	    });
+        /*game_object->menu_items.push_back({
 	    	"退出游戏",
 	    	std::bind( game_exit , game_object )
-	    });
+	    }); */
     }
 
     static void set_store_menu( struct GameEnvironment * game_object )

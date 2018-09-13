@@ -594,12 +594,17 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
         }
         case GDK_KEY_F1:
         {
-            MagicTower::save_game_status( game_object , 1 );
-            break;
-        }
-        case GDK_KEY_F2:
-        {
-            MagicTower::load_game_status( game_object , 1 );
+            if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU )
+            {
+                MagicTower::close_game_menu( game_object );
+                break;
+            }
+            else if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_LOSE ||
+			          game_object->game_status == MagicTower::GAME_STATUS::GAME_WIN  ||
+                      game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU
+            )
+			    break;
+            MagicTower::open_game_menu( game_object );
             break;
         }
         default :
