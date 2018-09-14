@@ -38,7 +38,7 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
 static void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 
-static std::vector<std::shared_ptr<const char> > laod_music_resource( const char * music_path );
+static std::vector<std::shared_ptr<const char> > get_music_uris( const char * music_path );
 static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( const char * image_path );
 
 int main( int argc , char * argv[] )
@@ -61,7 +61,7 @@ int main( int argc , char * argv[] )
         g_chdir( self_dir_path.get() );
     }
 
-    std::vector<std::shared_ptr<const char> > music_list = laod_music_resource( MUSIC_RESOURCES_PATH );
+    std::vector<std::shared_ptr<const char> > music_list = get_music_uris( MUSIC_RESOURCES_PATH );
     MagicTower::Music music( &argc , &argv , music_list );
     music.play_start();
 
@@ -266,6 +266,11 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
             []( char * image_file_name ){ g_free( image_file_name ); }
         );
         const GdkPixbuf * element = ( game_object->image_resource[ image_file_name.get() ] ).get();
+        if ( element == NULL )
+        {
+            g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , image_file_name.get() );
+            return ;
+        }
         gdk_cairo_set_source_pixbuf( cairo , element , x*( MagicTower::TOWER_GRID_SIZE ) , y*( MagicTower::TOWER_GRID_SIZE ) );
         cairo_paint( cairo );
     };
@@ -826,16 +831,19 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( co
             g_strdup_printf( IMAGE_RESOURCES_PATH"%s" , filename ) ,
             []( char * image_file_name ){ g_free( image_file_name ); }
         );
-        std::shared_ptr<GdkPixbuf> image_pixbuf(
-            gdk_pixbuf_new_from_file_at_size( image_file_name.get() , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL )
-            , gdk_pixbuff_free
-        );
+        GdkPixbuf * pixbuf = gdk_pixbuf_new_from_file_at_size( image_file_name.get() , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL );
+        if ( pixbuf == NULL )
+        {
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_file_name.get() );
+            continue;
+        }
+        std::shared_ptr<GdkPixbuf> image_pixbuf( pixbuf , gdk_pixbuff_free );
         image_resource.insert( std::pair< std::string , std::shared_ptr<GdkPixbuf> >( std::string( image_file_name.get() ) , image_pixbuf ) );
     }
     return image_resource;
 }
 
-static std::vector<std::shared_ptr<const char> > laod_music_resource( const char * music_path )
+static std::vector<std::shared_ptr<const char> > get_music_uris( const char * music_path )
 {
     std::shared_ptr<GDir> dir_ptr(
         g_dir_open( music_path , 0 , NULL ) ,
@@ -1133,14 +1141,21 @@ static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<Pa
 
 static void make_info_basic_frame( MagicTower::Tower& towers , std::shared_ptr<GdkPixbuf> frame )
 {
-    std::shared_ptr<GdkPixbuf> info_blank(
-        gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"wall1.png" , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL ) ,
-        gdk_pixbuff_free
-    );
-    std::shared_ptr<GdkPixbuf> info_bg(
-        gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"floor11.png" , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL ) ,
-        gdk_pixbuff_free
-    );
+    GdkPixbuf * blank_pixbuf = gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"wall1.png" , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL );
+    if ( blank_pixbuf == NULL )
+    {
+        g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , IMAGE_RESOURCES_PATH"wall1.png" );
+        return ;
+    }
+    std::shared_ptr<GdkPixbuf> info_blank( blank_pixbuf , gdk_pixbuff_free );
+    
+    GdkPixbuf * bg_pixbuf = gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"floor11.png" , MagicTower::TOWER_GRID_SIZE , MagicTower::TOWER_GRID_SIZE , NULL );
+    if( bg_pixbuf == NULL )
+    {
+        g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , IMAGE_RESOURCES_PATH"floor11.png" );
+        return ;
+    }
+    std::shared_ptr<GdkPixbuf> info_bg( bg_pixbuf , gdk_pixbuff_free );
 
     for ( size_t y = 0 ; y < towers.LENGTH ; y++ )
     {
