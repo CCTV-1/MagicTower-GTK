@@ -66,7 +66,7 @@ gboolean Music::play_start( PLAY_MODE mode )
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
         return FALSE;
     }
 
@@ -132,7 +132,7 @@ gboolean Music::play_next()
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
         return FALSE;
     }
     return TRUE;
@@ -153,7 +153,7 @@ void Music::play_resume()
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
         return ;
     }
 }
@@ -164,7 +164,7 @@ void Music::play_restart()
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
         return ;
     }
 }
@@ -249,7 +249,7 @@ static bool file_format_check( std::shared_ptr<const char>& file_uri )
             }
             else
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: unknown error\n", filename.get() );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: unknown error", filename.get() );
             }
             gst_element_set_state( pipeline , GST_STATE_NULL );
             gst_object_unref( pipeline );
@@ -263,13 +263,13 @@ static bool file_format_check( std::shared_ptr<const char>& file_uri )
                 gchar * caps_str;
 
                 caps_str = gst_caps_to_string( caps );
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s\n" , filename.get() , caps_str );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s" , filename.get() , caps_str );
                 g_free( caps_str );
                 gst_caps_unref( caps );
             }
             else
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s\n" , filename.get() , "No type found" );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s" , filename.get() , "No type found" );
             }
             #endif
             break;
@@ -305,7 +305,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     /* if our converter is already linked, we have nothing to do here */
     if ( gst_pad_is_linked( sink_pad ) )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "We are already linked. ignoring.\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "We are already linked. ignoring." );
         goto handler_exit;
     }
     
@@ -315,7 +315,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     new_pad_type = gst_structure_get_name( new_pad_struct );
     if ( !g_str_has_prefix( new_pad_type , "audio/x-raw" ) )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "It has type '%s' which is not raw audio. Ignoring.\n" , new_pad_type );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "It has type '%s' which is not raw audio. Ignoring." , new_pad_type );
         goto handler_exit;
     }
     
@@ -323,7 +323,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     ret = gst_pad_link( new_pad , sink_pad );
     if ( GST_PAD_LINK_FAILED( ret ) )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "Type is '%s' but link failed.\n" , new_pad_type );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "Type is '%s' but link failed." , new_pad_type );
     }
     
     handler_exit:
@@ -349,7 +349,7 @@ static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipe
     GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return FALSE;
     }
     return TRUE;
@@ -375,7 +375,7 @@ static gboolean list_cycle( GstBus * bus , GstMessage * msg , Music * music )
     GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return FALSE;
     }
     return TRUE;
@@ -397,7 +397,7 @@ static gboolean random_playing( GstBus * bus , GstMessage * msg , Music * music 
     GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state\n" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return FALSE;
     }
     return TRUE;
