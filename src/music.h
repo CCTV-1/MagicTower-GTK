@@ -34,6 +34,12 @@ public:
     explicit music_list_empty( const std::string &s ) : std::runtime_error(s) {}
 };
 
+class music_play_failure : public std::runtime_error
+{
+public:
+    explicit music_play_failure( const std::string &s ) : std::runtime_error(s) {}
+};
+
 enum PLAY_MODE:std::uint32_t
 {
     SIGLE_CYCLE = 0,
@@ -44,22 +50,24 @@ enum PLAY_MODE:std::uint32_t
 class Music
 {
 public:
-    Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& play_list );
+    Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& play_list , PLAY_MODE mode = PLAY_MODE::RANDOM_PLAYING , std::size_t play_id = 0 );
     ~Music();
-    gboolean play_start( PLAY_MODE mode = PLAY_MODE::RANDOM_PLAYING );
+    /* gboolean play_start( PLAY_MODE mode = PLAY_MODE::RANDOM_PLAYING ); */
     gboolean play_next();
     void play_stop();
     void play_pause();
     void play_restart();
     void play_resume();
     std::size_t get_play_id();
-    void set_play_id( std::size_t play_id );
     GstElement * get_pipeline();
     GstElement * get_source();
     GstElement * get_conver();
     GstElement * get_sink();
     gint32 get_random_id();
     std::vector<std::shared_ptr<const char> >& get_music_uri_list();
+
+    void set_play_id( std::size_t play_id );
+    void set_play_mode( PLAY_MODE mode );
 protected:
     Music( const Music& )=delete;
     Music( Music&& )=delete;
@@ -72,6 +80,7 @@ private:
     GstElement * source;
     GstElement * conver;
     GstElement * sink;
+    gulong play_signal_id;
     std::vector<std::shared_ptr<const char> >& music_uri_list;
     GRand * grand_gen;
 };

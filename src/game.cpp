@@ -63,7 +63,7 @@ int main( int argc , char * argv[] )
 
     std::vector<std::shared_ptr<const char> > music_list = get_music_uris( MUSIC_RESOURCES_PATH );
     MagicTower::Music music( &argc , &argv , music_list );
-    music.play_start();
+    /* music.play_start(); */
 
     MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
     MagicTower::Tower towers = db.get_tower_info( 0 );

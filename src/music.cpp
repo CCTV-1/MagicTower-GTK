@@ -10,7 +10,7 @@ static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipe
 static gboolean list_cycle( GstBus * bus , GstMessage * msg , Music * music );
 static gboolean random_playing( GstBus * bus , GstMessage * msg , Music * music );
 
-Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& music_uri_list )
+Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& music_uri_list , PLAY_MODE mode , std::size_t play_id )
     :music_uri_list( music_uri_list )
 {
     if ( this->music_uri_list.empty() )
@@ -38,8 +38,11 @@ Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const ch
 #else
     this->sink   = gst_element_factory_make( "playsink" , "sink" );
 #endif
-    this->play_id = 0;
-    this->mode = PLAY_MODE::SIGLE_CYCLE;
+
+    if ( play_id > this->music_uri_list.size() )
+        play_id = 0;
+    this->play_id = play_id;
+    this->mode = mode;
     if( this->pipeline == NULL || this->source == NULL || this->conver == NULL || this->sink == NULL )
         throw gst_element_make_failure( std::string( "element could not be created\n" ) );
 
@@ -48,6 +51,42 @@ Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const ch
         throw gst_element_link_failure( std::string( "elements could not be linked\n" ) );
 
     this->grand_gen = g_rand_new();
+
+    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ play_id ].get() , NULL );
+    g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
+
+    GstBus * bus = gst_element_get_bus( this->pipeline );
+    gst_bus_add_signal_watch( bus );
+    switch ( mode )
+    {
+        case PLAY_MODE::SIGLE_CYCLE:
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
+            break;
+        }
+        case PLAY_MODE::LIST_CYCLE:
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
+            break;
+        }
+        case RANDOM_PLAYING:
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( random_playing ) , this );
+            break;
+        }
+        default :
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
+            break;
+        }
+    }
+    gst_object_unref( bus );
+
+    GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
+    if ( ret == GST_STATE_CHANGE_FAILURE )
+    {
+        throw music_play_failure( std::string( "unable to set the pipeline to the playing state\n" ) );
+    }
 }
 
 Music::~Music()
@@ -56,7 +95,7 @@ Music::~Music()
     gst_object_unref( this->pipeline );
 }
 
-gboolean Music::play_start( PLAY_MODE mode )
+/* gboolean Music::play_start( PLAY_MODE mode )
 {
     this->mode = mode;
     gint32 i = this->get_random_id();
@@ -76,29 +115,29 @@ gboolean Music::play_start( PLAY_MODE mode )
     {
         case PLAY_MODE::SIGLE_CYCLE:
         {
-            g_signal_connect( G_OBJECT( bus ) , "message::eos" , ( GCallback )sigle_cycle , this->pipeline );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
             break;
         }
         case PLAY_MODE::LIST_CYCLE:
         {
-            g_signal_connect( G_OBJECT( bus ) , "message::eos" , ( GCallback )list_cycle , this->pipeline );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
             break;
         }
         case RANDOM_PLAYING:
         {
-            g_signal_connect( G_OBJECT( bus ) , "message::eos" , ( GCallback )random_playing , this );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( random_playing ) , this );
             break;
         }
         default :
         {
-            g_signal_connect( G_OBJECT( bus ) , "message::eos" , ( GCallback )sigle_cycle , this->pipeline );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
             break;
         }
     }
 
     gst_object_unref( bus );
     return TRUE;
-}
+} */
 
 gboolean Music::play_next()
 {
@@ -124,7 +163,7 @@ gboolean Music::play_next()
         default :
             return TRUE;
     }
-    this->set_play_id( i );
+    this->play_id = i;
     gst_element_unlink( this->conver , this->sink );
     gst_element_set_state( this->pipeline , GST_STATE_NULL );
     g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ i ].get() , NULL );
@@ -132,7 +171,7 @@ gboolean Music::play_next()
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return FALSE;
     }
     return TRUE;
@@ -153,7 +192,7 @@ void Music::play_resume()
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return ;
     }
 }
@@ -164,7 +203,7 @@ void Music::play_restart()
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return ;
     }
 }
@@ -172,11 +211,6 @@ void Music::play_restart()
 std::size_t Music::get_play_id()
 {
     return this->play_id;
-}
-
-void Music::set_play_id( std::size_t play_id )
-{
-    this->play_id = play_id;
 }
 
 GstElement * Music::get_pipeline()
@@ -208,6 +242,44 @@ gint32 Music::get_random_id()
 {
     gint32 id = g_rand_int_range( this->grand_gen , 0 , this->music_uri_list.size() );
     return id;
+}
+
+void Music::set_play_id( std::size_t play_id )
+{
+    this->play_id = play_id;
+}
+
+void Music::set_play_mode( PLAY_MODE mode )
+{
+    if ( mode == this->mode )
+        return ;
+    this->mode = mode;
+    GstBus * bus = gst_element_get_bus( this->pipeline );
+    g_signal_handler_disconnect( G_OBJECT( bus ) , this->play_signal_id );
+    switch ( mode )
+    {
+        case PLAY_MODE::SIGLE_CYCLE:
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
+            break;
+        }
+        case PLAY_MODE::LIST_CYCLE:
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
+            break;
+        }
+        case RANDOM_PLAYING:
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( random_playing ) , this );
+            break;
+        }
+        default :
+        {
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
+            break;
+        }
+    }
+    gst_object_unref( bus );
 }
 
 static bool file_format_check( std::shared_ptr<const char>& file_uri )
