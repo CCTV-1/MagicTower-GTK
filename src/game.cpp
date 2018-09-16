@@ -43,23 +43,11 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( co
 
 int main( int argc , char * argv[] )
 {
-    //fast free pointer
-    {
-        std::shared_ptr<GFile> self_gfile(
-            g_file_new_for_path( argv[0] ),
-            []( GFile * g_file ){ g_object_unref( g_file ); }
-        );
-        std::shared_ptr<GFile> self_dir_gfile(
-            g_file_get_parent( self_gfile.get() ),
-            []( GFile * g_file ){ g_object_unref( g_file ); }
-        );
-
-        std::shared_ptr<char> self_dir_path(
-            g_file_get_parse_name( self_dir_gfile.get() ),
-            []( char * path ){ g_free( path ); }
-        );
-        g_chdir( self_dir_path.get() );
-    }
+    std::shared_ptr<char> self_dir_path(
+        g_path_get_dirname( argv[0] ),
+        []( char * path ){ g_free( path ); }
+    );
+    g_chdir( self_dir_path.get() );
 
     std::vector<std::shared_ptr<const char> > music_list = get_music_uris( MUSIC_RESOURCES_PATH );
     MagicTower::Music music( &argc , &argv , music_list );
