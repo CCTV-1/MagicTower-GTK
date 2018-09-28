@@ -1540,27 +1540,27 @@ namespace MagicTower
 
 	    game_object->menu_items.push_back({
 	    	"保存存档",
-	    	std::bind( save_game_status , game_object , 1 )
+	    	[ game_object ](){ save_game_status( game_object , 1 ); }
 	    });
 	    game_object->menu_items.push_back({
 	    	"读取存档",
-	    	std::bind( load_game_status , game_object , 1 )
+	    	[ game_object ](){ load_game_status( game_object , 1 ); }
 	    });
 	    game_object->menu_items.push_back({
 	    	"背景音乐开关",
-	    	std::bind( background_music_switch , game_object )
+	    	[ game_object ](){ background_music_switch( game_object ); }
 	    });
 	    game_object->menu_items.push_back({
 	    	"测试模式开关",
-	    	std::bind( test_window_switch , game_object )
+	    	[ game_object ](){ test_window_switch( game_object ); }
 	    });
 	    game_object->menu_items.push_back({
 	    	"关闭菜单",
-	    	std::bind( close_game_menu_v2 , game_object )
+	    	[ game_object ](){ close_game_menu_v2( game_object ); }
 	    });
         /*game_object->menu_items.push_back({
 	    	"退出游戏",
-	    	std::bind( game_exit , game_object )
+	    	[ game_object ](){ game_exit( game_object ); }
 	    }); */
     }
 
@@ -1576,12 +1576,12 @@ namespace MagicTower
 
 	    	game_object->menu_items.push_back({
 	    		store.name,
-	    		std::bind( set_sub_store_menu , game_object , store.content.c_str() )
+	    		[ game_object , store ](){ set_sub_store_menu( game_object , store.content.c_str() ); }
 	    	});
 	    }
 	    game_object->menu_items.push_back({
 	    	"关闭菜单",
-	    	std::bind( close_store_menu_v2 , game_object )
+	    	[ game_object ](){ close_store_menu_v2( game_object ); }
 	    });
     }
 
@@ -1606,7 +1606,7 @@ namespace MagicTower
         size_t commodity_size = json_array_size( commodity_list );
     	game_object->menu_items.push_back({
     		"返回上级菜单",
-    		std::bind( set_store_menu , game_object )
+    		[ game_object ](){ set_store_menu( game_object ); }
     	});
         for( size_t i = 0 ; i < commodity_size ; i++ )
         {
@@ -1616,15 +1616,15 @@ namespace MagicTower
                 json_decref( root );
                 return ;
             }
-            const char * commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
+            std::string commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
     		game_object->menu_items.push_back({
-    			deserialize_commodity_content( commodity_content ),
-    			std::bind( shopping , game_object , commodity_content )
+    			deserialize_commodity_content( commodity_content.c_str() ),
+    			[ game_object , commodity_content ](){ shopping( game_object , commodity_content.c_str() ); }
     		});
     	}
     	game_object->menu_items.push_back({
     		"关闭菜单",
-    		std::bind( close_store_menu_v2 , game_object )
+    		[ game_object ](){ close_store_menu_v2( game_object ); }
     	});
     }
 
