@@ -10,8 +10,8 @@ static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipe
 static gboolean list_cycle( GstBus * bus , GstMessage * msg , Music * music );
 static gboolean random_playing( GstBus * bus , GstMessage * msg , Music * music );
 
-Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& music_uri_list , PLAY_MODE mode , std::size_t play_id )
-    :music_uri_list( music_uri_list )
+Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_MODE _mode , PLAY_STATE _state , std::size_t _play_id )
+    :music_uri_list( _music_uri_list ),mode( _mode ),state( _state ),play_id( _play_id )
 {
     if ( this->music_uri_list.empty() )
         throw music_list_empty( std::string( "music uri list is empty" ) );
@@ -40,9 +40,7 @@ Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const ch
 #endif
 
     if ( play_id > this->music_uri_list.size() )
-        play_id = 0;
-    this->play_id = play_id;
-    this->mode = mode;
+        this->play_id = 0;
     if( this->pipeline == NULL || this->source == NULL || this->conver == NULL || this->sink == NULL )
         throw gst_element_make_failure( std::string( "element could not be created\n" ) );
 
@@ -57,7 +55,7 @@ Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const ch
 
     GstBus * bus = gst_element_get_bus( this->pipeline );
     gst_bus_add_signal_watch( bus );
-    switch ( mode )
+    switch ( this->mode )
     {
         case PLAY_MODE::SIGLE_CYCLE:
         {
@@ -82,6 +80,8 @@ Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const ch
     }
     gst_object_unref( bus );
 
+    if ( this->state != PLAY_STATE::PLAYING )
+        return ;
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
@@ -179,26 +179,37 @@ gboolean Music::play_next()
 
 void Music::play_stop()
 {
+    if ( this->state == PLAY_STATE::STOP )
+        return ;
     gst_element_set_state( this->pipeline , GST_STATE_READY );
+    this->state = PLAY_STATE::STOP;
 }
 
 void Music::play_pause()
 {
+    if ( this->state == PLAY_STATE::PAUSE )
+        return ;
     gst_element_set_state( this->pipeline , GST_STATE_PAUSED );
+    this->state = PLAY_STATE::PAUSE;
 }
 
 void Music::play_resume()
 {
+    if ( this->state != PLAY_STATE::PAUSE )
+        return ;
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return ;
     }
+    this->state = PLAY_STATE::PLAYING;
 }
 
 void Music::play_restart()
 {
+    if ( this->state != PLAY_STATE::STOP )
+        return ;
     gst_element_set_state( this->pipeline , GST_STATE_READY );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -206,6 +217,12 @@ void Music::play_restart()
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return ;
     }
+    this->state = PLAY_STATE::PLAYING;
+}
+
+enum PLAY_STATE Music::get_state()
+{
+    return this->state;
 }
 
 std::size_t Music::get_play_id()
