@@ -47,7 +47,7 @@ namespace MagicTower
         STATUS_COUNT,
     };
 
-    typedef std::vector< std::pair<std::string,std::function< void(void) > > > Menu_t;
+    typedef std::vector< std::pair<std::function< std::string(void) > , std::function< void(void) > > > Menu_t;
 
     struct GameEnvironment
     {
@@ -113,6 +113,8 @@ CREATE TABLE events (
     void background_music_switch( struct GameEnvironment * game_object );
 
     void test_window_switch( struct GameEnvironment * game_object );
+
+    void path_line_switch( struct GameEnvironment * game_object );
 
     void open_game_menu_v2(  struct GameEnvironment * game_object );
 

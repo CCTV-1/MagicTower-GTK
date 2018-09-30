@@ -1278,6 +1278,11 @@ namespace MagicTower
             gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
     }
 
+    void path_line_switch( struct GameEnvironment * game_object )
+    {
+        game_object->draw_path = !game_object->draw_path;
+    }
+
     void open_store_menu_v2( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
@@ -1539,35 +1544,51 @@ namespace MagicTower
         game_object->menu_items.clear();
 
 	    game_object->menu_items.push_back({
-	    	"保存存档",
+	    	[](){ return std::string( "保存存档" ); },
 	    	[ game_object ](){ save_game_status( game_object , 1 ); }
 	    });
 	    game_object->menu_items.push_back({
-	    	"读取存档",
+	    	[](){ return std::string( "读取存档" ); },
 	    	[ game_object ](){ load_game_status( game_object , 1 ); }
 	    });
 	    game_object->menu_items.push_back({
-	    	"背景音乐开关",
+	    	[ game_object ](){
+                if ( game_object->music.get_state() == PLAY_STATE::PLAYING )
+                    return std::string( "背景音乐: 开" );
+                else
+                    return std::string( "背景音乐: 关" );
+            },
 	    	[ game_object ](){ background_music_switch( game_object ); }
 	    });
 	    game_object->menu_items.push_back({
-	    	"测试模式开关",
+	    	[ game_object ](){
+                GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
+                if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
+                    return std::string( "测试模式: 开" );
+                else
+                    return std::string( "测试模式: 关" );
+            },
 	    	[ game_object ](){ test_window_switch( game_object ); }
 	    });
+        game_object->menu_items.push_back({
+	    	[ game_object ](){
+                if ( game_object->draw_path == TRUE )
+                    return std::string( "寻路指示: 开" );
+                else
+                    return std::string( "寻路指示: 关" );
+            },
+	    	[ game_object ](){ path_line_switch( game_object ); }
+	    });
 	    game_object->menu_items.push_back({
-	    	"关闭菜单",
+	    	[](){ return std::string( "关闭菜单" ); },
 	    	[ game_object ](){ close_game_menu_v2( game_object ); }
 	    });
-        /*game_object->menu_items.push_back({
-	    	"退出游戏",
-	    	[ game_object ](){ game_exit( game_object ); }
-	    }); */
     }
 
     static void set_store_menu( struct GameEnvironment * game_object )
     {
 	    game_object->menu_items.clear();
-	    for ( auto& store : game_object->store_list )
+	    for ( auto store : game_object->store_list )
 	    {
             if ( store.usability != true )
             {
@@ -1575,19 +1596,18 @@ namespace MagicTower
             }
 
 	    	game_object->menu_items.push_back({
-	    		store.name,
+	    		[ store ](){ return store.name; },
 	    		[ game_object , store ](){ set_sub_store_menu( game_object , store.content.c_str() ); }
 	    	});
 	    }
 	    game_object->menu_items.push_back({
-	    	"关闭菜单",
+	    	[](){ return std::string( "关闭菜单" ); },
 	    	[ game_object ](){ close_store_menu_v2( game_object ); }
 	    });
     }
 
     static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content )
     {
-	    game_object->menu_items.clear();
         game_object->focus_item_id = 0;
 
         json_error_t json_error;
@@ -1597,6 +1617,9 @@ namespace MagicTower
             json_decref( root );
             return ;
         }
+
+        //when call clear will free item_content content,so first call json_loads copy item_content content.
+	    game_object->menu_items.clear();
         json_t * commodity_list = json_object_get( root , "commoditys" );
         if ( !json_is_array( commodity_list ) )
         {
@@ -1605,7 +1628,7 @@ namespace MagicTower
         }
         size_t commodity_size = json_array_size( commodity_list );
     	game_object->menu_items.push_back({
-    		"返回上级菜单",
+    		[](){ return std::string( "返回上级菜单" ); },
     		[ game_object ](){ set_store_menu( game_object ); }
     	});
         for( size_t i = 0 ; i < commodity_size ; i++ )
@@ -1618,12 +1641,12 @@ namespace MagicTower
             }
             std::string commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
     		game_object->menu_items.push_back({
-    			deserialize_commodity_content( commodity_content.c_str() ),
+    			[ commodity_content ](){ return deserialize_commodity_content( commodity_content.c_str() ); },
     			[ game_object , commodity_content ](){ shopping( game_object , commodity_content.c_str() ); }
     		});
     	}
     	game_object->menu_items.push_back({
-    		"关闭菜单",
+    		[](){ return std::string( "关闭菜单" ); },
     		[ game_object ](){ close_store_menu_v2( game_object ); }
     	});
     }

@@ -998,8 +998,9 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
 			cairo_set_line_width( cairo , 2 );
 			cairo_stroke( cairo );
 		}
+        std::string menu_name = game_object->menu_items[i].first();
         std::shared_ptr<PangoLayout> layout(
-            gtk_widget_create_pango_layout( widget , game_object->menu_items[i].first.c_str() )
+            gtk_widget_create_pango_layout( widget , menu_name.c_str() )
             ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
         );
 		pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
