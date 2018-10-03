@@ -1826,7 +1826,7 @@ namespace MagicTower
         MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
         if ( game_object->tips_content.empty() )
             return FALSE;
-        game_object->tips_content.pop_back();
+        game_object->tips_content.pop_front();
         return FALSE;
     }
 }
