@@ -26,11 +26,11 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_normal( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
-    static gboolean do_shopping( GtkWidget * widget , gpointer data );
+/*     static gboolean do_shopping( GtkWidget * widget , gpointer data ); */
     static void set_game_menu( struct GameEnvironment * game_object );
     static void set_store_menu( struct GameEnvironment * game_object );
     static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content );
-    static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content );
+/*     static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content ); */
     static std::string deserialize_commodity_content( const char * content );
     static gboolean remove_tips( gpointer data );
 
@@ -355,7 +355,7 @@ namespace MagicTower
 
     void set_tips( struct GameEnvironment * game_object , std::shared_ptr<gchar> tips_content )
     {
-        game_object->tips_content = tips_content;
+        game_object->tips_content.push_back( tips_content );
         g_timeout_add( 1000 , remove_tips , game_object );
     }
 
@@ -1302,7 +1302,7 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    void open_store_menu( struct GameEnvironment * game_object )
+/*     void open_store_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
 			game_object->game_status == GAME_STATUS::GAME_WIN   ||
@@ -1347,7 +1347,7 @@ namespace MagicTower
         gtk_grid_attach( GTK_GRID( game_grid ) , tower_area , 1 , 0 , 1 , 1 );
         gtk_widget_show( game_grid );
         game_object->game_status = GAME_STATUS::NORMAL;
-    }
+    } */
 
     void open_game_menu_v2(  struct GameEnvironment * game_object )
     {
@@ -1369,7 +1369,7 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    void open_game_menu( struct GameEnvironment * game_object )
+/*     void open_game_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
 			game_object->game_status == GAME_STATUS::GAME_WIN   ||
@@ -1398,7 +1398,7 @@ namespace MagicTower
         gtk_container_remove( GTK_CONTAINER( game_window ) , game_menu );
         gtk_container_add( GTK_CONTAINER( game_window ) , game_grid );
         gtk_widget_show( game_grid );
-    }
+    } */
 
     void game_win( struct GameEnvironment * game_object )
     {
@@ -1532,12 +1532,12 @@ namespace MagicTower
         return -1;
     }
 
-    static gboolean do_shopping( GtkWidget * widget , gpointer data )
+/*     static gboolean do_shopping( GtkWidget * widget , gpointer data )
     {
         const char * commodity_json = gtk_widget_get_name( widget );
         shopping( static_cast<MagicTower::GameEnvironment *>( data ) , commodity_json );
         return TRUE;
-    }
+    } */
 
     static void set_game_menu( struct GameEnvironment * game_object )
     {
@@ -1782,7 +1782,7 @@ namespace MagicTower
         return deserialize_string;
     }
 
-    static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content )
+/*     static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content )
     {
         json_error_t json_error;
         json_t * root = json_loads( content.c_str() , 0 , &json_error );
@@ -1819,12 +1819,14 @@ namespace MagicTower
         }
         json_decref( root );
         return commodity_grid;
-    }
+    } */
 
     static gboolean remove_tips( gpointer data )
     {
         MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-        game_object->tips_content.reset();
+        if ( game_object->tips_content.empty() )
+            return FALSE;
+        game_object->tips_content.pop_back();
         return FALSE;
     }
 }

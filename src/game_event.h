@@ -4,9 +4,11 @@
 
 #include <cstdint>
 
+#include <deque>
 #include <functional>
 #include <map>
 #include <memory>
+#include <vector>
 #include <string>
 //#include <tuple>
 
@@ -55,7 +57,7 @@ namespace MagicTower
         std::shared_ptr<GdkPixbuf> info_frame;
         std::shared_ptr<PangoFontDescription> damage_font;
         std::shared_ptr<PangoFontDescription> info_font;
-        std::shared_ptr<gchar> tips_content;
+        std::deque< std::shared_ptr<gchar> > tips_content;
         std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource;
 /* 
 CREATE TABLE events (
@@ -120,17 +122,17 @@ CREATE TABLE events (
 
     void close_game_menu_v2( struct GameEnvironment * game_object );
 
-    void open_game_menu( struct GameEnvironment * game_object );
+/*     void open_game_menu( struct GameEnvironment * game_object );
 
-    void close_game_menu( struct GameEnvironment * game_object );
+    void close_game_menu( struct GameEnvironment * game_object ); */
 
     void open_store_menu_v2( struct GameEnvironment * game_object );
     
     void close_store_menu_v2( struct GameEnvironment * game_object );
 
-    void open_store_menu( struct GameEnvironment * game_object );
+/*     void open_store_menu( struct GameEnvironment * game_object );
     
-    void close_store_menu( struct GameEnvironment * game_object );
+    void close_store_menu( struct GameEnvironment * game_object ); */
 
     void save_game_status( struct GameEnvironment * game_object , size_t save_id );
 
