@@ -250,27 +250,42 @@ namespace MagicTower
         if ( grid.type != GRID_TYPE::IS_DOOR )
             return false;
 
-        bool status = true;
         switch( grid.id )
         {
             case 1:
-                ( hero.yellow_key >= 1 ) ? hero.yellow_key-- : status = false;
-                set_grid_type( game_object , position );
+            {
+                if ( hero.yellow_key >= 1 )
+                {
+                    set_grid_type( game_object , position );
+                    hero.yellow_key--;
+                }
                 break;
+            }
             case 2:
-                ( hero.blue_key >= 1 ) ? hero.blue_key-- : status = false;
-                set_grid_type( game_object , position );
+            {
+                if ( hero.blue_key >= 1 )
+                {
+                    set_grid_type( game_object , position );
+                    hero.blue_key--;
+                }
                 break;
+            }
             case 3:
-                ( hero.red_key >= 1 ) ? hero.red_key-- : status = false;
-                set_grid_type( game_object , position );
+            {
+                if ( hero.red_key >= 1 )
+                {
+                    set_grid_type( game_object , position );
+                    hero.red_key--;
+                }
                 break;
+            }
             default :
-                status = false;
+            {
                 break;
+            }
         }
 
-        return status;
+        return false;
     }
 
     bool check_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
@@ -592,7 +607,7 @@ namespace MagicTower
 
     bool trigger_collision_event( struct GameEnvironment * game_object )
     {
-        bool status = false;
+        bool state = false;
         Hero& hero = game_object->hero;
         Tower& tower = game_object->towers;
 
@@ -608,48 +623,48 @@ namespace MagicTower
         {
             case GRID_TYPE::IS_FLOOR:
             {
-                status = true;
+                state = true;
                 break;
             }
             case GRID_TYPE::IS_STAIRS:
             {
-                status = change_floor( game_object , grid.id );
+                state = change_floor( game_object , grid.id );
                 break;
             }
             case GRID_TYPE::IS_DOOR:
             {
                 open_door( game_object , { hero.x , hero.y , hero.layers } );
-                status = false;
+                state = false;
                 break;
             }
             case GRID_TYPE::IS_NPC:
             {
-                status = false;
+                state = false;
                 break;
             }
             case GRID_TYPE::IS_MONSTER:
             {
-                status = battle( game_object , grid.id );
-                if ( status == true )
+                state = battle( game_object , grid.id );
+                if ( state == true )
                     set_grid_type( game_object , { hero.x , hero.y , hero.layers } );
                 else
                 {
                     game_lose( game_object );
                 }
                 
-                status = false;
+                state = false;
                 break;
             }
             case GRID_TYPE::IS_ITEM:
             {
-                status = get_item( game_object , grid.id );
-                if ( status == true )
+                state = get_item( game_object , grid.id );
+                if ( state == true )
                     set_grid_type( game_object , { hero.x , hero.y , hero.layers } );
                 break;
             }
             default :
             {
-                status = false;
+                state = false;
                 break;
             }
         }
@@ -658,7 +673,7 @@ namespace MagicTower
         if ( event_iter != game_object->custom_events.end() )
             trigger_custom_event( game_object , event_iter->second );
 
-        return status;
+        return state;
     }
 
     bool trigger_custom_event( struct GameEnvironment * game_object , std::string& event_json )
