@@ -21,8 +21,8 @@ static gboolean resume_game( GtkWidget * widget , gpointer data ); */
 static gboolean apply_game_data( GtkWidget * widget , gpointer data );
 static gboolean sync_game_data( GtkWidget * widget , gpointer data );
 static void game_exit( GtkWidget * widget , gpointer data );
-static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpointer data );
-static gboolean button_press_handle( GtkWidget * widget , GdkEventMotion * event , gpointer data );
+static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gpointer data );
+static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * event , gpointer data );
 static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data );
 static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data );
 /* static gboolean music_switch( GtkWidget * widget , gboolean state , gpointer data );
@@ -142,9 +142,9 @@ int main( int argc , char * argv[] )
     //game signal handler
     g_signal_connect( G_OBJECT( info_area ) , "draw" , G_CALLBACK( draw_info ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "draw" , G_CALLBACK( draw_tower ) , &game_object );
-    g_signal_connect( G_OBJECT( tower_area ) , "button-press-event" , G_CALLBACK( button_press_handle ) , &game_object );
+    g_signal_connect( G_OBJECT( tower_area ) , "button-press-event" , G_CALLBACK( button_press_handler ) , &game_object );
     g_signal_connect( G_OBJECT( game_window ) , "destroy" , G_CALLBACK( game_exit ) , NULL );
-    g_signal_connect( G_OBJECT( game_window ) , "key-press-event" , G_CALLBACK( key_press_handle ) , &game_object );
+    g_signal_connect( G_OBJECT( game_window ) , "key-press-event" , G_CALLBACK( key_press_handler ) , &game_object );
     gtk_widget_set_events( tower_area , gtk_widget_get_events( tower_area )
         | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK 
         | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK );
@@ -452,7 +452,7 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
     return TRUE;
 }
 
-static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpointer data )
+static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gpointer data )
 {
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
@@ -625,7 +625,7 @@ static inline gboolean automatic_movement( gpointer data )
     return TRUE;
 }
 
-static gboolean button_press_handle( GtkWidget * widget , GdkEventMotion * event , gpointer data )
+static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * event , gpointer data )
 {
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
