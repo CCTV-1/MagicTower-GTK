@@ -154,8 +154,9 @@ int main( int argc , char * argv[] )
     gtk_widget_set_size_request( GTK_WIDGET( game_grid ) , ( towers.LENGTH + towers.LENGTH/2 )*MagicTower::TOWER_GRID_SIZE , ( towers.WIDTH )*MagicTower::TOWER_GRID_SIZE );
     gtk_widget_set_size_request( GTK_WIDGET( game_window ) , ( towers.LENGTH + towers.LENGTH/2 )*MagicTower::TOWER_GRID_SIZE , ( towers.WIDTH )*MagicTower::TOWER_GRID_SIZE );
     gtk_widget_show_all( game_window );
-    
+
     g_timeout_add( 50 , draw_loop , &game_object );
+    g_timeout_add( 100 , automatic_movement , &game_object );
     gtk_main();
 
     return EXIT_SUCCESS;
@@ -455,150 +456,142 @@ static gboolean key_press_handle( GtkWidget * widget , GdkEventKey * event , gpo
 {
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-
-    if ( ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG ) &&
-       ( game_object->animation_value < 10 ) )
+    
+    switch ( game_object->game_status )
     {
-        game_object->animation_value = 0;
-        return FALSE;
-    }
-    else if ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG )
-    {
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        return FALSE;
-    }
-
-    if ( game_object->game_status == MagicTower::GAME_STATUS::REVIEW_DETAIL )
-    {
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        return FALSE;
-    }
-
-    switch( event->keyval )
-    {
-        case GDK_KEY_Left:
+        case MagicTower::GAME_STATUS::DIALOG:
+        case MagicTower::GAME_STATUS::REVIEW_DETAIL:
         {
-            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
-                break;
-            ( game_object->hero ).x -= 1;
-            bool flags = MagicTower::trigger_collision_event( game_object );
-            if ( flags == false )
-                ( game_object->hero ).x += 1;
+            game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
             break;
         }
-        case GDK_KEY_Right:
+        case MagicTower::GAME_STATUS::NORMAL:
         {
-            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
-                break;
-            ( game_object->hero ).x += 1;
-            bool flags = MagicTower::trigger_collision_event( game_object );
-            if ( flags == false )
-                ( game_object->hero ).x -= 1;
-            break;
-        }
-        case GDK_KEY_Up:
-        {
-			if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU ||
-                 game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU
-            )
+            switch( event->keyval )
             {
-    			if ( game_object->focus_item_id > 0 )
-	    			game_object->focus_item_id--;
-		    	else
-			    	game_object->focus_item_id = game_object->menu_items.size() - 1;
-                break;
+                case GDK_KEY_Left:
+                {
+                    ( game_object->hero ).x -= 1;
+                    bool flags = MagicTower::trigger_collision_event( game_object );
+                    if ( flags == false )
+                        ( game_object->hero ).x += 1;
+                    break;
+                }
+                case GDK_KEY_Right:
+                {
+                    ( game_object->hero ).x += 1;
+                    bool flags = MagicTower::trigger_collision_event( game_object );
+                    if ( flags == false )
+                        ( game_object->hero ).x -= 1;
+                    break;
+                }
+                case GDK_KEY_Up:
+                {
+                    ( game_object->hero ).y -= 1;
+                    bool flags = MagicTower::trigger_collision_event( game_object );
+                    if ( flags == false )
+                        ( game_object->hero ).y += 1;
+                    break;
+                }
+                case GDK_KEY_Down:
+                {
+                    ( game_object->hero ).y += 1;
+                    bool flags = MagicTower::trigger_collision_event( game_object );
+                    if ( flags == false )
+                        ( game_object->hero ).y -= 1;
+                    break;
+                }
+                case GDK_KEY_Escape:
+                {
+                    MagicTower::open_game_menu_v2( game_object );
+                    break;
+                }
+                case GDK_KEY_s:
+                case GDK_KEY_S:
+                {
+                    MagicTower::open_store_menu_v2( game_object );
+                    break;
+                }
+                default :
+                    break;
             }
-
-            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
-                break;
-            ( game_object->hero ).y -= 1;
-            bool flags = MagicTower::trigger_collision_event( game_object );
-            if ( flags == false )
-                ( game_object->hero ).y += 1;
             break;
         }
-        case GDK_KEY_Down:
+        case MagicTower::GAME_STATUS::GAME_MENU:
         {
-			if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU ||
-                 game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU
-            )
+            switch( event->keyval )
             {
-    			if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
-	    			game_object->focus_item_id++;
-		    	else
-			    	game_object->focus_item_id = 0;
-                break;
+                case GDK_KEY_Up:
+                {
+    	        	if ( game_object->focus_item_id > 0 )
+	            		game_object->focus_item_id--;
+		            else
+		        		game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    break;
+                }
+                case GDK_KEY_Down:
+                {
+    	        	if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+	            		game_object->focus_item_id++;
+		            else
+		        		game_object->focus_item_id = 0;
+                    break;
+                }
+		        case GDK_KEY_Return:
+		        {
+                    ( game_object->menu_items[ game_object->focus_item_id ] ).second();
+                    break;
+		        }
+                case GDK_KEY_Escape:
+                {
+                    MagicTower::close_game_menu_v2( game_object );
+                    break;
+                }
+                default :
+                    break;
             }
-
-            if ( game_object->game_status != MagicTower::GAME_STATUS::NORMAL )
-                break;
-            ( game_object->hero ).y += 1;
-            bool flags = MagicTower::trigger_collision_event( game_object );
-            if ( flags == false )
-                ( game_object->hero ).y -= 1;
             break;
         }
-		case GDK_KEY_Return:
-		{
-			if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU ||
-                 game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU
-            )
-			{
-                ( game_object->menu_items[ game_object->focus_item_id ] ).second();
-            }
-			break;
-		}
-        case GDK_KEY_Escape:
+        case MagicTower::GAME_STATUS::STORE_MENU:
         {
-            if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU )
+            switch( event->keyval )
             {
-                MagicTower::close_game_menu_v2( game_object );
-                break;
+                case GDK_KEY_Up:
+                {
+    	        	if ( game_object->focus_item_id > 0 )
+	            		game_object->focus_item_id--;
+		            else
+		        		game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    break;
+                }
+                case GDK_KEY_Down:
+                {
+    	        	if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+	            		game_object->focus_item_id++;
+		            else
+		        		game_object->focus_item_id = 0;
+                    break;
+                }
+		        case GDK_KEY_Return:
+		        {
+                    ( game_object->menu_items[ game_object->focus_item_id ] ).second();
+                    break;
+		        }
+                case GDK_KEY_s:
+                case GDK_KEY_S:
+                {
+                    MagicTower::close_store_menu_v2( game_object );
+                    break;
+                }
             }
-            else if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_LOSE ||
-			          game_object->game_status == MagicTower::GAME_STATUS::GAME_WIN  ||
-                      game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU
-            )
-			    break;
-            MagicTower::open_game_menu_v2( game_object );
             break;
         }
-        case GDK_KEY_s:
-        case GDK_KEY_S:
+        default:
         {
-            if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU )
-            {
-                MagicTower::close_store_menu_v2( game_object );
-                break;
-            }
-            else if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_LOSE ||
-			          game_object->game_status == MagicTower::GAME_STATUS::GAME_WIN  ||
-                      game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU
-            )
-			    break;
-            MagicTower::open_store_menu_v2( game_object );
             break;
-        }
-/*         case GDK_KEY_F1:
-        {
-            if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU )
-            {
-                MagicTower::close_game_menu( game_object );
-                break;
-            }
-            else if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_LOSE ||
-			          game_object->game_status == MagicTower::GAME_STATUS::GAME_WIN  ||
-                      game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU
-            )
-			    break;
-            MagicTower::open_game_menu( game_object );
-            break;
-        } */
-        default :
-        {
-            return FALSE;
         }
     }
+
     return FALSE;
 }
 
@@ -607,12 +600,12 @@ static inline gboolean automatic_movement( gpointer data )
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     if ( game_object->game_status != MagicTower::GAME_STATUS::FIND_PATH )
     {
-        return FALSE;
+        return TRUE;
     }
-    if ( game_object->path.empty() && ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH ) )
+    if ( game_object->path.empty() )
     {
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        return FALSE;
+        return TRUE;
     }
     MagicTower::TowerGridLocation goal = game_object->path.back();
     MagicTower::TowerGridLocation temp = { ( game_object->hero ).x , ( game_object->hero ).y };
@@ -626,7 +619,7 @@ static inline gboolean automatic_movement( gpointer data )
         //if goal is npc,game status status set to dialog,now can't set game status to NORMAL
         if ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH )
             game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        return FALSE;
+        return TRUE;
     }
     game_object->path.pop_back();
     return TRUE;
@@ -637,72 +630,78 @@ static gboolean button_press_handle( GtkWidget * widget , GdkEventMotion * event
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     GdkEventButton * mouse_event = reinterpret_cast<GdkEventButton *>( event );
-    if ( mouse_event->type == GDK_2BUTTON_PRESS )
-    {
-        //ignore double chick
-        return TRUE;
-    }
-    if ( mouse_event->type == GDK_3BUTTON_PRESS )
-    {
-        //ignore triple chick
-        return TRUE;
-    }
-
-    if ( ( game_object->game_status == MagicTower::GAME_STATUS::REVIEW_DETAIL ) &&
-         ( mouse_event->type == GDK_BUTTON_PRESS ) )
-    {
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        return TRUE;
-    }
-    if ( ( game_object->game_status == MagicTower::GAME_STATUS::DIALOG ) &&
-         ( mouse_event->type == GDK_BUTTON_PRESS ) )
-    {
-        if ( game_object->animation_value < 10 )
-        {
-            game_object->animation_value = 10;
-            return TRUE;
-        }
-        game_object->animation_value = 0;
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        return TRUE;
-    }
-
-    int x, y;
+    gint x , y;
     GdkModifierType state;  
     gdk_window_get_device_position( event->window , event->device , &x , &y , &state );
-    //start find path or muliti find path do speed move
-    if  ( ( mouse_event->button == 1 ) && ( 
-         ( game_object->game_status == MagicTower::GAME_STATUS::NORMAL ) ||
-         ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH ) )
-        )
+
+    switch ( mouse_event->type )
     {
-        game_object->path = MagicTower::find_path( game_object , { x/MagicTower::TOWER_GRID_SIZE , y/MagicTower::TOWER_GRID_SIZE } );
-        game_object->game_status = MagicTower::GAME_STATUS::FIND_PATH;
-        g_timeout_add( 100 , automatic_movement , game_object );
+        case GDK_2BUTTON_PRESS:
+        case GDK_3BUTTON_PRESS:
+        {
+            break;
+        }
+        case GDK_BUTTON_PRESS:
+        {
+            switch ( game_object->game_status )
+            {
+                case MagicTower::GAME_STATUS::REVIEW_DETAIL:
+                case MagicTower::GAME_STATUS::DIALOG:
+                {
+                    game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                    break;
+                }
+                //if mouse_event->button == 1,behavior equal to MagicTower::GAME_STATUS::FIND_PATH,so don't break.
+                #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+                case MagicTower::GAME_STATUS::NORMAL:
+                {
+                    if ( mouse_event->button == 3 )
+                    {
+                        game_object->mouse_x = x + 0.5*MagicTower::TOWER_GRID_SIZE;
+                        game_object->mouse_y = y + 0.5*MagicTower::TOWER_GRID_SIZE;
+                        game_object->game_status = MagicTower::GAME_STATUS::REVIEW_DETAIL;
+                        break;
+                    }
+                }
+                #pragma GCC diagnostic warning "-Wimplicit-fallthrough" 
+                case MagicTower::GAME_STATUS::FIND_PATH:
+                {
+                    if ( mouse_event->button == 1 )
+                    {
+                        game_object->path = MagicTower::find_path( game_object , { x/MagicTower::TOWER_GRID_SIZE , y/MagicTower::TOWER_GRID_SIZE } );
+                        game_object->game_status = MagicTower::GAME_STATUS::FIND_PATH;
+                        break;
+                    }
+                    break;
+                }
+                case MagicTower::GAME_STATUS::STORE_MENU:
+                case MagicTower::GAME_STATUS::GAME_MENU:
+                {
+                    int widget_width = gtk_widget_get_allocated_width( widget );
+                    int widget_height = gtk_widget_get_allocated_height( widget );
+                    const int box_start_x = widget_height/6;
+                    const int box_start_y = widget_width/6;
+	                double box_height = widget_height*2/3;
+	                double box_width = widget_width*2/3;
+	                if ( x > box_start_x && x - box_width < box_start_x && y > box_start_y && y - box_height < box_start_y )
+	                {
+	                	size_t item_total = game_object->menu_items.size();
+	                	size_t access_index = ( y - box_start_y )*item_total/box_height;
+	                	( game_object->menu_items[ access_index ] ).second();
+	                }
+                }
+                default:
+                {
+                    break;
+                }
+            }
+        }
+        default:
+        {
+            break;
+        }
     }
-    if ( ( mouse_event->button == 3 ) && ( game_object->game_status == MagicTower::GAME_STATUS::NORMAL ) )
-    {
-        game_object->mouse_x = x + 0.5*MagicTower::TOWER_GRID_SIZE;
-        game_object->mouse_y = y + 0.5*MagicTower::TOWER_GRID_SIZE;
-        game_object->game_status = MagicTower::GAME_STATUS::REVIEW_DETAIL;
-    }
-    if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU ||
-         game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU
-    )
-    {
-        int widget_width = gtk_widget_get_allocated_width( widget );
-        int widget_height = gtk_widget_get_allocated_height( widget );
-        const int box_start_x = widget_height/6;
-        const int box_start_y = widget_width/6;
-	    double box_height = widget_height*2/3;
-	    double box_width = widget_width*2/3;
-	    if ( x > box_start_x && x - box_width < box_start_x && y > box_start_y && y - box_height < box_start_y )
-	    {
-	    	size_t item_total = game_object->menu_items.size();
-	    	size_t access_index = ( y - box_start_y )*item_total/box_height;
-	    	( game_object->menu_items[ access_index ] ).second();
-	    }
-    }
+
     return TRUE;
 }
 
@@ -710,9 +709,7 @@ static gboolean draw_loop( gpointer data )
 {
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_LOSE &&
-        game_object->game_status  == MagicTower::GAME_STATUS::GAME_WIN &&
-        game_object->game_status  == MagicTower::GAME_STATUS::UNKNOWN &&
-        game_object->game_status  == MagicTower::GAME_STATUS::STATUS_COUNT
+        game_object->game_status  == MagicTower::GAME_STATUS::GAME_WIN
     )
         return TRUE;
     

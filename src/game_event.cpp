@@ -1298,6 +1298,16 @@ namespace MagicTower
         game_object->draw_path = !game_object->draw_path;
     }
 
+    void open_layer_jump( struct GameEnvironment * game_object )
+    {
+        ;
+    }
+
+    void close_layer_jump( struct GameEnvironment * game_object )
+    {
+        ;
+    }
+
     void open_store_menu_v2( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||

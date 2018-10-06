@@ -46,7 +46,6 @@ namespace MagicTower
         GAME_LOSE,
         GAME_WIN,
         UNKNOWN,
-        STATUS_COUNT,
     };
 
     typedef std::vector< std::pair<std::function< std::string(void) > , std::function< void(void) > > > Menu_t;
@@ -133,6 +132,10 @@ CREATE TABLE events (
 /*     void open_store_menu( struct GameEnvironment * game_object );
     
     void close_store_menu( struct GameEnvironment * game_object ); */
+
+    void open_layer_jump( struct GameEnvironment * game_object );
+
+    void close_layer_jump( struct GameEnvironment * game_object );
 
     void save_game_status( struct GameEnvironment * game_object , size_t save_id );
 
