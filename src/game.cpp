@@ -86,7 +86,7 @@ int main( int argc , char * argv[] )
     GtkWidget * info_area   = GTK_WIDGET( gtk_builder_get_object( builder , "info_area"  ) );
     GtkWidget * tower_area  = GTK_WIDGET( gtk_builder_get_object( builder , "tower_area" ) );
 
-/*     GtkWidget * exit_button_1            = GTK_WIDGET( gtk_builder_get_object( builder , "exit_game_button_1" ) );
+    /* GtkWidget * exit_button_1         = GTK_WIDGET( gtk_builder_get_object( builder , "exit_game_button_1" ) );
     GtkWidget * exit_button_2            = GTK_WIDGET( gtk_builder_get_object( builder , "exit_game_button_2" ) );
     GtkWidget * restart_button           = GTK_WIDGET( gtk_builder_get_object( builder , "restart_game_button" ) );
     GtkWidget * resume_button            = GTK_WIDGET( gtk_builder_get_object( builder , "resume_game_button" ) );
@@ -131,7 +131,7 @@ int main( int argc , char * argv[] )
     g_signal_connect( G_OBJECT( synchronize_data_button ) , "clicked" , G_CALLBACK( sync_game_data ) , &game_object );
 
     //menu signal handler
-/*     g_signal_connect( G_OBJECT( exit_button_1 ) , "clicked" , G_CALLBACK( game_exit ) , NULL );
+    /* g_signal_connect( G_OBJECT( exit_button_1 ) , "clicked" , G_CALLBACK( game_exit ) , NULL );
     g_signal_connect( G_OBJECT( restart_button ) , "clicked" , G_CALLBACK( restart_game ) , &game_object );
     g_signal_connect( G_OBJECT( exit_button_2 ) , "clicked" , G_CALLBACK( game_exit ) , NULL );
     g_signal_connect( G_OBJECT( resume_button ) , "clicked" , G_CALLBACK( resume_game ) , &game_object );
@@ -407,48 +407,34 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
     //Draw text
     //if remove ' ' to '%''PRIu32',g++ warning:
     //invalid suffix on literal; C++11 requires a space between literal and string macro.
-    constexpr static const gchar * base_text[] = 
-    {   
-        "第  %" PRIu32 "  层",
-        "等   级:  %" PRIu32,
-        "生命值:  %" PRIu32,
-        "攻击力:  %" PRIu32,
-        "防御力:  %" PRIu32,
-        "金   币:  %" PRIu32,
-        "经验值:  %" PRIu32,
-        "黄钥匙:  %" PRIu32,
-        "蓝钥匙:  %" PRIu32,
-        "红钥匙:  %" PRIu32,
-    };
 
-    std::uint32_t abilitys[] =
+    std::vector< std::pair<gchar * , int > > arr =
     {
-        hero.layers + 1 , hero.level , hero.life ,
-        hero.attack , hero.defense , hero.gold , 
-        hero.experience , hero.yellow_key , hero.blue_key ,
-        hero.red_key
+        { g_strdup_printf( "第  %" PRIu32 "  层" , hero.layers + 1 ) , 2 },
+        { g_strdup_printf( "等   级:  %" PRIu32 , hero.level ) , 0 },
+        { g_strdup_printf( "生命值:  %" PRIu32 , hero.life ) , 0 },
+        { g_strdup_printf( "攻击力:  %" PRIu32 , hero.attack ) , 0 },
+        { g_strdup_printf( "防御力:  %" PRIu32 , hero.defense ) , 0 },
+        { g_strdup_printf( "金   币:  %" PRIu32 , hero.gold ) , 0 },
+        { g_strdup_printf( "经验值:  %" PRIu32 , hero.experience ) , 0 },
+        { g_strdup_printf( "黄钥匙:  %" PRIu32 , hero.yellow_key ) , 0 },
+        { g_strdup_printf( "蓝钥匙:  %" PRIu32 , hero.blue_key ) , 0 },
+        { g_strdup_printf( "红钥匙:  %" PRIu32 , hero.red_key ) , 0 },
+        { g_strdup_printf( "游戏菜单(ESC) " ) , 2 },
+        { g_strdup_printf( "商店菜单(s/S)" ) , 2 },
+        { g_strdup_printf( "楼层跳跃器(j/J)" ) , 2 },
     };
 
-    std::shared_ptr<gchar> text(
-        g_strdup_printf( base_text[0] , abilitys[0] )
-        , []( gchar * text ){ g_free( text ); }
-    );
-    draw_text( widget , cairo , game_object->info_font , MagicTower::TOWER_GRID_SIZE , 0 , text , 2 );
-    for ( size_t i = 1 ; i < sizeof( base_text )/sizeof( const gchar * ) ; i++ )
+    int widget_height = gtk_widget_get_allocated_height( widget );
+    std::size_t arr_size = arr.size();
+    for ( std::size_t i = 0 ; i < arr_size ; i++ )
     {
         std::shared_ptr<gchar> text(
-            g_strdup_printf( base_text[i] , abilitys[i] )
-            , []( gchar * text ){ g_free( text ); }
+            arr[i].first , []( gchar * text ){ g_free( text ); }
         );
-        draw_text( widget , cairo , game_object->info_font , 0*i , MagicTower::TOWER_GRID_SIZE*i , text );
+        draw_text( widget , cairo , game_object->info_font , 0 , widget_height/arr_size*i , text , arr[i].second );
     }
-    
-    std::shared_ptr<gchar> test(
-        g_strdup_printf( "%s" , "游戏菜单(ESC)\n商店菜单(S/s)" )
-        ,[]( gchar * text ){ g_free( text ); }
-    );
-    draw_text( widget , cairo , game_object->info_font , 0 , MagicTower::TOWER_GRID_SIZE*( 
-                sizeof( base_text)/sizeof( const gchar * ) ) , test , 2 );
+
     return TRUE;
 }
 
@@ -510,6 +496,12 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
                 case GDK_KEY_S:
                 {
                     MagicTower::open_store_menu_v2( game_object );
+                    break;
+                }
+                case GDK_KEY_j:
+                case GDK_KEY_J:
+                {
+                    MagicTower::open_layer_jump( game_object );
                     break;
                 }
                 default :
