@@ -130,8 +130,8 @@ namespace MagicTower
             R"(
                 CREATE TABLE IF NOT EXISTS jump_point (
                     layer INTEGER PRIMARY KEY AUTOINCREMENT,
-	                x     INT (32),
-	                y     INT (32)
+                    x     INT (32),
+                    y     INT (32)
                 );
             )"
         };

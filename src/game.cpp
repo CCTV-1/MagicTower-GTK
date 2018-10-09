@@ -169,7 +169,7 @@ int main( int argc , char * argv[] )
     ( void )widget;
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_LOSE &&
-		game_object->game_status != MagicTower::GAME_STATUS::GAME_WIN )
+        game_object->game_status != MagicTower::GAME_STATUS::GAME_WIN )
             return TRUE;
 
     //reset game status
@@ -423,7 +423,7 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
         { g_strdup_printf( "黄钥匙:  %" PRIu32 , hero.yellow_key ) , 0 },
         { g_strdup_printf( "蓝钥匙:  %" PRIu32 , hero.blue_key ) , 0 },
         { g_strdup_printf( "红钥匙:  %" PRIu32 , hero.red_key ) , 0 },
-        { g_strdup_printf( "游戏菜单(ESC) " ) , 2 },
+        { g_strdup_printf( "游戏菜单(ESC)" ) , 2 },
         { g_strdup_printf( "商店菜单(s/S)" ) , 2 },
         { g_strdup_printf( "楼层跳跃/浏览器(j/J)" ) , 2 },
     };
@@ -518,25 +518,25 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
             {
                 case GDK_KEY_Up:
                 {
-    	        	if ( game_object->focus_item_id > 0 )
-	            		game_object->focus_item_id--;
-		            else
-		        		game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    if ( game_object->focus_item_id > 0 )
+                        game_object->focus_item_id--;
+                    else
+                        game_object->focus_item_id = game_object->menu_items.size() - 1;
                     break;
                 }
                 case GDK_KEY_Down:
                 {
-    	        	if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
-	            		game_object->focus_item_id++;
-		            else
-		        		game_object->focus_item_id = 0;
+                    if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+                        game_object->focus_item_id++;
+                    else
+                        game_object->focus_item_id = 0;
                     break;
                 }
-		        case GDK_KEY_Return:
-		        {
+                case GDK_KEY_Return:
+                {
                     ( game_object->menu_items[ game_object->focus_item_id ] ).second();
                     break;
-		        }
+                }
                 case GDK_KEY_Escape:
                 {
                     MagicTower::close_game_menu_v2( game_object );
@@ -553,25 +553,25 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
             {
                 case GDK_KEY_Up:
                 {
-    	        	if ( game_object->focus_item_id > 0 )
-	            		game_object->focus_item_id--;
-		            else
-		        		game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    if ( game_object->focus_item_id > 0 )
+                        game_object->focus_item_id--;
+                    else
+                        game_object->focus_item_id = game_object->menu_items.size() - 1;
                     break;
                 }
                 case GDK_KEY_Down:
                 {
-    	        	if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
-	            		game_object->focus_item_id++;
-		            else
-		        		game_object->focus_item_id = 0;
+                    if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+                        game_object->focus_item_id++;
+                    else
+                        game_object->focus_item_id = 0;
                     break;
                 }
-		        case GDK_KEY_Return:
-		        {
+                case GDK_KEY_Return:
+                {
                     ( game_object->menu_items[ game_object->focus_item_id ] ).second();
                     break;
-		        }
+                }
                 case GDK_KEY_s:
                 case GDK_KEY_S:
                 {
@@ -587,25 +587,25 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
             {
                 case GDK_KEY_Up:
                 {
-    	        	if ( game_object->focus_item_id > 0 )
-	            		game_object->focus_item_id--;
-		            else
-		        		game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    if ( game_object->focus_item_id > 0 )
+                        game_object->focus_item_id--;
+                    else
+                        game_object->focus_item_id = game_object->menu_items.size() - 1;
                     break;
                 }
                 case GDK_KEY_Down:
                 {
-    	        	if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
-	            		game_object->focus_item_id++;
-		            else
-		        		game_object->focus_item_id = 0;
+                    if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+                        game_object->focus_item_id++;
+                    else
+                        game_object->focus_item_id = 0;
                     break;
                 }
-		        case GDK_KEY_Return:
-		        {
+                case GDK_KEY_Return:
+                {
                     ( game_object->menu_items[ game_object->focus_item_id ] ).second();
                     break;
-		        }
+                }
                 case GDK_KEY_j:
                 case GDK_KEY_J:
                 {
@@ -712,14 +712,14 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
                     int widget_height = gtk_widget_get_allocated_height( widget );
                     const int box_start_x = widget_height/6;
                     const int box_start_y = widget_width/6;
-	                double box_height = widget_height*2/3;
-	                double box_width = widget_width*2/3;
-	                if ( x > box_start_x && x - box_width < box_start_x && y > box_start_y && y - box_height < box_start_y )
-	                {
-	                	size_t item_total = game_object->menu_items.size();
-	                	size_t access_index = ( y - box_start_y )*item_total/box_height;
-	                	( game_object->menu_items[ access_index ] ).second();
-	                }
+                    double box_height = widget_height*2/3;
+                    double box_width = widget_width*2/3;
+                    if ( x > box_start_x && x - box_width < box_start_x && y > box_start_y && y - box_height < box_start_y )
+                    {
+                        size_t item_total = game_object->menu_items.size();
+                        size_t access_index = ( y - box_start_y )*item_total/box_height;
+                        ( game_object->menu_items[ access_index ] ).second();
+                    }
                 }
                 default:
                 {
@@ -992,59 +992,59 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
     const int box_start_x = widget_height/6;
     const int box_start_y = widget_width/6;
 
-	//draw box
-	double box_height = widget_height*2/3;
-	double box_width = widget_width*2/3;
-	cairo_move_to( cairo, box_start_x , box_start_y );
-	cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
-	cairo_rel_line_to( cairo , 0 , box_height );
-	cairo_rel_line_to( cairo , box_width , 0 );
-	cairo_rel_line_to( cairo , 0 , 0 - box_height );
-	cairo_rel_line_to( cairo , 0 - box_width , 0 );
-	cairo_close_path( cairo );
-	cairo_set_line_width( cairo , 2 );
-	cairo_fill_preserve( cairo );
-	cairo_set_source_rgba( cairo , 0 , 0 , 0 , 1.0 );
-	cairo_stroke( cairo );
-	//draw content
-	size_t item_total = game_object->menu_items.size();
-	double item_size = box_height/item_total;
+    //draw box
+    double box_height = widget_height*2/3;
+    double box_width = widget_width*2/3;
+    cairo_move_to( cairo, box_start_x , box_start_y );
+    cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
+    cairo_rel_line_to( cairo , 0 , box_height );
+    cairo_rel_line_to( cairo , box_width , 0 );
+    cairo_rel_line_to( cairo , 0 , 0 - box_height );
+    cairo_rel_line_to( cairo , 0 - box_width , 0 );
+    cairo_close_path( cairo );
+    cairo_set_line_width( cairo , 2 );
+    cairo_fill_preserve( cairo );
+    cairo_set_source_rgba( cairo , 0 , 0 , 0 , 1.0 );
+    cairo_stroke( cairo );
+    //draw content
+    size_t item_total = game_object->menu_items.size();
+    double item_size = box_height/item_total;
     std::shared_ptr<cairo_pattern_t> pattern(
         cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_height )
         , []( cairo_pattern_t * pattern ){ cairo_pattern_destroy( pattern ); }
     );
-	for ( size_t i = 0 ; i < item_total ; i++ )
-	{
-		if ( i == game_object->focus_item_id )
-		{
-			cairo_move_to( cairo , box_start_x + 2 , i*item_size + box_start_y + 2 );
-			cairo_rel_line_to( cairo , box_width - 4 , 0 );
-			cairo_rel_line_to( cairo , 0 , item_size - 4 );
-			cairo_rel_line_to( cairo , -1*box_width + 4 , 0 );
-			cairo_rel_line_to( cairo , 0 , -1*item_size + 4 );
-			cairo_set_source_rgba( cairo , 255/255.0 , 125/255.0 , 0/255.0 , 1.0 );
-			cairo_set_line_width( cairo , 2 );
-			cairo_stroke( cairo );
-		}
+    for ( size_t i = 0 ; i < item_total ; i++ )
+    {
+        if ( i == game_object->focus_item_id )
+        {
+            cairo_move_to( cairo , box_start_x + 2 , i*item_size + box_start_y + 2 );
+            cairo_rel_line_to( cairo , box_width - 4 , 0 );
+            cairo_rel_line_to( cairo , 0 , item_size - 4 );
+            cairo_rel_line_to( cairo , -1*box_width + 4 , 0 );
+            cairo_rel_line_to( cairo , 0 , -1*item_size + 4 );
+            cairo_set_source_rgba( cairo , 255/255.0 , 125/255.0 , 0/255.0 , 1.0 );
+            cairo_set_line_width( cairo , 2 );
+            cairo_stroke( cairo );
+        }
         std::string menu_name = game_object->menu_items[i].first();
         std::shared_ptr<PangoLayout> layout(
             gtk_widget_create_pango_layout( widget , menu_name.c_str() )
             ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
         );
-		pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
-		int layout_width = 0;
+        pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
+        int layout_width = 0;
         int layout_height = 0;
-		pango_layout_get_pixel_size( layout.get() , &layout_width , &layout_height );
-		int content_start_x = ( box_width - layout_width )/2 + box_start_x;
-		int content_start_y = box_start_y + i*item_size + ( item_size - layout_height )/2;
-		cairo_move_to( cairo , content_start_x ,  content_start_y );
-		pango_cairo_layout_path( cairo , layout.get() );
-		cairo_pattern_add_color_stop_rgb( pattern.get() , 0.0 , 1.0 , 1.0 , 1.0 );
-		cairo_set_source( cairo , pattern.get() );
-		cairo_fill_preserve( cairo );
-		cairo_set_line_width( cairo , 0.5 );
-		cairo_stroke( cairo );
-	}
+        pango_layout_get_pixel_size( layout.get() , &layout_width , &layout_height );
+        int content_start_x = ( box_width - layout_width )/2 + box_start_x;
+        int content_start_y = box_start_y + i*item_size + ( item_size - layout_height )/2;
+        cairo_move_to( cairo , content_start_x ,  content_start_y );
+        pango_cairo_layout_path( cairo , layout.get() );
+        cairo_pattern_add_color_stop_rgb( pattern.get() , 0.0 , 1.0 , 1.0 , 1.0 );
+        cairo_set_source( cairo , pattern.get() );
+        cairo_fill_preserve( cairo );
+        cairo_set_line_width( cairo , 0.5 );
+        cairo_stroke( cairo );
+    }
 }
 
 static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_object , std::shared_ptr<gchar> text , double x , double y )

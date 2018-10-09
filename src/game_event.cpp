@@ -39,85 +39,85 @@ namespace MagicTower
     // Helpers for TowerGridLocation
     bool operator==( TowerGridLocation a , TowerGridLocation b )
     {
-    	return a.x == b.x && a.y == b.y;
+        return a.x == b.x && a.y == b.y;
     }
 
     bool operator!=( TowerGridLocation a , TowerGridLocation b )
     {
-    	return !( a == b );
+        return !( a == b );
     }
 
     bool operator<( TowerGridLocation a, TowerGridLocation b )
     {
-    	return std::tie( a.x , a.y ) < std::tie( b.x , b.y );
+        return std::tie( a.x , a.y ) < std::tie( b.x , b.y );
     }
 
     struct SquareGrid
     {
-    	static std::array<TowerGridLocation, 4> DIRS;
+        static std::array<TowerGridLocation, 4> DIRS;
 
-    	std::int64_t width, height;
-    	std::set<TowerGridLocation> walls;
+        std::int64_t width, height;
+        std::set<TowerGridLocation> walls;
 
-    	SquareGrid(std::int64_t width_, std::int64_t height_)
-    		: width( width_ ), height( height_ ) {}
+        SquareGrid(std::int64_t width_, std::int64_t height_)
+            : width( width_ ), height( height_ ) {}
 
-    	bool in_bounds( TowerGridLocation id ) const
-    	{
-    		return 0 <= id.x && id.x < width && 0 <= id.y && id.y < height;
-    	}
+        bool in_bounds( TowerGridLocation id ) const
+        {
+            return 0 <= id.x && id.x < width && 0 <= id.y && id.y < height;
+        }
 
-    	bool passable( TowerGridLocation id ) const
-    	{
-    		return walls.find( id ) == walls.end();
-    	}
+        bool passable( TowerGridLocation id ) const
+        {
+            return walls.find( id ) == walls.end();
+        }
 
-    	std::vector<TowerGridLocation> neighbors( TowerGridLocation id ) const
-    	{
-    		std::vector<TowerGridLocation> results;
+        std::vector<TowerGridLocation> neighbors( TowerGridLocation id ) const
+        {
+            std::vector<TowerGridLocation> results;
 
-    		for ( TowerGridLocation dir : DIRS )
-    		{
-    			TowerGridLocation next{ id.x + dir.x , id.y + dir.y };
-    			if ( in_bounds( next ) && passable( next ) )
-    			{
-    				results.push_back( next );
-    			}
-    		}
+            for ( TowerGridLocation dir : DIRS )
+            {
+                TowerGridLocation next{ id.x + dir.x , id.y + dir.y };
+                if ( in_bounds( next ) && passable( next ) )
+                {
+                    results.push_back( next );
+                }
+            }
 
-    		if ( ( id.x + id.y ) % 2 == 0 )
-    		{
-    			// aesthetic improvement on square grids
-    			std::reverse( results.begin() , results.end() );
-    		}
+            if ( ( id.x + id.y ) % 2 == 0 )
+            {
+                // aesthetic improvement on square grids
+                std::reverse( results.begin() , results.end() );
+            }
 
-    		return results;
-    	}
+            return results;
+        }
     };
 
     template <typename T, typename priority_t>
     struct PriorityQueue
     {
-    	typedef std::pair<priority_t, T> PQElement;
-    	std::priority_queue<PQElement, std::vector<PQElement>,
-    						std::greater<PQElement> > elements;
+        typedef std::pair<priority_t, T> PQElement;
+        std::priority_queue<PQElement, std::vector<PQElement>,
+                            std::greater<PQElement> > elements;
 
-    	inline bool empty() const
-    	{
-    		return elements.empty();
-    	}
+        inline bool empty() const
+        {
+            return elements.empty();
+        }
 
-    	inline void put( T item , priority_t priority )
-    	{
-    		elements.emplace( priority , item );
-    	}
+        inline void put( T item , priority_t priority )
+        {
+            elements.emplace( priority , item );
+        }
 
-    	T get()
-    	{
-    		T best_item = elements.top().second;
-    		elements.pop();
-    		return best_item;
-    	}
+        T get()
+        {
+            T best_item = elements.top().second;
+            elements.pop();
+            return best_item;
+        }
     };
 
     std::array<TowerGridLocation, 4> SquareGrid::DIRS =
@@ -128,73 +128,73 @@ namespace MagicTower
 
     struct GridWithWeights : SquareGrid
     {
-    	std::set<TowerGridLocation> forests;
-    	GridWithWeights( std::int64_t w, std::int64_t h ) : SquareGrid( w , h ) {}
-    	double cost( TowerGridLocation from_node , TowerGridLocation to_node ) const
-    	{
+        std::set<TowerGridLocation> forests;
+        GridWithWeights( std::int64_t w, std::int64_t h ) : SquareGrid( w , h ) {}
+        double cost( TowerGridLocation from_node , TowerGridLocation to_node ) const
+        {
             ( void )from_node;
             //efficiency:1;bypass any forests:this->width*this->height;so 
-    		return forests.find( to_node ) != forests.end() ? this->width + this->height : 1;
-    	}
+            return forests.find( to_node ) != forests.end() ? this->width + this->height : 1;
+        }
     };
 
     template <typename Location>
     std::vector<Location> reconstruct_path( Location start , Location goal ,
-    	std::map<Location , Location> came_from )
+        std::map<Location , Location> came_from )
     {
-    	std::vector<Location> path;
-    	Location current = goal;
-    	while ( current != start )
-    	{
-    		path.push_back( current );
-    		current = came_from[current];
+        std::vector<Location> path;
+        Location current = goal;
+        while ( current != start )
+        {
+            path.push_back( current );
+            current = came_from[current];
             //path not found return
             if ( came_from.find( current ) == came_from.end() )
                 return {};
-    	}
-    	path.push_back( start ); // optional
+        }
+        path.push_back( start ); // optional
         //remove self location
         path.pop_back();
         //std::reverse( path.begin() , path.end() );
-    	return path;
+        return path;
     }
 
     inline double heuristic( TowerGridLocation a , TowerGridLocation b )
     {
-    	return std::abs( a.x -  b.x ) + std::abs( a.y -  b.y );
+        return std::abs( a.x -  b.x ) + std::abs( a.y -  b.y );
     }
 
     template <typename Location, typename Graph>
     void a_star_search( Graph graph , Location start , Location goal,
         std::map<Location, Location> &came_from , std::map<Location, double> &cost_so_far )
     {
-    	PriorityQueue<Location, double> frontier;
-    	frontier.put( start , 0 );
+        PriorityQueue<Location, double> frontier;
+        frontier.put( start , 0 );
 
-    	came_from[start] = start;
-    	cost_so_far[start] = 0;
+        came_from[start] = start;
+        cost_so_far[start] = 0;
 
-    	while ( !frontier.empty() )
-    	{
-    		Location current = frontier.get();
+        while ( !frontier.empty() )
+        {
+            Location current = frontier.get();
 
-    		if ( current == goal )
-    		{
-    			break;
-    		}
+            if ( current == goal )
+            {
+                break;
+            }
 
-    		for ( Location next : graph.neighbors( current ) )
-    		{
-    			double new_cost = cost_so_far[current] + graph.cost( current , next );
-    			if ( cost_so_far.find( next ) == cost_so_far.end() || new_cost < cost_so_far[next] )
-    			{
-    				cost_so_far[next] = new_cost;
-    				double priority = new_cost + heuristic( next , goal );
-    				frontier.put( next , priority );
-    				came_from[next] = current;
-    			}
-    		}
-    	}
+            for ( Location next : graph.neighbors( current ) )
+            {
+                double new_cost = cost_so_far[current] + graph.cost( current , next );
+                if ( cost_so_far.find( next ) == cost_so_far.end() || new_cost < cost_so_far[next] )
+                {
+                    cost_so_far[next] = new_cost;
+                    double priority = new_cost + heuristic( next , goal );
+                    frontier.put( next , priority );
+                    came_from[next] = current;
+                }
+            }
+        }
     }
 
     std::vector<TowerGridLocation> find_path( struct GameEnvironment * game_object , TowerGridLocation goal )
@@ -214,32 +214,32 @@ namespace MagicTower
             return {};
         }
         
-	    GridWithWeights game_map( tower.LENGTH , tower.WIDTH );
+        GridWithWeights game_map( tower.LENGTH , tower.WIDTH );
 
         for( size_t y = 0 ; y < tower.LENGTH ; y++ )
         {
             for ( size_t x = 0 ; x < tower.WIDTH ; x++ )
-	    	{
-	    		auto grid = get_tower_grid( tower , hero.layers , x , y );
-	    		switch ( grid.type )
-	    		{
-	    			case MagicTower::GRID_TYPE::IS_BOUNDARY:
-	    			case MagicTower::GRID_TYPE::IS_WALL:
-	    			//case MagicTower::GRID_TYPE::IS_NPC:
-	    				game_map.walls.insert( { std::int64_t( x ) , std::int64_t( y ) } );
-	    				break;
-	    			case MagicTower::GRID_TYPE::IS_FLOOR:
-	    			case MagicTower::GRID_TYPE::IS_ITEM:
-	    				break;
-	    			default :
-	    				game_map.forests.insert( { std::int64_t( x ) , std::int64_t( y ) } );
-	    		}
-	    	}
-	    }
-	    std::map<TowerGridLocation, TowerGridLocation> came_from;
-	    std::map<TowerGridLocation, double> cost_so_far;
-	    a_star_search( game_map , start , goal , came_from , cost_so_far );
-	    std::vector<TowerGridLocation> path = reconstruct_path( start , goal , came_from );
+            {
+                auto grid = get_tower_grid( tower , hero.layers , x , y );
+                switch ( grid.type )
+                {
+                    case MagicTower::GRID_TYPE::IS_BOUNDARY:
+                    case MagicTower::GRID_TYPE::IS_WALL:
+                    //case MagicTower::GRID_TYPE::IS_NPC:
+                        game_map.walls.insert( { std::int64_t( x ) , std::int64_t( y ) } );
+                        break;
+                    case MagicTower::GRID_TYPE::IS_FLOOR:
+                    case MagicTower::GRID_TYPE::IS_ITEM:
+                        break;
+                    default :
+                        game_map.forests.insert( { std::int64_t( x ) , std::int64_t( y ) } );
+                }
+            }
+        }
+        std::map<TowerGridLocation, TowerGridLocation> came_from;
+        std::map<TowerGridLocation, double> cost_so_far;
+        a_star_search( game_map , start , goal , came_from , cost_so_far );
+        std::vector<TowerGridLocation> path = reconstruct_path( start , goal , came_from );
         
         return path;
     }
@@ -1308,12 +1308,12 @@ namespace MagicTower
 
     void open_layer_jump( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+             game_object->game_status == GAME_STATUS::GAME_WIN   ||
              game_object->game_status == GAME_STATUS::GAME_MENU  ||
              game_object->game_status == GAME_STATUS::STORE_MENU ||
              game_object->game_status == GAME_STATUS::JUMP_MENU )
-			return ;
+            return ;
 
         game_object->game_status = GAME_STATUS::JUMP_MENU;
         game_object->focus_item_id = 0;
@@ -1330,12 +1330,12 @@ namespace MagicTower
 
     void open_store_menu_v2( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+             game_object->game_status == GAME_STATUS::GAME_WIN   ||
              game_object->game_status == GAME_STATUS::GAME_MENU  ||
              game_object->game_status == GAME_STATUS::STORE_MENU ||
              game_object->game_status == GAME_STATUS::JUMP_MENU )
-			return ;
+            return ;
         game_object->game_status = MagicTower::GAME_STATUS::STORE_MENU;
         game_object->focus_item_id = 0;
         set_store_menu( game_object );
@@ -1343,27 +1343,27 @@ namespace MagicTower
 
     void close_store_menu_v2( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status != GAME_STATUS::STORE_MENU )
-			return ;
+        if ( game_object->game_status != GAME_STATUS::STORE_MENU )
+            return ;
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
     /*void open_store_menu( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
+            game_object->game_status == GAME_STATUS::GAME_WIN   ||
             game_object->game_status == GAME_STATUS::GAME_MENU  ||
             game_object->game_status == GAME_STATUS::STORE_MENU )
-			return ;
+            return ;
         GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
 
-	    GtkWidget * notebook = gtk_notebook_new();
+        GtkWidget * notebook = gtk_notebook_new();
         for( auto store : game_object->store_list )
         {
             if ( store.usability != true )
                 continue;
             GtkWidget * store_label = gtk_label_new( store.name.c_str() );
-	        GtkWidget * store_content = make_commodity_grid( game_object , store.content );
+            GtkWidget * store_content = make_commodity_grid( game_object , store.content );
             gtk_notebook_append_page( GTK_NOTEBOOK( notebook ) , store_content , store_label );
         }
         if ( gtk_notebook_get_n_pages( GTK_NOTEBOOK( notebook ) ) == 0 )
@@ -1373,8 +1373,8 @@ namespace MagicTower
             return ;
         }
         game_object->game_status = GAME_STATUS::STORE_MENU;
-	    gtk_notebook_set_scrollable( GTK_NOTEBOOK( notebook ) , TRUE );
-	    gtk_notebook_popup_enable( GTK_NOTEBOOK( notebook ) );
+        gtk_notebook_set_scrollable( GTK_NOTEBOOK( notebook ) , TRUE );
+        gtk_notebook_popup_enable( GTK_NOTEBOOK( notebook ) );
 
         gtk_grid_remove_column( GTK_GRID( game_grid ) , 1 );
         gtk_grid_attach( GTK_GRID( game_grid ) , notebook , 1 , 0 , 1 , 1 );
@@ -1384,8 +1384,8 @@ namespace MagicTower
 
     void close_store_menu( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status != GAME_STATUS::STORE_MENU )
-			return ;
+        if ( game_object->game_status != GAME_STATUS::STORE_MENU )
+            return ;
         GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
         GtkWidget * tower_area  = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
 
@@ -1397,12 +1397,12 @@ namespace MagicTower
 
     void open_game_menu_v2(  struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+             game_object->game_status == GAME_STATUS::GAME_WIN   ||
              game_object->game_status == GAME_STATUS::GAME_MENU  ||
              game_object->game_status == GAME_STATUS::STORE_MENU ||
              game_object->game_status == GAME_STATUS::JUMP_MENU )
-			return ;
+            return ;
 
         game_object->game_status = GAME_STATUS::GAME_MENU;
         game_object->focus_item_id = 0;
@@ -1418,12 +1418,12 @@ namespace MagicTower
 
     /*void open_game_menu( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
+            game_object->game_status == GAME_STATUS::GAME_WIN   ||
             game_object->game_status == GAME_STATUS::GAME_MENU  ||
             game_object->game_status == GAME_STATUS::STORE_MENU )
-			return ;
-		game_object->game_status = GAME_STATUS::GAME_MENU;
+            return ;
+        game_object->game_status = GAME_STATUS::GAME_MENU;
         GtkWidget * game_window    = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
         GtkWidget * game_grid      = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
         GtkWidget * game_menu  = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_menu" ) );
@@ -1449,13 +1449,13 @@ namespace MagicTower
 
     void game_win( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+             game_object->game_status == GAME_STATUS::GAME_WIN   ||
              game_object->game_status == GAME_STATUS::GAME_MENU  ||
              game_object->game_status == GAME_STATUS::STORE_MENU ||
              game_object->game_status == GAME_STATUS::JUMP_MENU )
-			return ;
-		game_object->game_status = GAME_STATUS::GAME_WIN;
+            return ;
+        game_object->game_status = GAME_STATUS::GAME_WIN;
         GtkWidget * game_window      = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
         GtkWidget * game_grid        = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
         GtkWidget * game_end_menu    = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_end_menu" ) );
@@ -1468,13 +1468,13 @@ namespace MagicTower
 
     void game_lose( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+             game_object->game_status == GAME_STATUS::GAME_WIN   ||
              game_object->game_status == GAME_STATUS::GAME_MENU  ||
              game_object->game_status == GAME_STATUS::STORE_MENU ||
              game_object->game_status == GAME_STATUS::JUMP_MENU )
-			return ;
-		game_object->game_status = GAME_STATUS::GAME_LOSE;
+            return ;
+        game_object->game_status = GAME_STATUS::GAME_LOSE;
         GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
         GtkWidget * game_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
         GtkWidget * game_end_menu = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_end_menu" ) );
@@ -1669,9 +1669,9 @@ namespace MagicTower
                 try_jump( game_object );
             }
         });
-	    game_object->menu_items.push_back({
-	    	[](){ return std::string( "确定跳跃" ); },
-	    	[ game_object ](){
+        game_object->menu_items.push_back({
+            [](){ return std::string( "确定跳跃" ); },
+            [ game_object ](){
                 try
                 {
                     game_object->layers_jump.at( std::get<0>( game_object->temp_pos ) );
@@ -1701,81 +1701,81 @@ namespace MagicTower
                     back_jump( game_object );
                 close_layer_jump( game_object );
             }
-	    });
-	    game_object->menu_items.push_back({
-	    	[](){ return std::string( "取消跳跃" ); },
-	    	[ game_object ](){
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "取消跳跃" ); },
+            [ game_object ](){
                 back_jump( game_object );
                 close_layer_jump( game_object );
             }
-	    });
+        });
     }
 
     static void set_game_menu( struct GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
 
-	    game_object->menu_items.push_back({
-	    	[](){ return std::string( "保存存档" ); },
-	    	[ game_object ](){ save_game_status( game_object , 1 ); }
-	    });
-	    game_object->menu_items.push_back({
-	    	[](){ return std::string( "读取存档" ); },
-	    	[ game_object ](){ load_game_status( game_object , 1 ); }
-	    });
-	    game_object->menu_items.push_back({
-	    	[ game_object ](){
+        game_object->menu_items.push_back({
+            [](){ return std::string( "保存存档" ); },
+            [ game_object ](){ save_game_status( game_object , 1 ); }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "读取存档" ); },
+            [ game_object ](){ load_game_status( game_object , 1 ); }
+        });
+        game_object->menu_items.push_back({
+            [ game_object ](){
                 if ( game_object->music.get_state() == PLAY_STATE::PLAYING )
                     return std::string( "背景音乐: 开" );
                 else
                     return std::string( "背景音乐: 关" );
             },
-	    	[ game_object ](){ background_music_switch( game_object ); }
-	    });
-	    game_object->menu_items.push_back({
-	    	[ game_object ](){
+            [ game_object ](){ background_music_switch( game_object ); }
+        });
+        game_object->menu_items.push_back({
+            [ game_object ](){
                 GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
                 if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
                     return std::string( "测试模式: 开" );
                 else
                     return std::string( "测试模式: 关" );
             },
-	    	[ game_object ](){ test_window_switch( game_object ); }
-	    });
+            [ game_object ](){ test_window_switch( game_object ); }
+        });
         game_object->menu_items.push_back({
-	    	[ game_object ](){
+            [ game_object ](){
                 if ( game_object->draw_path == TRUE )
                     return std::string( "寻路指示: 开" );
                 else
                     return std::string( "寻路指示: 关" );
             },
-	    	[ game_object ](){ path_line_switch( game_object ); }
-	    });
-	    game_object->menu_items.push_back({
-	    	[](){ return std::string( "关闭菜单" ); },
-	    	[ game_object ](){ close_game_menu_v2( game_object ); }
-	    });
+            [ game_object ](){ path_line_switch( game_object ); }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "关闭菜单" ); },
+            [ game_object ](){ close_game_menu_v2( game_object ); }
+        });
     }
 
     static void set_store_menu( struct GameEnvironment * game_object )
     {
-	    game_object->menu_items.clear();
-	    for ( auto store : game_object->store_list )
-	    {
+        game_object->menu_items.clear();
+        for ( auto store : game_object->store_list )
+        {
             if ( store.usability != true )
             {
                 continue;
             }
 
-	    	game_object->menu_items.push_back({
-	    		[ store ](){ return store.name; },
-	    		[ game_object , store ](){ set_sub_store_menu( game_object , store.content.c_str() ); }
-	    	});
-	    }
-	    game_object->menu_items.push_back({
-	    	[](){ return std::string( "关闭菜单" ); },
-	    	[ game_object ](){ close_store_menu_v2( game_object ); }
-	    });
+            game_object->menu_items.push_back({
+                [ store ](){ return store.name; },
+                [ game_object , store ](){ set_sub_store_menu( game_object , store.content.c_str() ); }
+            });
+        }
+        game_object->menu_items.push_back({
+            [](){ return std::string( "关闭菜单" ); },
+            [ game_object ](){ close_store_menu_v2( game_object ); }
+        });
     }
 
     static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content )
@@ -1791,7 +1791,7 @@ namespace MagicTower
         }
 
         //when call clear will free item_content content,so first call json_loads copy item_content content.
-	    game_object->menu_items.clear();
+        game_object->menu_items.clear();
         json_t * commodity_list = json_object_get( root , "commoditys" );
         if ( !json_is_array( commodity_list ) )
         {
@@ -1799,10 +1799,10 @@ namespace MagicTower
             return ;
         }
         size_t commodity_size = json_array_size( commodity_list );
-    	game_object->menu_items.push_back({
-    		[](){ return std::string( "返回上级菜单" ); },
-    		[ game_object ](){ set_store_menu( game_object ); }
-    	});
+        game_object->menu_items.push_back({
+            [](){ return std::string( "返回上级菜单" ); },
+            [ game_object ](){ set_store_menu( game_object ); }
+        });
         for( size_t i = 0 ; i < commodity_size ; i++ )
         {
             json_t * commodity_node = json_array_get( commodity_list , i );
@@ -1812,15 +1812,15 @@ namespace MagicTower
                 return ;
             }
             std::string commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
-    		game_object->menu_items.push_back({
-    			[ commodity_content ](){ return deserialize_commodity_content( commodity_content.c_str() ); },
-    			[ game_object , commodity_content ](){ shopping( game_object , commodity_content.c_str() ); }
-    		});
-    	}
-    	game_object->menu_items.push_back({
-    		[](){ return std::string( "关闭菜单" ); },
-    		[ game_object ](){ close_store_menu_v2( game_object ); }
-    	});
+            game_object->menu_items.push_back({
+                [ commodity_content ](){ return deserialize_commodity_content( commodity_content.c_str() ); },
+                [ game_object , commodity_content ](){ shopping( game_object , commodity_content.c_str() ); }
+            });
+        }
+        game_object->menu_items.push_back({
+            [](){ return std::string( "关闭菜单" ); },
+            [ game_object ](){ close_store_menu_v2( game_object ); }
+        });
     }
 
     std::string deserialize_commodity_content( const char * content )

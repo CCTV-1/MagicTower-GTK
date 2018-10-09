@@ -41,7 +41,7 @@ typedef std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> event_position_t;
 struct TowerGridLocation
 {
     //path search algorith call std::abs( x1 - x2 ).
-	std::int64_t x, y;
+    std::int64_t x, y;
 };
 
 /* CREATE TABLE tower (
