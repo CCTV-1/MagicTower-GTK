@@ -43,6 +43,7 @@ namespace MagicTower
         REVIEW_DETAIL,
         GAME_MENU,
         STORE_MENU,
+        JUMP_MENU,
         GAME_LOSE,
         GAME_WIN,
         UNKNOWN,
@@ -70,7 +71,19 @@ CREATE TABLE events (
         std::size_t focus_item_id;
         MagicTower::Music& music;
         MagicTower::Hero hero;
+        //layer , x , y
+        std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> temp_pos;
         MagicTower::Tower towers;
+/* CREATE TABLE access_layers (
+    layer INT (32) PRIMARY KEY AUTOINCREMENT,
+); */
+        std::map<std::uint32_t , bool>& access_layer;
+/* CREATE TABLE jump_point (
+    layer INT (32) PRIMARY KEY AUTOINCREMENT,
+    x     INT (32),
+    y     INT (32)
+); */
+        std::map<std::size_t , std::pair<std::size_t , std::size_t> >& layers_jump;
         std::vector<MagicTower::Stairs>& stairs;
         std::vector<MagicTower::Monster>& monsters;
         std::vector<MagicTower::Item>& items;
@@ -78,7 +91,7 @@ CREATE TABLE events (
         std::vector<MagicTower::Store> store_list;
         std::uint32_t game_status;
         bool draw_path;
-        std::int32_t animation_value;
+        //std::int32_t animation_value;
         int mouse_x;
         int mouse_y;
     };
@@ -133,6 +146,8 @@ CREATE TABLE events (
     
     void close_store_menu( struct GameEnvironment * game_object ); */
 
+    void back_jump( struct GameEnvironment * game_object );
+    
     void open_layer_jump( struct GameEnvironment * game_object );
 
     void close_layer_jump( struct GameEnvironment * game_object );

@@ -130,6 +130,8 @@ public:
     Tower get_tower_info( std::size_t archive_id );
 
     std::map<event_position_t , std::string> get_custom_events();
+    std::map<std::size_t , std::pair<std::size_t , std::size_t> > get_jump_map();
+    std::map<std::uint32_t , bool> get_access_layers();
     std::vector<Stairs> get_stairs_list();
     std::vector<Store> get_store_list();
     std::vector<Item> get_item_list();
@@ -142,6 +144,8 @@ public:
     void set_monster_list( const std::vector<Monster>& monsters );
     void set_stairs_list( const std::vector<Stairs>& stairs );
     void set_store_list( std::vector<Store>& stores );
+    void set_access_layers( std::map<std::uint32_t , bool>& maps );
+    void set_jump_map( std::map<std::size_t , std::pair<std::size_t , std::size_t> >& maps );
     void set_custom_events( std::map<event_position_t , std::string>& custom_events );
 
 protected:

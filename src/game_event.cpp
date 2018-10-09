@@ -27,6 +27,8 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
 /*     static gboolean do_shopping( GtkWidget * widget , gpointer data ); */
+    static bool try_jump( struct GameEnvironment * game_object );
+    static void set_jump_menu( struct GameEnvironment * game_object );
     static void set_game_menu( struct GameEnvironment * game_object );
     static void set_store_menu( struct GameEnvironment * game_object );
     static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content );
@@ -316,6 +318,8 @@ namespace MagicTower
             db.set_monster_list( game_object->monsters );
             db.set_item_list( game_object->items );
             db.set_custom_events( game_object->custom_events );
+            db.set_access_layers( game_object->access_layer );
+            db.set_jump_map( game_object->layers_jump );
         }
         catch ( ... )
         {
@@ -355,6 +359,8 @@ namespace MagicTower
             game_object->monsters = db.get_monster_list();
             game_object->items = db.get_item_list();
             game_object->custom_events = db.get_custom_events();
+            game_object->access_layer = db.get_access_layers();
+            game_object->layers_jump = db.get_jump_map();
         }
         catch ( ... )
         {
@@ -601,6 +607,8 @@ namespace MagicTower
         game_object->hero.layers = stair.layers;
         game_object->hero.x = stair.x;
         game_object->hero.y = stair.y;
+
+        game_object->access_layer[ stair.layers ] = true;
 
         return true;
     }
@@ -1300,20 +1308,33 @@ namespace MagicTower
 
     void open_layer_jump( struct GameEnvironment * game_object )
     {
-        ;
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+             game_object->game_status == GAME_STATUS::GAME_MENU  ||
+             game_object->game_status == GAME_STATUS::STORE_MENU ||
+             game_object->game_status == GAME_STATUS::JUMP_MENU )
+			return ;
+
+        game_object->game_status = GAME_STATUS::JUMP_MENU;
+        game_object->focus_item_id = 0;
+        game_object->temp_pos= { game_object->hero.layers , game_object->hero.x , game_object->hero.y };
+        set_jump_menu( game_object );
     }
 
     void close_layer_jump( struct GameEnvironment * game_object )
     {
-        ;
+        if ( game_object->game_status != GAME_STATUS::JUMP_MENU )
+            return ;
+        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
     void open_store_menu_v2( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   ||
-            game_object->game_status == GAME_STATUS::GAME_MENU  ||
-            game_object->game_status == GAME_STATUS::STORE_MENU )
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+             game_object->game_status == GAME_STATUS::GAME_MENU  ||
+             game_object->game_status == GAME_STATUS::STORE_MENU ||
+             game_object->game_status == GAME_STATUS::JUMP_MENU )
 			return ;
         game_object->game_status = MagicTower::GAME_STATUS::STORE_MENU;
         game_object->focus_item_id = 0;
@@ -1327,7 +1348,7 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-/*     void open_store_menu( struct GameEnvironment * game_object )
+    /*void open_store_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
 			game_object->game_status == GAME_STATUS::GAME_WIN   ||
@@ -1376,10 +1397,11 @@ namespace MagicTower
 
     void open_game_menu_v2(  struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   ||
-            game_object->game_status == GAME_STATUS::GAME_MENU  ||
-            game_object->game_status == GAME_STATUS::STORE_MENU )
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+             game_object->game_status == GAME_STATUS::GAME_MENU  ||
+             game_object->game_status == GAME_STATUS::STORE_MENU ||
+             game_object->game_status == GAME_STATUS::JUMP_MENU )
 			return ;
 
         game_object->game_status = GAME_STATUS::GAME_MENU;
@@ -1394,7 +1416,7 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-/*     void open_game_menu( struct GameEnvironment * game_object )
+    /*void open_game_menu( struct GameEnvironment * game_object )
     {
 		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
 			game_object->game_status == GAME_STATUS::GAME_WIN   ||
@@ -1427,10 +1449,11 @@ namespace MagicTower
 
     void game_win( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			 game_object->game_status == GAME_STATUS::GAME_WIN  ||
-             game_object->game_status == GAME_STATUS::GAME_MENU ||
-             game_object->game_status == GAME_STATUS::STORE_MENU )
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+             game_object->game_status == GAME_STATUS::GAME_MENU  ||
+             game_object->game_status == GAME_STATUS::STORE_MENU ||
+             game_object->game_status == GAME_STATUS::JUMP_MENU )
 			return ;
 		game_object->game_status = GAME_STATUS::GAME_WIN;
         GtkWidget * game_window      = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
@@ -1445,10 +1468,11 @@ namespace MagicTower
 
     void game_lose( struct GameEnvironment * game_object )
     {
-		if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-			game_object->game_status == GAME_STATUS::GAME_WIN   ||
-            game_object->game_status == GAME_STATUS::GAME_MENU  ||
-            game_object->game_status == GAME_STATUS::STORE_MENU )
+		if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
+			 game_object->game_status == GAME_STATUS::GAME_WIN   ||
+             game_object->game_status == GAME_STATUS::GAME_MENU  ||
+             game_object->game_status == GAME_STATUS::STORE_MENU ||
+             game_object->game_status == GAME_STATUS::JUMP_MENU )
 			return ;
 		game_object->game_status = GAME_STATUS::GAME_LOSE;
         GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
@@ -1557,12 +1581,135 @@ namespace MagicTower
         return -1;
     }
 
-/*     static gboolean do_shopping( GtkWidget * widget , gpointer data )
+    /*static gboolean do_shopping( GtkWidget * widget , gpointer data )
     {
         const char * commodity_json = gtk_widget_get_name( widget );
         shopping( static_cast<MagicTower::GameEnvironment *>( data ) , commodity_json );
         return TRUE;
     } */
+
+    void back_jump( struct GameEnvironment * game_object )
+    {
+        game_object->hero.layers = std::get<0>( game_object->temp_pos );
+        game_object->hero.x = std::get<1>( game_object->temp_pos );
+        game_object->hero.y = std::get<2>( game_object->temp_pos );
+    }
+
+    static bool try_jump( struct GameEnvironment * game_object )
+    {
+        try
+        {
+            std::uint32_t x = game_object->layers_jump.at( game_object->hero.layers ).first;
+            std::uint32_t y = game_object->layers_jump.at( game_object->hero.layers ).second;
+            game_object->hero.x = x;
+            game_object->hero.y = y;
+            return true;
+        }
+        catch(const std::out_of_range& e)
+        {
+            std::shared_ptr<gchar> tips(
+                g_strdup_printf( "该层禁止跃入" ),
+                []( gchar * content ){ g_free( content ); }
+            );
+            set_tips( game_object , tips );
+            return false;
+        }
+    }
+
+    static void set_jump_menu( struct GameEnvironment * game_object )
+    {
+        game_object->menu_items.clear();
+        game_object->menu_items.push_back({
+            [](){ return std::string( "最上层" ); },
+            [ game_object ](){
+                game_object->hero.layers = game_object->towers.HEIGHT - 1;
+                try_jump( game_object );
+            }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "上一层" ); },
+            [ game_object ](){
+                if ( game_object->hero.layers < game_object->towers.HEIGHT - 1 )
+                {
+                    game_object->hero.layers += 1;
+                    try_jump( game_object );
+                }
+                else
+                {
+                    std::shared_ptr<gchar> tips(
+                        g_strdup_printf( "已是最上层" ),
+                        []( gchar * content ){ g_free( content ); }
+                    );
+                    set_tips( game_object , tips );
+                }
+            }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "下一层" ); },
+            [ game_object ](){
+                if ( game_object->hero.layers > 0 )
+                {
+                    game_object->hero.layers -= 1;
+                    try_jump( game_object );
+                }
+                else
+                {
+                    std::shared_ptr<gchar> tips(
+                        g_strdup_printf( "已是最下层" ),
+                        []( gchar * content ){ g_free( content ); }
+                    );
+                    set_tips( game_object , tips );
+                }
+            }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "最下层" ); },
+            [ game_object ](){
+                game_object->hero.layers = 0;
+                try_jump( game_object );
+            }
+        });
+	    game_object->menu_items.push_back({
+	    	[](){ return std::string( "确定跳跃" ); },
+	    	[ game_object ](){
+                try
+                {
+                    game_object->layers_jump.at( std::get<0>( game_object->temp_pos ) );
+                }
+                catch(const std::out_of_range& e)
+                {
+                    std::shared_ptr<gchar> tips(
+                        g_strdup_printf( "所在层禁止跳跃楼层" ),
+                        []( gchar * content ){ g_free( content ); }
+                    );
+                    set_tips( game_object , tips );
+                    back_jump( game_object );
+                    return ;
+                }
+                if ( game_object->access_layer[ game_object->hero.layers ] == false )
+                {
+                    std::shared_ptr<gchar> tips(
+                        g_strdup_printf( "所选择的楼层当前禁止跃入" ),
+                        []( gchar * content ){ g_free( content ); }
+                    );
+                    set_tips( game_object , tips );
+                    back_jump( game_object );
+                    return ;
+                }
+                bool state = try_jump( game_object );
+                if ( state == false )
+                    back_jump( game_object );
+                close_layer_jump( game_object );
+            }
+	    });
+	    game_object->menu_items.push_back({
+	    	[](){ return std::string( "取消跳跃" ); },
+	    	[ game_object ](){
+                back_jump( game_object );
+                close_layer_jump( game_object );
+            }
+	    });
+    }
 
     static void set_game_menu( struct GameEnvironment * game_object )
     {
@@ -1807,7 +1954,7 @@ namespace MagicTower
         return deserialize_string;
     }
 
-/*     static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content )
+    /*static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content )
     {
         json_error_t json_error;
         json_t * root = json_loads( content.c_str() , 0 , &json_error );

@@ -61,6 +61,8 @@ int main( int argc , char * argv[] )
     auto monsters = db.get_monster_list();
     auto items = db.get_item_list();
     auto custom_events = db.get_custom_events();
+    auto access_layer = db.get_access_layers();
+    auto layers_jump = db.get_jump_map();
     MagicTower::Menu_t menu;
 
     gtk_init( &argc , &argv );
@@ -122,8 +124,8 @@ int main( int argc , char * argv[] )
 
     MagicTower::GameEnvironment game_object =
     {
-        builder , info_frame , damage_font , info_font , {} , image_resource , custom_events , menu , 0 , music , hero ,
-        towers , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true , 0 , 0 , 0
+        builder , info_frame , damage_font , info_font , {} , image_resource , custom_events , menu , 0 , music , hero , { 0 , 0 , 0 } ,
+        towers , access_layer, layers_jump , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true , /* 0 ,*/ 0 , 0
     };
 
     //test mode window signal handler
@@ -387,7 +389,8 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
         draw_dialog( cairo , game_object , text , game_object->mouse_x - 0.5*MagicTower::TOWER_GRID_SIZE , game_object->mouse_y - 0.5*MagicTower::TOWER_GRID_SIZE );
     }
     else if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU ||
-              game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU
+              game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU  ||
+              game_object->game_status == MagicTower::GAME_STATUS::JUMP_MENU
     )
     {
         draw_menu( cairo , game_object );
@@ -422,7 +425,7 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
         { g_strdup_printf( "红钥匙:  %" PRIu32 , hero.red_key ) , 0 },
         { g_strdup_printf( "游戏菜单(ESC) " ) , 2 },
         { g_strdup_printf( "商店菜单(s/S)" ) , 2 },
-        { g_strdup_printf( "楼层跳跃器(j/J)" ) , 2 },
+        { g_strdup_printf( "楼层跳跃/浏览器(j/J)" ) , 2 },
     };
 
     int widget_height = gtk_widget_get_allocated_height( widget );
@@ -578,6 +581,41 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
             }
             break;
         }
+        case MagicTower::GAME_STATUS::JUMP_MENU:
+        {
+            switch( event->keyval )
+            {
+                case GDK_KEY_Up:
+                {
+    	        	if ( game_object->focus_item_id > 0 )
+	            		game_object->focus_item_id--;
+		            else
+		        		game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    break;
+                }
+                case GDK_KEY_Down:
+                {
+    	        	if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+	            		game_object->focus_item_id++;
+		            else
+		        		game_object->focus_item_id = 0;
+                    break;
+                }
+		        case GDK_KEY_Return:
+		        {
+                    ( game_object->menu_items[ game_object->focus_item_id ] ).second();
+                    break;
+		        }
+                case GDK_KEY_j:
+                case GDK_KEY_J:
+                {
+                    MagicTower::back_jump( game_object );
+                    MagicTower::close_layer_jump( game_object );
+                    break;
+                }
+            }
+            break;
+        }
         default:
         {
             break;
@@ -668,6 +706,7 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
                 }
                 case MagicTower::GAME_STATUS::STORE_MENU:
                 case MagicTower::GAME_STATUS::GAME_MENU:
+                case MagicTower::GAME_STATUS::JUMP_MENU:
                 {
                     int widget_width = gtk_widget_get_allocated_width( widget );
                     int widget_height = gtk_widget_get_allocated_height( widget );
@@ -700,10 +739,6 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
 static gboolean draw_loop( gpointer data )
 {
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-    if ( game_object->game_status == MagicTower::GAME_STATUS::GAME_LOSE &&
-        game_object->game_status  == MagicTower::GAME_STATUS::GAME_WIN
-    )
-        return TRUE;
     
     GtkWidget * info_area  = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "info_area"  ) );
     GtkWidget * tower_area = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
