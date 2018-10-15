@@ -15,6 +15,7 @@
 //ignore in gcc-8+ gtk library warning:unnecessary parentheses in declaration of '*'
 #pragma GCC diagnostic ignored "-Wparentheses"
 #include <gtk/gtk.h>
+#pragma GCC diagnostic warning "-Wparentheses"
 #include <jansson.h>
 
 #include "database.h"
@@ -40,8 +41,10 @@ namespace MagicTower
         NORMAL = 0,
         FIND_PATH,
         DIALOG,
+        MESSAGE,
         REVIEW_DETAIL,
         GAME_MENU,
+        START_MENU,
         STORE_MENU,
         JUMP_MENU,
         GAME_LOSE,
@@ -57,6 +60,7 @@ namespace MagicTower
         std::shared_ptr<GdkPixbuf> info_frame;
         std::shared_ptr<PangoFontDescription> damage_font;
         std::shared_ptr<PangoFontDescription> info_font;
+        std::deque<std::string> game_message;
         std::deque< std::shared_ptr<gchar> > tips_content;
         std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource;
 /* 
@@ -89,9 +93,8 @@ CREATE TABLE events (
         std::vector<MagicTower::Item>& items;
         std::vector<MagicTower::TowerGridLocation> path;
         std::vector<MagicTower::Store> store_list;
-        std::uint32_t game_status;
+        enum GAME_STATUS game_status;
         bool draw_path;
-        //std::int32_t animation_value;
         int mouse_x;
         int mouse_y;
     };
@@ -130,21 +133,15 @@ CREATE TABLE events (
 
     void path_line_switch( struct GameEnvironment * game_object );
 
+    void open_start_menu(  struct GameEnvironment * game_object );
+
     void open_game_menu_v2(  struct GameEnvironment * game_object );
 
     void close_game_menu_v2( struct GameEnvironment * game_object );
 
-/*     void open_game_menu( struct GameEnvironment * game_object );
-
-    void close_game_menu( struct GameEnvironment * game_object ); */
-
     void open_store_menu_v2( struct GameEnvironment * game_object );
     
     void close_store_menu_v2( struct GameEnvironment * game_object );
-
-/*     void open_store_menu( struct GameEnvironment * game_object );
-    
-    void close_store_menu( struct GameEnvironment * game_object ); */
 
     void back_jump( struct GameEnvironment * game_object );
     

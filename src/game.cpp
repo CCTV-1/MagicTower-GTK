@@ -16,24 +16,22 @@
 //signal handlers
 static gboolean draw_loop( gpointer data );
 static gboolean automatic_movement( gpointer data );
-/* static gboolean restart_game( GtkWidget * widget , gpointer data );
-static gboolean resume_game( GtkWidget * widget , gpointer data ); */
 static gboolean apply_game_data( GtkWidget * widget , gpointer data );
 static gboolean sync_game_data( GtkWidget * widget , gpointer data );
 static void game_exit( GtkWidget * widget , gpointer data );
+static gboolean scroll_signal_handler( GtkWidget * widget , GdkEventScroll * event , gpointer data );
 static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gpointer data );
 static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * event , gpointer data );
 static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data );
 static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data );
-/* static gboolean music_switch( GtkWidget * widget , gboolean state , gpointer data );
-static gboolean path_line_switch( GtkWidget * widget , gboolean state , gpointer data );
-static gboolean test_switch( GtkWidget * widget , gboolean state , gpointer data ); */
 
 static void gdk_pixbuff_free( GdkPixbuf * pixbuf );
 static std::shared_ptr<GdkPixbuf> make_info_basic_frame( MagicTower::Tower& towers );
-/* static void draw_box( cairo_t * cairo , double x , double y , double width , double height , std::int32_t animation_value ); */
+static void draw_path_line( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
+static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object , double x , double y , std::uint32_t monster_id );
 static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<PangoFontDescription> font_desc , double x , double y , std::shared_ptr<gchar> text , int mode = 0 );
+static void draw_message( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_object , std::shared_ptr<gchar> text , double x , double y );
 static void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
@@ -51,7 +49,6 @@ int main( int argc , char * argv[] )
 
     std::vector<std::shared_ptr<const char> > music_list = get_music_uris( MUSIC_RESOURCES_PATH );
     MagicTower::Music music( &argc , &argv , music_list );
-    /* music.play_start(); */
 
     MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
     MagicTower::Tower towers = db.get_tower_info( 0 );
@@ -88,14 +85,6 @@ int main( int argc , char * argv[] )
     GtkWidget * info_area   = GTK_WIDGET( gtk_builder_get_object( builder , "info_area"  ) );
     GtkWidget * tower_area  = GTK_WIDGET( gtk_builder_get_object( builder , "tower_area" ) );
 
-    /* GtkWidget * exit_button_1         = GTK_WIDGET( gtk_builder_get_object( builder , "exit_game_button_1" ) );
-    GtkWidget * exit_button_2            = GTK_WIDGET( gtk_builder_get_object( builder , "exit_game_button_2" ) );
-    GtkWidget * restart_button           = GTK_WIDGET( gtk_builder_get_object( builder , "restart_game_button" ) );
-    GtkWidget * resume_button            = GTK_WIDGET( gtk_builder_get_object( builder , "resume_game_button" ) );
-    GtkWidget * music_setting_button     = GTK_WIDGET( gtk_builder_get_object( builder , "music_setting_button" ) );
-    GtkWidget * path_line_setting_button = GTK_WIDGET( gtk_builder_get_object( builder , "path_line_setting_button" ) );
-    GtkWidget * test_mode_setting_button = GTK_WIDGET( gtk_builder_get_object( builder , "test_mode_setting_button" ) ); */
-
     GtkWidget * apply_modify_button      = GTK_WIDGET( gtk_builder_get_object( builder , "apply_modify_button" ) );
     GtkWidget * synchronize_data_button  = GTK_WIDGET( gtk_builder_get_object( builder , "synchronize_data_button" ) );
     GtkWidget * layer_spin_button        = GTK_WIDGET( gtk_builder_get_object( builder , "layer_spin_button" ) );
@@ -124,31 +113,23 @@ int main( int argc , char * argv[] )
 
     MagicTower::GameEnvironment game_object =
     {
-        builder , info_frame , damage_font , info_font , {} , image_resource , custom_events , menu , 0 , music , hero , { 0 , 0 , 0 } ,
-        towers , access_layer, layers_jump , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true , /* 0 ,*/ 0 , 0
+        builder , info_frame , damage_font , info_font , {} , {} , image_resource , custom_events , menu , 0 , music , hero , { 0 , 0 , 0 } ,
+        towers , access_layer, layers_jump , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true , 0 , 0
     };
 
     //test mode window signal handler
     g_signal_connect( G_OBJECT( apply_modify_button ) , "clicked" , G_CALLBACK( apply_game_data ) , &game_object );
     g_signal_connect( G_OBJECT( synchronize_data_button ) , "clicked" , G_CALLBACK( sync_game_data ) , &game_object );
 
-    //menu signal handler
-    /* g_signal_connect( G_OBJECT( exit_button_1 ) , "clicked" , G_CALLBACK( game_exit ) , NULL );
-    g_signal_connect( G_OBJECT( restart_button ) , "clicked" , G_CALLBACK( restart_game ) , &game_object );
-    g_signal_connect( G_OBJECT( exit_button_2 ) , "clicked" , G_CALLBACK( game_exit ) , NULL );
-    g_signal_connect( G_OBJECT( resume_button ) , "clicked" , G_CALLBACK( resume_game ) , &game_object );
-    g_signal_connect( G_OBJECT( music_setting_button ) , "state-set" , G_CALLBACK( music_switch ) , &game_object );
-    g_signal_connect( G_OBJECT( path_line_setting_button ) , "state-set" , G_CALLBACK( path_line_switch ) , &game_object );
-    g_signal_connect( G_OBJECT( test_mode_setting_button ) , "state-set" , G_CALLBACK( test_switch ) , &game_object ); */
-
     //game signal handler
     g_signal_connect( G_OBJECT( info_area ) , "draw" , G_CALLBACK( draw_info ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "draw" , G_CALLBACK( draw_tower ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "button-press-event" , G_CALLBACK( button_press_handler ) , &game_object );
+    g_signal_connect( G_OBJECT( tower_area ) , "scroll-event" , G_CALLBACK( scroll_signal_handler ) , &game_object );
     g_signal_connect( G_OBJECT( game_window ) , "destroy" , G_CALLBACK( game_exit ) , NULL );
     g_signal_connect( G_OBJECT( game_window ) , "key-press-event" , G_CALLBACK( key_press_handler ) , &game_object );
     gtk_widget_set_events( tower_area , gtk_widget_get_events( tower_area )
-        | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK 
+        | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_SCROLL_MASK
         | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK );
 
     gtk_widget_set_size_request( GTK_WIDGET( tower_area ) , ( towers.LENGTH )*MagicTower::TOWER_GRID_SIZE , ( towers.WIDTH )*MagicTower::TOWER_GRID_SIZE );
@@ -163,81 +144,6 @@ int main( int argc , char * argv[] )
 
     return EXIT_SUCCESS;
 }
-
-/* static gboolean restart_game( GtkWidget * widget , gpointer data )
-{
-    ( void )widget;
-    MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-    if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_LOSE &&
-        game_object->game_status != MagicTower::GAME_STATUS::GAME_WIN )
-            return TRUE;
-
-    //reset game status
-    MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
-    game_object->hero = db.get_hero_info( 0 );
-    game_object->towers = db.get_tower_info( 0 );
-    game_object->towers = db.get_tower_info( 0 );
-    game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-    game_object->store_list = db.get_store_list();
-    game_object->custom_events = db.get_custom_events();
-    GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
-    GtkWidget * game_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-    GtkWidget * game_end_menu = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_end_menu" ) );
-    
-    
-    gtk_container_remove( GTK_CONTAINER( game_window ) , game_end_menu );
-    gtk_container_add( GTK_CONTAINER( game_window ) , game_grid );
-    gtk_widget_show( game_grid );
-    return TRUE;
-} */
-
-/* static gboolean resume_game( GtkWidget * widget , gpointer data )
-{
-    ( void )widget;
-    MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-    close_game_menu( game_object );
-    return FALSE;
-} */
-
-/* static gboolean test_switch( GtkWidget * widget , gboolean state , gpointer data )
-{
-    MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-    GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
-    GtkWidget * test_func_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_func_grid" ) );
-
-    if ( state == true )
-    {
-        if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-            return TRUE;
-
-        sync_game_data( widget , data );
-
-        gtk_widget_show_all( GTK_WIDGET( test_func_grid ) );
-        gtk_widget_show_all( GTK_WIDGET( test_mode_window ) );
-    }
-    else if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-        gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
-    return FALSE;
-} */
-
-/* static gboolean music_switch( GtkWidget * widget , gboolean state , gpointer data )
-{
-    ( void )widget;
-    MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-    if ( state == true )
-        game_object->music.play_resume();
-    else
-        game_object->music.play_pause();
-    return FALSE;
-} */
-
-/* static gboolean path_line_switch( GtkWidget * widget , gboolean state , gpointer data )
-{
-    ( void )widget;
-    MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
-    game_object->draw_path = state;
-    return FALSE;
-} */
 
 static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data )
 {
@@ -317,27 +223,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
         }
     }
 
-    //draw path line
-    if ( ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH ) &&
-         !( game_object->path.empty() ) &&
-         ( game_object->draw_path == true )
-       )
-    {
-        cairo_save( cairo );
-        cairo_set_source_rgba( cairo , 1 , 0.2 , 0.2 , 1.0 );
-        cairo_set_line_width( cairo , 4.0 );
-        cairo_arc( cairo , ( ( game_object->path[0] ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( game_object->path[0] ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE 
-            , 0.1*MagicTower::TOWER_GRID_SIZE , 0 , 2*G_PI );
-        cairo_fill( cairo );
-        for ( auto point : game_object->path )
-        {
-            cairo_line_to( cairo , ( ( point ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( point ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE );
-            cairo_move_to( cairo , ( ( point ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( point ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE );
-        }
-        cairo_line_to( cairo , ( ( game_object->hero ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( game_object->hero ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE );
-        cairo_stroke( cairo );
-        cairo_restore( cairo );
-    }
+    draw_path_line(  cairo , game_object );
 
     //draw hero
     draw_grid( ( game_object->hero ).x , ( game_object->hero ).y , "hero" , 1 );
@@ -347,7 +233,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
     {
         for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
         {
-            auto grid = get_tower_grid( game_object->towers, game_object->hero.layers , x , y );
+            auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
             if ( grid.type == MagicTower::GRID_TYPE::IS_MONSTER )
             {
                 draw_damage( cairo , game_object , x*MagicTower::TOWER_GRID_SIZE , ( y + 0.5 )*MagicTower::TOWER_GRID_SIZE , grid.id );
@@ -355,46 +241,10 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
         }
     }
 
-    if ( game_object->tips_content.empty() == false )
-        draw_tips( cairo , game_object );
-    
-    if ( game_object->game_status == MagicTower::GAME_STATUS::REVIEW_DETAIL )
-    {
-        std::int32_t x , y;
-        std::string detail_str;
-        const char * str;
-        x = game_object->mouse_x - 0.5*MagicTower::TOWER_GRID_SIZE;
-        x = x/MagicTower::TOWER_GRID_SIZE;
-        y = game_object->mouse_y - 0.5*MagicTower::TOWER_GRID_SIZE;
-        y = y/MagicTower::TOWER_GRID_SIZE;
-        auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
-        if ( grid.type == MagicTower::GRID_TYPE::IS_MONSTER )
-        {
-            auto monster = game_object->monsters[ grid.id - 1 ];
-            detail_str = dump_monster_info( monster );
-            str = detail_str.c_str();
-        }
-        else if( grid.type == MagicTower::GRID_TYPE::IS_ITEM )
-        {
-            auto item = game_object->items[ grid.id - 1 ];
-            detail_str = dump_item_info( item );
-            str = detail_str.c_str();
-        }
-        else
-        {
-            game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-            return TRUE;
-        }
-        std::shared_ptr<gchar> text( g_strdup_printf( str ) , []( gchar * text ){ g_free( text ); } );
-        draw_dialog( cairo , game_object , text , game_object->mouse_x - 0.5*MagicTower::TOWER_GRID_SIZE , game_object->mouse_y - 0.5*MagicTower::TOWER_GRID_SIZE );
-    }
-    else if ( game_object->game_status == MagicTower::GAME_STATUS::STORE_MENU ||
-              game_object->game_status == MagicTower::GAME_STATUS::GAME_MENU  ||
-              game_object->game_status == MagicTower::GAME_STATUS::JUMP_MENU
-    )
-    {
-        draw_menu( cairo , game_object );
-    }
+    draw_tips( cairo , game_object );
+    draw_detail( cairo , game_object );
+    draw_menu( cairo , game_object );
+    draw_message( cairo , game_object );
 
     return TRUE;
 }
@@ -436,6 +286,51 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
             arr[i].first , []( gchar * text ){ g_free( text ); }
         );
         draw_text( widget , cairo , game_object->info_font , 0 , widget_height/arr_size*i , text , arr[i].second );
+    }
+
+    return TRUE;
+}
+
+static gboolean scroll_signal_handler( GtkWidget * widget , GdkEventScroll * event , gpointer data )
+{
+    (void)widget;
+    MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
+    switch ( game_object->game_status )
+    {
+        case MagicTower::GAME_STATUS::START_MENU:
+        case MagicTower::GAME_STATUS::GAME_MENU:
+        case MagicTower::GAME_STATUS::STORE_MENU:
+        case MagicTower::GAME_STATUS::JUMP_MENU:
+        {
+            switch ( event->direction )
+            {
+                case GDK_SCROLL_UP:
+                {
+                    if ( game_object->focus_item_id > 0 )
+                        game_object->focus_item_id--;
+                    else
+                        game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    break;
+                }
+                case GDK_SCROLL_DOWN:
+                {
+                    if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+                        game_object->focus_item_id++;
+                    else
+                        game_object->focus_item_id = 0;
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
+            }
+            break;
+        }    
+        default :
+        {
+            break;
+        }
     }
 
     return TRUE;
@@ -505,6 +400,46 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
                 case GDK_KEY_J:
                 {
                     MagicTower::open_layer_jump( game_object );
+                    break;
+                }
+                default :
+                    break;
+            }
+            break;
+        }
+        case MagicTower::GAME_STATUS::MESSAGE:
+        {
+            //check don't send message
+            if ( game_object->game_message.empty() )
+                game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+            game_object->game_message.pop_front();
+            if ( game_object->game_message.empty() )
+                game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+            break;
+        }
+        case MagicTower::GAME_STATUS::START_MENU:
+        {
+            switch( event->keyval )
+            {
+                case GDK_KEY_Up:
+                {
+                    if ( game_object->focus_item_id > 0 )
+                        game_object->focus_item_id--;
+                    else
+                        game_object->focus_item_id = game_object->menu_items.size() - 1;
+                    break;
+                }
+                case GDK_KEY_Down:
+                {
+                    if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
+                        game_object->focus_item_id++;
+                    else
+                        game_object->focus_item_id = 0;
+                    break;
+                }
+                case GDK_KEY_Return:
+                {
+                    ( game_object->menu_items[ game_object->focus_item_id ] ).second();
                     break;
                 }
                 default :
@@ -616,6 +551,17 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
             }
             break;
         }
+        case MagicTower::GAME_STATUS::GAME_LOSE:
+        case MagicTower::GAME_STATUS::GAME_WIN:
+        {
+            //check don't send message
+            if ( game_object->game_message.empty() )
+                open_start_menu( game_object );
+            game_object->game_message.pop_front();
+            if ( game_object->game_message.empty() )
+                open_start_menu( game_object );
+            break;
+        }
         default:
         {
             break;
@@ -681,6 +627,16 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
                     game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
                     break;
                 }
+                case MagicTower::GAME_STATUS::MESSAGE:
+                {
+                    //check don't send message
+                    if ( game_object->game_message.empty() )
+                        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                    game_object->game_message.pop_front();
+                    if ( game_object->game_message.empty() )
+                        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                    break;
+                }
                 //if mouse_event->button == 1,behavior equal to MagicTower::GAME_STATUS::FIND_PATH,so don't break.
                 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
                 case MagicTower::GAME_STATUS::NORMAL:
@@ -704,6 +660,7 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
                     }
                     break;
                 }
+                case MagicTower::GAME_STATUS::START_MENU:
                 case MagicTower::GAME_STATUS::STORE_MENU:
                 case MagicTower::GAME_STATUS::GAME_MENU:
                 case MagicTower::GAME_STATUS::JUMP_MENU:
@@ -720,6 +677,18 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
                         size_t access_index = ( y - box_start_y )*item_total/box_height;
                         ( game_object->menu_items[ access_index ] ).second();
                     }
+                    break;
+                }
+                case MagicTower::GAME_STATUS::GAME_LOSE:
+                case MagicTower::GAME_STATUS::GAME_WIN:
+                {
+                    //check don't send message
+                    if ( game_object->game_message.empty() )
+                        open_start_menu( game_object );
+                    game_object->game_message.pop_front();
+                    if ( game_object->game_message.empty() )
+                        open_start_menu( game_object );
+                    break;
                 }
                 default:
                 {
@@ -897,6 +866,65 @@ static void game_exit( GtkWidget * widget , gpointer data )
     gtk_main_quit();
 }
 
+static void draw_path_line( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
+{
+    if ( game_object->game_status != MagicTower::GAME_STATUS::FIND_PATH )
+        return ;
+    if ( game_object->path.empty() )
+        return ;
+    if ( game_object->draw_path == false )
+        return ;
+
+    cairo_save( cairo );
+    cairo_set_source_rgba( cairo , 1 , 0.2 , 0.2 , 1.0 );
+    cairo_set_line_width( cairo , 4.0 );
+    cairo_arc( cairo , ( ( game_object->path[0] ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( game_object->path[0] ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE 
+        , 0.1*MagicTower::TOWER_GRID_SIZE , 0 , 2*G_PI );
+    cairo_fill( cairo );
+    for ( auto point : game_object->path )
+    {
+        cairo_line_to( cairo , ( ( point ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( point ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE );
+        cairo_move_to( cairo , ( ( point ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( point ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE );
+    }
+    cairo_line_to( cairo , ( ( game_object->hero ).x + 0.5 )*MagicTower::TOWER_GRID_SIZE , ( ( game_object->hero ).y + 0.5 )*MagicTower::TOWER_GRID_SIZE );
+    cairo_stroke( cairo );
+    cairo_restore( cairo );
+}
+
+static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
+{
+    if ( game_object->game_status != MagicTower::GAME_STATUS::REVIEW_DETAIL )
+        return ;
+
+    std::int32_t x , y;
+    std::string detail_str;
+    const char * str;
+    x = game_object->mouse_x - 0.5*MagicTower::TOWER_GRID_SIZE;
+    x = x/MagicTower::TOWER_GRID_SIZE;
+    y = game_object->mouse_y - 0.5*MagicTower::TOWER_GRID_SIZE;
+    y = y/MagicTower::TOWER_GRID_SIZE;
+    auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
+    if ( grid.type == MagicTower::GRID_TYPE::IS_MONSTER )
+    {
+        auto monster = game_object->monsters[ grid.id - 1 ];
+        detail_str = dump_monster_info( monster );
+        str = detail_str.c_str();
+    }
+    else if( grid.type == MagicTower::GRID_TYPE::IS_ITEM )
+    {
+        auto item = game_object->items[ grid.id - 1 ];
+        detail_str = dump_item_info( item );
+        str = detail_str.c_str();
+    }
+    else
+    {
+        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+        return ;
+    }
+    std::shared_ptr<gchar> text( g_strdup_printf( str ) , []( gchar * text ){ g_free( text ); } );
+    draw_dialog( cairo , game_object , text , game_object->mouse_x - 0.5*MagicTower::TOWER_GRID_SIZE , game_object->mouse_y - 0.5*MagicTower::TOWER_GRID_SIZE );
+}
+
 static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object ,
     double x , double y , std::uint32_t monster_id )
 {
@@ -917,6 +945,8 @@ static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         , []( cairo_pattern_t * pattern ){ cairo_pattern_destroy( pattern ); }
     );
     pango_layout_set_font_description( layout.get() , game_object->damage_font.get() );
+
+    cairo_save( cairo );
     cairo_move_to( cairo , x , y );
     pango_cairo_layout_path( cairo , layout.get() );
     double red_value = 0;
@@ -935,6 +965,72 @@ static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
     cairo_fill_preserve( cairo );
     cairo_set_line_width( cairo , 0.5 );
     cairo_stroke( cairo );
+    cairo_restore( cairo );
+}
+
+static void draw_message( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
+{
+    switch ( game_object->game_status )
+    {
+        case MagicTower::GAME_STATUS::MESSAGE:
+        case MagicTower::GAME_STATUS::GAME_LOSE :
+        case MagicTower::GAME_STATUS::GAME_WIN :
+            break;
+        default:
+            return ;
+    }
+    if ( game_object->game_message.empty() )
+        return ;
+
+    GtkWidget * widget = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
+    int widget_width = gtk_widget_get_allocated_width( widget );
+    int widget_height = gtk_widget_get_allocated_height( widget );
+    std::shared_ptr<cairo_pattern_t> pattern(
+        cairo_pattern_create_linear( 0.0 , 0.0 , widget_width , widget_height )
+        , []( cairo_pattern_t * pattern ){ cairo_pattern_destroy( pattern ); }
+    );
+    std::shared_ptr<PangoLayout> layout(
+        gtk_widget_create_pango_layout( widget , game_object->game_message.front().c_str() )
+        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
+    );
+    pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
+    int layout_width = 0;
+    int layout_height = 0;
+    pango_layout_get_pixel_size( layout.get() , &layout_width , &layout_height );
+
+    double box_width = layout_width;
+    double box_height = layout_height;
+    if ( box_width*3/2 < widget_width )
+        box_width = widget_width*2/3;
+    if ( box_height*6 < widget_height )
+        box_height = widget_height/6;
+    const int box_start_x = ( widget_width - box_width )/2;
+    const int box_start_y = ( widget_height - box_height )/2;
+    int content_start_x = ( box_width - layout_width )/2 + box_start_x;
+    int content_start_y = ( box_height - layout_height )/2 + box_start_y;
+
+    cairo_save( cairo );
+    //draw box
+    cairo_move_to( cairo, box_start_x , box_start_y );
+    cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
+    cairo_rel_line_to( cairo , 0 , box_height );
+    cairo_rel_line_to( cairo , box_width , 0 );
+    cairo_rel_line_to( cairo , 0 , 0 - box_height );
+    cairo_rel_line_to( cairo , 0 - box_width , 0 );
+    cairo_close_path( cairo );
+    cairo_set_line_width( cairo , 2 );
+    cairo_fill_preserve( cairo );
+    cairo_set_source_rgba( cairo , 0 , 0 , 0 , 1.0 );
+    cairo_stroke( cairo );
+    //draw content
+    cairo_move_to( cairo , content_start_x ,  content_start_y );
+    pango_cairo_layout_path( cairo , layout.get() );
+    cairo_pattern_add_color_stop_rgb( pattern.get() , 0.0 , 1.0 , 1.0 , 1.0 );
+    cairo_set_source( cairo , pattern.get() );
+    cairo_fill_preserve( cairo );
+    cairo_set_line_width( cairo , 0.5 );
+    cairo_stroke( cairo );
+    cairo_restore( cairo );
 }
 
 static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
@@ -952,6 +1048,7 @@ static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_obje
 
     std::size_t tips_size = game_object->tips_content.size();
 
+    cairo_save( cairo );
     for ( std::size_t i = 0 ; i < tips_size ; i++ )
     {
         std::shared_ptr<PangoLayout> layout(
@@ -981,20 +1078,34 @@ static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_obje
         cairo_set_line_width( cairo , 0.5 );
         cairo_stroke( cairo );
     }
+    cairo_restore( cairo );
 
 }
 
 void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
 {
+    switch ( game_object->game_status )
+    {
+        case MagicTower::GAME_STATUS::START_MENU:
+        case MagicTower::GAME_STATUS::STORE_MENU :
+        case MagicTower::GAME_STATUS::GAME_MENU :
+        case MagicTower::GAME_STATUS::JUMP_MENU :
+            break;
+        default:
+            return ;
+    }
+
     GtkWidget * widget = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
     int widget_width = gtk_widget_get_allocated_width( widget );
     int widget_height = gtk_widget_get_allocated_height( widget );
     const int box_start_x = widget_height/6;
     const int box_start_y = widget_width/6;
 
-    //draw box
     double box_height = widget_height*2/3;
     double box_width = widget_width*2/3;
+    
+    cairo_save( cairo );
+    //draw box
     cairo_move_to( cairo, box_start_x , box_start_y );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
     cairo_rel_line_to( cairo , 0 , box_height );
@@ -1045,6 +1156,7 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
         cairo_set_line_width( cairo , 0.5 );
         cairo_stroke( cairo );
     }
+    cairo_restore( cairo );
 }
 
 static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_object , std::shared_ptr<gchar> text , double x , double y )
@@ -1072,7 +1184,8 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         x -= layout_width;
     if ( static_cast<std::uint32_t>( y + layout_height ) > ( game_object->towers.WIDTH )*MagicTower::TOWER_GRID_SIZE)
         y -= layout_height;
-
+    
+    cairo_save( cairo );
     cairo_move_to( cairo , x , y );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.8 );
     cairo_rel_line_to( cairo , layout_width , 0 );
@@ -1092,22 +1205,8 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
     cairo_fill_preserve( cairo );
     cairo_set_line_width( cairo , 0.5 );
     cairo_stroke( cairo );
+    cairo_restore( cairo );
 }
-
-/* static void draw_box( cairo_t * cairo , double x , double y , double width , double height , std::int32_t animation_value )
-{
-    cairo_move_to( cairo , x , y );
-    cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 1.0/10*animation_value );
-    cairo_rel_line_to( cairo , width/10*animation_value , 0 );
-    cairo_rel_line_to( cairo , 0 , height/10*animation_value );
-    cairo_rel_line_to( cairo , -1*width/10*animation_value , 0 );
-    cairo_close_path( cairo );
-
-    cairo_set_line_width( cairo , 2 );
-    cairo_fill_preserve( cairo );
-    cairo_set_source_rgba( cairo , 0 , 0 , 0 , 1.0/10*animation_value );
-    cairo_stroke( cairo );
-} */
 
 //if mode != 0 ignore argument x,mode = 1 left alignment,mode = 2 center alignment,mode = 3 right alignment.
 static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<PangoFontDescription> font_desc ,
@@ -1147,6 +1246,7 @@ static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<Pa
             break;
     }
 
+    cairo_save( cairo );
     cairo_move_to( cairo , pos , y );
     pango_cairo_layout_path( cairo , layout.get() );
     cairo_pattern_add_color_stop_rgb( pattern.get() , 0.0 , 0.4 , 0.3 , 0.4 );
@@ -1154,6 +1254,7 @@ static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<Pa
     cairo_fill_preserve( cairo );
     cairo_set_line_width( cairo , 0.5 );
     cairo_stroke( cairo );
+    cairo_restore( cairo );
 }
 
 static std::shared_ptr<GdkPixbuf> make_info_basic_frame( MagicTower::Tower& towers )

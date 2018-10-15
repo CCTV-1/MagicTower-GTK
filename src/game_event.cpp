@@ -26,13 +26,12 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_normal( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
-/*     static gboolean do_shopping( GtkWidget * widget , gpointer data ); */
     static bool try_jump( struct GameEnvironment * game_object );
     static void set_jump_menu( struct GameEnvironment * game_object );
+    static void set_start_menu( struct GameEnvironment * game_object );
     static void set_game_menu( struct GameEnvironment * game_object );
     static void set_store_menu( struct GameEnvironment * game_object );
     static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content );
-/*     static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content ); */
     static std::string deserialize_commodity_content( const char * content );
     static gboolean remove_tips( gpointer data );
 
@@ -1308,12 +1307,17 @@ namespace MagicTower
 
     void open_layer_jump( struct GameEnvironment * game_object )
     {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-             game_object->game_status == GAME_STATUS::GAME_WIN   ||
-             game_object->game_status == GAME_STATUS::GAME_MENU  ||
-             game_object->game_status == GAME_STATUS::STORE_MENU ||
-             game_object->game_status == GAME_STATUS::JUMP_MENU )
-            return ;
+        switch ( game_object->game_status )
+        {
+            case GAME_STATUS::GAME_LOSE:
+            case GAME_STATUS::GAME_WIN:
+            case GAME_STATUS::GAME_MENU:
+            case GAME_STATUS::STORE_MENU:
+            case GAME_STATUS::JUMP_MENU:
+                return ;
+            default:
+                break;
+        }
 
         game_object->game_status = GAME_STATUS::JUMP_MENU;
         game_object->focus_item_id = 0;
@@ -1330,12 +1334,18 @@ namespace MagicTower
 
     void open_store_menu_v2( struct GameEnvironment * game_object )
     {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-             game_object->game_status == GAME_STATUS::GAME_WIN   ||
-             game_object->game_status == GAME_STATUS::GAME_MENU  ||
-             game_object->game_status == GAME_STATUS::STORE_MENU ||
-             game_object->game_status == GAME_STATUS::JUMP_MENU )
-            return ;
+        switch ( game_object->game_status )
+        {
+            case GAME_STATUS::GAME_LOSE:
+            case GAME_STATUS::GAME_WIN:
+            case GAME_STATUS::GAME_MENU:
+            case GAME_STATUS::STORE_MENU:
+            case GAME_STATUS::JUMP_MENU:
+                return ;
+            default:
+                break;
+        }
+
         game_object->game_status = MagicTower::GAME_STATUS::STORE_MENU;
         game_object->focus_item_id = 0;
         set_store_menu( game_object );
@@ -1348,61 +1358,35 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    /*void open_store_menu( struct GameEnvironment * game_object )
+    void open_start_menu(  struct GameEnvironment * game_object )
     {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-            game_object->game_status == GAME_STATUS::GAME_WIN   ||
-            game_object->game_status == GAME_STATUS::GAME_MENU  ||
-            game_object->game_status == GAME_STATUS::STORE_MENU )
-            return ;
-        GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-
-        GtkWidget * notebook = gtk_notebook_new();
-        for( auto store : game_object->store_list )
+        switch ( game_object->game_status )
         {
-            if ( store.usability != true )
-                continue;
-            GtkWidget * store_label = gtk_label_new( store.name.c_str() );
-            GtkWidget * store_content = make_commodity_grid( game_object , store.content );
-            gtk_notebook_append_page( GTK_NOTEBOOK( notebook ) , store_content , store_label );
+            case GAME_STATUS::GAME_LOSE:
+            case GAME_STATUS::GAME_WIN:
+                break;
+            default:
+                return ;
         }
-        if ( gtk_notebook_get_n_pages( GTK_NOTEBOOK( notebook ) ) == 0 )
-        {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "没有被解锁的商店" );
-            gtk_widget_destroy( notebook );
-            return ;
-        }
-        game_object->game_status = GAME_STATUS::STORE_MENU;
-        gtk_notebook_set_scrollable( GTK_NOTEBOOK( notebook ) , TRUE );
-        gtk_notebook_popup_enable( GTK_NOTEBOOK( notebook ) );
 
-        gtk_grid_remove_column( GTK_GRID( game_grid ) , 1 );
-        gtk_grid_attach( GTK_GRID( game_grid ) , notebook , 1 , 0 , 1 , 1 );
-        gtk_widget_set_size_request( GTK_WIDGET( notebook ) , ( game_object->towers.LENGTH )*MagicTower::TOWER_GRID_SIZE ,  ( game_object->towers.WIDTH )*MagicTower::TOWER_GRID_SIZE );
-        gtk_widget_show_all( notebook );
+        game_object->game_status = GAME_STATUS::START_MENU;
+        game_object->focus_item_id = 0;
+        set_start_menu( game_object );
     }
-
-    void close_store_menu( struct GameEnvironment * game_object )
-    {
-        if ( game_object->game_status != GAME_STATUS::STORE_MENU )
-            return ;
-        GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-        GtkWidget * tower_area  = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
-
-        gtk_grid_remove_column( GTK_GRID( game_grid ) , 1 );
-        gtk_grid_attach( GTK_GRID( game_grid ) , tower_area , 1 , 0 , 1 , 1 );
-        gtk_widget_show( game_grid );
-        game_object->game_status = GAME_STATUS::NORMAL;
-    } */
 
     void open_game_menu_v2(  struct GameEnvironment * game_object )
     {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-             game_object->game_status == GAME_STATUS::GAME_WIN   ||
-             game_object->game_status == GAME_STATUS::GAME_MENU  ||
-             game_object->game_status == GAME_STATUS::STORE_MENU ||
-             game_object->game_status == GAME_STATUS::JUMP_MENU )
-            return ;
+        switch ( game_object->game_status )
+        {
+            case GAME_STATUS::GAME_LOSE:
+            case GAME_STATUS::GAME_WIN:
+            case GAME_STATUS::GAME_MENU:
+            case GAME_STATUS::STORE_MENU:
+            case GAME_STATUS::JUMP_MENU:
+                return ;
+            default:
+                break;
+        }
 
         game_object->game_status = GAME_STATUS::GAME_MENU;
         game_object->focus_item_id = 0;
@@ -1416,73 +1400,52 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    /*void open_game_menu( struct GameEnvironment * game_object )
-    {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE ||
-            game_object->game_status == GAME_STATUS::GAME_WIN   ||
-            game_object->game_status == GAME_STATUS::GAME_MENU  ||
-            game_object->game_status == GAME_STATUS::STORE_MENU )
-            return ;
-        game_object->game_status = GAME_STATUS::GAME_MENU;
-        GtkWidget * game_window    = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
-        GtkWidget * game_grid      = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-        GtkWidget * game_menu  = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_menu" ) );
-        gtk_widget_set_size_request( GTK_WIDGET( game_menu ) , ( game_object->towers.LENGTH + game_object->towers.LENGTH/2 )*MagicTower::TOWER_GRID_SIZE ,  ( game_object->towers.WIDTH )*MagicTower::TOWER_GRID_SIZE );
-        gtk_container_remove( GTK_CONTAINER( game_window ) , game_grid );
-        gtk_container_add( GTK_CONTAINER( game_window ) , game_menu );
-        gtk_widget_show( game_menu );
-    }
-
-    void close_game_menu( struct GameEnvironment * game_object )
-    {
-        if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_MENU )
-            return ;
-
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
-        GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
-        GtkWidget * game_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-        GtkWidget * game_menu = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_menu" ) );
-        gtk_container_remove( GTK_CONTAINER( game_window ) , game_menu );
-        gtk_container_add( GTK_CONTAINER( game_window ) , game_grid );
-        gtk_widget_show( game_grid );
-    } */
-
     void game_win( struct GameEnvironment * game_object )
     {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-             game_object->game_status == GAME_STATUS::GAME_WIN   ||
-             game_object->game_status == GAME_STATUS::GAME_MENU  ||
-             game_object->game_status == GAME_STATUS::STORE_MENU ||
-             game_object->game_status == GAME_STATUS::JUMP_MENU )
-            return ;
+        switch ( game_object->game_status )
+        {
+            case GAME_STATUS::GAME_LOSE:
+            case GAME_STATUS::GAME_WIN:
+            case GAME_STATUS::GAME_MENU:
+            case GAME_STATUS::STORE_MENU:
+            case GAME_STATUS::JUMP_MENU:
+                return ;
+            default:
+                break;
+        }
+
+        game_object->game_message.push_back( "恭喜通关" );
+        game_object->game_message.push_back(
+            std::string( "你的得分为:" ) + std::to_string(
+                game_object->hero.life + ( game_object->hero.attack +
+                game_object->hero.defense )*( game_object->hero.level )
+            )
+        );
         game_object->game_status = GAME_STATUS::GAME_WIN;
-        GtkWidget * game_window      = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
-        GtkWidget * game_grid        = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-        GtkWidget * game_end_menu    = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_end_menu" ) );
-        GtkWidget * story_text_label = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "story_text_label" ) );
-        gtk_label_set_label( GTK_LABEL( story_text_label ) , "恭喜通关" );
-        gtk_container_remove( GTK_CONTAINER( game_window ) , game_grid );
-        gtk_container_add( GTK_CONTAINER( game_window ) , game_end_menu );
-        gtk_widget_show( game_end_menu );
     }
 
     void game_lose( struct GameEnvironment * game_object )
     {
-        if ( game_object->game_status == GAME_STATUS::GAME_LOSE  ||
-             game_object->game_status == GAME_STATUS::GAME_WIN   ||
-             game_object->game_status == GAME_STATUS::GAME_MENU  ||
-             game_object->game_status == GAME_STATUS::STORE_MENU ||
-             game_object->game_status == GAME_STATUS::JUMP_MENU )
-            return ;
+        switch ( game_object->game_status )
+        {
+            case GAME_STATUS::GAME_LOSE:
+            case GAME_STATUS::GAME_WIN:
+            case GAME_STATUS::GAME_MENU:
+            case GAME_STATUS::STORE_MENU:
+            case GAME_STATUS::JUMP_MENU:
+                return ;
+            default:
+                break;
+        }
+
+        game_object->game_message.push_back( "游戏失败" );
+        game_object->game_message.push_back(
+            std::string( "你的得分为:" ) + std::to_string(
+                game_object->hero.life + ( game_object->hero.attack +
+                game_object->hero.defense )*( game_object->hero.level )
+            )
+        );
         game_object->game_status = GAME_STATUS::GAME_LOSE;
-        GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
-        GtkWidget * game_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_grid" ) );
-        GtkWidget * game_end_menu = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_end_menu" ) );
-        GtkWidget * story_text_label = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "story_text_label" ) );
-        gtk_label_set_label( GTK_LABEL( story_text_label ) , "游戏失败" );
-        gtk_container_remove( GTK_CONTAINER( game_window ) , game_grid );
-        gtk_container_add( GTK_CONTAINER( game_window ) , game_end_menu );
-        gtk_widget_show( game_end_menu );
     }
 
     void game_exit( struct GameEnvironment * game_object )
@@ -1580,13 +1543,6 @@ namespace MagicTower
         }
         return -1;
     }
-
-    /*static gboolean do_shopping( GtkWidget * widget , gpointer data )
-    {
-        const char * commodity_json = gtk_widget_get_name( widget );
-        shopping( static_cast<MagicTower::GameEnvironment *>( data ) , commodity_json );
-        return TRUE;
-    } */
 
     void back_jump( struct GameEnvironment * game_object )
     {
@@ -1707,6 +1663,40 @@ namespace MagicTower
             [ game_object ](){
                 back_jump( game_object );
                 close_layer_jump( game_object );
+            }
+        });
+    }
+
+    static void set_start_menu( struct GameEnvironment * game_object )
+    {
+        game_object->menu_items.clear();
+        game_object->menu_items.push_back({
+            [](){ return std::string( "重新游戏" ); },
+            [ game_object ](){
+                MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
+                game_object->towers = db.get_tower_info( 0 );
+                game_object->hero = db.get_hero_info( 0 );
+                game_object->stairs = db.get_stairs_list();
+                game_object->store_list = db.get_store_list();
+                game_object->monsters = db.get_monster_list();
+                game_object->items = db.get_item_list();
+                game_object->custom_events = db.get_custom_events();
+                game_object->access_layer = db.get_access_layers();
+                game_object->layers_jump = db.get_jump_map();
+                game_object->game_status = GAME_STATUS::NORMAL;
+            }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "读取存档" ); },
+            [ game_object ](){
+                load_game_status( game_object , 1 );
+                game_object->game_status = GAME_STATUS::NORMAL;
+            }
+        });
+        game_object->menu_items.push_back({
+            [](){ return std::string( "退出游戏" ); },
+            [ game_object ](){
+                game_exit( game_object );
             }
         });
     }
@@ -1953,45 +1943,6 @@ namespace MagicTower
 
         return deserialize_string;
     }
-
-    /*static GtkWidget * make_commodity_grid( struct GameEnvironment * game_object , std::string content )
-    {
-        json_error_t json_error;
-        json_t * root = json_loads( content.c_str() , 0 , &json_error );
-        GtkWidget * commodity_grid = gtk_grid_new();
-        gtk_grid_set_row_homogeneous( GTK_GRID( commodity_grid ) , TRUE );
-        gtk_grid_set_column_homogeneous( GTK_GRID( commodity_grid ) , TRUE );
-        //gtk_widget_set_size_request( GTK_WIDGET( commodity_grid ) , ( game_object->towers.LENGTH )*TOWER_GRID_SIZE ,  ( game_object->towers.WIDTH )*TOWER_GRID_SIZE );
-        if ( root == NULL )
-        {
-            json_decref( root );
-            return commodity_grid;
-        }
-        json_t * commodity_list = json_object_get( root , "commoditys" );
-        if ( !json_is_array( commodity_list ) )
-        {
-            json_decref( root );
-            return commodity_grid;
-        }
-        size_t commodity_size = json_array_size( commodity_list );
-        for( size_t i = 0 ; i < commodity_size ; i++ )
-        {
-            json_t * commodity_node = json_array_get( commodity_list , i );
-            if ( !json_is_object( commodity_node ) )
-            {
-                json_decref( root );
-                return commodity_grid;
-            }
-            const char * commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
-            std::string button_label = deserialize_commodity_content( commodity_content );
-            GtkWidget * commodity_button = gtk_button_new_with_label( button_label.c_str() );
-            gtk_widget_set_name( commodity_button , commodity_content );
-            g_signal_connect( G_OBJECT( commodity_button ) , "clicked" , G_CALLBACK( do_shopping ) , game_object );
-            gtk_grid_attach( GTK_GRID( commodity_grid ) , commodity_button , 1 , i , 1 , 1 );
-        }
-        json_decref( root );
-        return commodity_grid;
-    } */
 
     static gboolean remove_tips( gpointer data )
     {
