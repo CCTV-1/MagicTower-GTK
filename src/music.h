@@ -16,6 +16,12 @@
 namespace MagicTower
 {
 
+class gst_init_failure : public std::runtime_error
+{
+public:
+    explicit gst_init_failure( const std::string &s ) : std::runtime_error(s) {}
+};
+
 class gst_element_make_failure : public std::runtime_error
 {
 public:
@@ -57,7 +63,7 @@ enum PLAY_MODE:std::uint32_t
 class Music
 {
 public:
-    Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& _play_list , 
+    Music( std::vector<std::shared_ptr<const char> >& _play_list , 
         PLAY_MODE _mode = PLAY_MODE::RANDOM_PLAYING , PLAY_STATE _state = PLAY_STATE::PLAYING , std::size_t _play_id = 0 );
     ~Music();
     /* gboolean play_start( PLAY_MODE mode = PLAY_MODE::RANDOM_PLAYING ); */

@@ -50,7 +50,7 @@ int main( int argc , char * argv[] )
     g_chdir( self_dir_path.get() );
 
     std::vector<std::shared_ptr<const char> > music_list = get_music_uris( MUSIC_RESOURCES_PATH );
-    MagicTower::Music music( &argc , &argv , music_list );
+    MagicTower::Music music( music_list );
 
     MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
     MagicTower::Tower towers = db.get_tower_info( 0 );

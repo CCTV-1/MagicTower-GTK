@@ -10,12 +10,16 @@ static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipe
 static gboolean list_cycle( GstBus * bus , GstMessage * msg , Music * music );
 static gboolean random_playing( GstBus * bus , GstMessage * msg , Music * music );
 
-Music::Music( int * argc , char ** argv[] , std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_MODE _mode , PLAY_STATE _state , std::size_t _play_id )
+Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_MODE _mode , PLAY_STATE _state , std::size_t _play_id )
     :music_uri_list( _music_uri_list ),mode( _mode ),state( _state ),play_id( _play_id )
 {
+    gboolean init_status = true;
+    if ( gst_is_initialized() == false )
+        init_status = gst_init_check( NULL , NULL , NULL );
+    if ( init_status == false )
+        throw gst_init_failure( std::string( "gstreamer initial failure" ) );
     if ( this->music_uri_list.empty() )
         throw music_list_empty( std::string( "music uri list is empty" ) );
-    gst_init( argc , argv );
 
     //uri to file format check
     for ( auto music_uri_iterator = this->music_uri_list.begin() ; music_uri_iterator != this->music_uri_list.end() ; )
