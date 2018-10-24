@@ -20,8 +20,6 @@
 
 namespace MagicTower
 {
-    int TOWER_GRID_SIZE;
-
     static std::int64_t get_combat_damage_of_last  ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_normal( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );

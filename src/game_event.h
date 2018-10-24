@@ -33,9 +33,7 @@
 #define MUSIC_RESOURCES_PATH "../resources/music/"
 
 namespace MagicTower
-{
-    extern int TOWER_GRID_SIZE;
-    
+{   
     enum GAME_STATUS:std::uint32_t
     {
         NORMAL = 0,
@@ -71,7 +69,7 @@ CREATE TABLE events (
 );
 */
         std::map< MagicTower::event_position_t , std::string > custom_events;
-        Menu_t& menu_items;
+        Menu_t menu_items;
         std::size_t focus_item_id;
         MagicTower::Music& music;
         MagicTower::Hero hero;
@@ -81,16 +79,16 @@ CREATE TABLE events (
 /* CREATE TABLE access_layers (
     layer INT (32) PRIMARY KEY AUTOINCREMENT,
 ); */
-        std::map<std::uint32_t , bool>& access_layer;
+        std::map<std::uint32_t , bool> access_layer;
 /* CREATE TABLE jump_point (
     layer INT (32) PRIMARY KEY AUTOINCREMENT,
     x     INT (32),
     y     INT (32)
 ); */
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> >& layers_jump;
-        std::vector<MagicTower::Stairs>& stairs;
-        std::vector<MagicTower::Monster>& monsters;
-        std::vector<MagicTower::Item>& items;
+        std::map<std::size_t , std::pair<std::size_t , std::size_t> > layers_jump;
+        std::vector<MagicTower::Stairs> stairs;
+        std::vector<MagicTower::Monster> monsters;
+        std::vector<MagicTower::Item> items;
         std::vector<MagicTower::TowerGridLocation> path;
         std::vector<MagicTower::Store> store_list;
         enum GAME_STATUS game_status;
