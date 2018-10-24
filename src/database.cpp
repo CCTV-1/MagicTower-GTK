@@ -155,7 +155,7 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_int_failure( 1 ,archive_id , this->sqlite3_error_code , std::string( sql_statement ) );
+            throw sqlite_bind_int_failure( 1 , archive_id , this->sqlite3_error_code , std::string( sql_statement ) );
         }
 
         //id should be unique,so hero will not be repeat setting
