@@ -77,11 +77,11 @@ public:
 
     void set_play_id( std::size_t play_id );
     void set_play_mode( PLAY_MODE mode );
-protected:
-    Music( const Music& )=delete;
-    Music& operator=( const Music& )=delete;
-    Music( Music&& )=delete;
-    Music& operator=( const Music&& )=delete;
+
+    Music( const Music& rhs )=delete;
+    Music( Music&& rhs )=delete;
+    Music& operator=( const Music& rhs )=delete;
+    Music& operator=( const Music&& rhs )=delete;
 private:
     std::vector<std::shared_ptr<const char> >& music_uri_list;
     PLAY_MODE mode;
