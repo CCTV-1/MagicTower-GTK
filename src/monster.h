@@ -8,39 +8,34 @@
 
 namespace MagicTower
 {
+    enum ATTACK_TYPE:std::uint32_t
+    {
+        //if is normal,when the hero level is higher than the monster level,hero first attack
+        FIRST_ATTACK = 0,
+        NORMAL_ATTACK,
+        LAST_ATTACK,
+        DOUBLE_ATTACK,
+        EXTRA_QUOTA_DAMAGE,
+        EXTRA_PERCENT_DAMAG,
+    };
 
-enum ATTACK_TYPE:std::uint32_t
-{
-    //if is normal,when the hero level is higher than the monster level,hero first attack
-    FIRST_ATTACK = 0,
-    NORMAL_ATTACK,
-    LAST_ATTACK,
-    DOUBLE_ATTACK,
-    EXTRA_QUOTA_DAMAGE,
-    EXTRA_PERCENT_DAMAG,
-};
-
-#ifdef _cplusplus
-extern "C"
-#endif
-
-/* 
-CREATE TABLE monster (
-    id         INTEGER  PRIMARY KEY AUTOINCREMENT,
-    type       INT (32),
-    type_value INT (32),
-    name       TEXT,
-    level      INT (32),
-    life       INT (32),
-    attack     INT (32),
-    defense    INT (32),
-    gold       INT (32),
-    experience INT (32) 
-);
- */
-struct Monster
-{
-public:
+    /* 
+    CREATE TABLE monster (
+        id         INTEGER  PRIMARY KEY AUTOINCREMENT,
+        type       INT (32),
+        type_value INT (32),
+        name       TEXT,
+        level      INT (32),
+        life       INT (32),
+        attack     INT (32),
+        defense    INT (32),
+        gold       INT (32),
+        experience INT (32) 
+    );
+     */
+    struct Monster
+    {
+    public:
     std::size_t id;
     ATTACK_TYPE type;
     std::uint32_t type_value;
@@ -51,10 +46,10 @@ public:
     std::uint32_t defense;
     std::uint32_t gold;
     std::uint32_t experience;
-};
+    };
 
-inline std::string dump_monster_info( Monster& monster )
-{
+    inline std::string dump_monster_info( Monster& monster )
+    {
     std::string monster_str;
     switch ( monster.type )
     {
@@ -90,8 +85,7 @@ inline std::string dump_monster_info( Monster& monster )
     monster_str += "\n金钱:" + std::to_string( monster.gold );
     monster_str += "\n经验:" + std::to_string( monster.experience );
     return monster_str;
-}
-
+    }
 }
 
 #endif
