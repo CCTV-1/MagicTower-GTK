@@ -131,7 +131,7 @@ int main( int argc , char * argv[] )
     g_signal_connect( G_OBJECT( tower_area ) , "draw" , G_CALLBACK( draw_tower ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "button-press-event" , G_CALLBACK( button_press_handler ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "scroll-event" , G_CALLBACK( scroll_signal_handler ) , &game_object );
-    g_signal_connect( G_OBJECT( game_window ) , "destroy" , G_CALLBACK( game_exit ) , NULL );
+    g_signal_connect( G_OBJECT( game_window ) , "destroy" , G_CALLBACK( game_exit ) , nullptr );
     g_signal_connect( G_OBJECT( game_window ) , "key-press-event" , G_CALLBACK( key_press_handler ) , &game_object );
     gtk_widget_set_events( tower_area , gtk_widget_get_events( tower_area )
         | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_SCROLL_MASK
@@ -162,7 +162,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
             []( char * image_file_name ){ g_free( image_file_name ); }
         );
         const GdkPixbuf * element = ( image_resource[ image_file_name.get() ] ).get();
-        if ( element == NULL )
+        if ( element == nullptr )
         {
             g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , image_file_name.get() );
             return ;
@@ -791,7 +791,7 @@ static gboolean sync_game_data( GtkWidget * widget , gpointer data )
 static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( const char * image_path )
 {
     std::shared_ptr<GDir> dir_ptr(
-        g_dir_open( image_path , 0 , NULL ) ,
+        g_dir_open( image_path , 0 , nullptr ) ,
         []( GDir * dir_ptr ){ g_dir_close( dir_ptr ); }
     );
     std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource;
@@ -804,14 +804,14 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( co
 
     //g_dir_read_name auto ignore "." ".."
     const gchar * filename;
-    while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != NULL )
+    while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
     {
         std::shared_ptr<char> image_file_name(
             g_strdup_printf( IMAGE_RESOURCES_PATH"%s" , filename ) ,
             []( char * image_file_name ){ g_free( image_file_name ); }
         );
-        GdkPixbuf * pixbuf = gdk_pixbuf_new_from_file_at_size( image_file_name.get() , PIXEL_SIZE , PIXEL_SIZE , NULL );
-        if ( pixbuf == NULL )
+        GdkPixbuf * pixbuf = gdk_pixbuf_new_from_file_at_size( image_file_name.get() , PIXEL_SIZE , PIXEL_SIZE , nullptr );
+        if ( pixbuf == nullptr )
         {
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_file_name.get() );
             continue;
@@ -825,7 +825,7 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( co
 static std::vector<std::shared_ptr<const char> > get_music_uris( const char * music_path )
 {
     std::shared_ptr<GDir> dir_ptr(
-        g_dir_open( music_path , 0 , NULL ) ,
+        g_dir_open( music_path , 0 , nullptr ) ,
         []( GDir * dir_ptr ){ g_dir_close( dir_ptr ); }
     );
 
@@ -838,7 +838,7 @@ static std::vector<std::shared_ptr<const char> > get_music_uris( const char * mu
 
     //g_dir_read_name auto ignore "." ".."
     const gchar * filename;
-    while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != NULL )
+    while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
     {
         std::shared_ptr<char> music_file_name(
             g_strdup_printf( "%s/%s" , music_path , filename ) ,
@@ -1197,7 +1197,7 @@ static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<Pa
     int pos;
     int layout_width;
     int widget_width = gtk_widget_get_allocated_width( widget );
-    pango_layout_get_pixel_size( layout.get() , &layout_width , NULL );
+    pango_layout_get_pixel_size( layout.get() , &layout_width , nullptr );
     switch ( mode )
     {
         case 0:
@@ -1234,8 +1234,8 @@ static std::shared_ptr<GdkPixbuf> info_frame_factory( size_t width , size_t heig
         gdk_pixbuff_free
     );
 
-    GdkPixbuf * bg_pixbuf = gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"floor11.png" , PIXEL_SIZE , PIXEL_SIZE , NULL );
-    if( bg_pixbuf == NULL )
+    GdkPixbuf * bg_pixbuf = gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"floor11.png" , PIXEL_SIZE , PIXEL_SIZE , nullptr );
+    if( bg_pixbuf == nullptr )
     {
         g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , IMAGE_RESOURCES_PATH"floor11.png" );
         return info_frame;

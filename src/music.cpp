@@ -15,7 +15,7 @@ Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_
 {
     gboolean init_status = true;
     if ( gst_is_initialized() == false )
-        init_status = gst_init_check( NULL , NULL , NULL );
+        init_status = gst_init_check( nullptr , nullptr , nullptr );
     if ( init_status == false )
         throw gst_init_failure( std::string( "gstreamer initial failure" ) );
 
@@ -28,10 +28,10 @@ Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_
     this->sink   = gst_element_factory_make( "playsink" , "sink" );
 #endif
 
-    if( this->pipeline == NULL || this->source == NULL || this->conver == NULL || this->sink == NULL )
+    if( this->pipeline == nullptr || this->source == nullptr || this->conver == nullptr || this->sink == nullptr )
         throw gst_init_failure( std::string( "element could not be created\n" ) );
 
-    gst_bin_add_many( GST_BIN( this->pipeline ) , this->source , this->conver , this->sink , NULL );
+    gst_bin_add_many( GST_BIN( this->pipeline ) , this->source , this->conver , this->sink , nullptr );
     if ( gst_element_link( this->conver , this->sink ) != TRUE )
         throw gst_init_failure( std::string( "elements could not be linked\n" ) );
 
@@ -51,11 +51,11 @@ Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_
             uri_iterator++;
         else
         {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , g_filename_from_uri( uri_iterator->get() , NULL , NULL ) );
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , g_filename_from_uri( uri_iterator->get() , nullptr , nullptr ) );
             this->music_uri_list.erase( uri_iterator );
         }
     }
-    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ play_id ].get() , NULL );
+    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ play_id ].get() , nullptr );
     g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -73,7 +73,7 @@ Music::~Music()
 gboolean Music::play( std::size_t id )
 {
     this->play_id = id;
-    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ id ].get() , NULL );
+    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ id ].get() , nullptr );
     g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -111,7 +111,7 @@ gboolean Music::play_next()
     this->play_id = i;
     gst_element_unlink( this->conver , this->sink );
     gst_element_set_state( this->pipeline , GST_STATE_NULL );
-    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ i ].get() , NULL );
+    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ i ].get() , nullptr );
     gst_element_link( this->conver , this->sink );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -156,7 +156,7 @@ void Music::play_restart()
 enum PLAY_STATE Music::get_state()
 {
     GstState state = GST_STATE_NULL;
-    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( this->pipeline ) , &state , NULL , -1 );
+    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( this->pipeline ) , &state , nullptr , -1 );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable get the playing state" );
@@ -253,29 +253,29 @@ void Music::set_play_mode( PLAY_MODE mode )
 
 static bool is_music( std::shared_ptr<const char>& file_uri )
 {
-    GstCaps * caps = NULL;
+    GstCaps * caps = nullptr;
     std::shared_ptr<gchar> filename(
-        g_filename_from_uri( file_uri.get() , NULL , NULL ),
+        g_filename_from_uri( file_uri.get() , nullptr , nullptr ),
         []( char * music_file_name ){ g_free( music_file_name ); }
     );
     GstElement * pipeline = gst_pipeline_new( "format_check" );
     GstElement * source = gst_element_factory_make( "filesrc" , "source" );
     GstElement * typefind = gst_element_factory_make( "typefind" , "typefind" );
     GstElement * sink   = gst_element_factory_make( "fakesink" , "fakesink" );
-    gst_bin_add_many( GST_BIN( pipeline ) , source , typefind , sink , NULL );
-    gst_element_link_many( source , typefind, sink , NULL );
+    gst_bin_add_many( GST_BIN( pipeline ) , source , typefind , sink , nullptr );
+    gst_element_link_many( source , typefind, sink , nullptr );
     g_signal_connect( G_OBJECT( typefind ) , "have-type" , G_CALLBACK( have_type_handler ) , &caps );
-    g_object_set(source , "location" , filename.get() , NULL );
+    g_object_set(source , "location" , filename.get() , nullptr );
     GstState state = GST_STATE_NULL;
     gst_element_set_state( GST_ELEMENT( pipeline ) , GST_STATE_PAUSED );
-    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( pipeline ) , &state , NULL , -1 );
+    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( pipeline ) , &state , nullptr , -1 );
     switch( ret )
     {
         case GST_STATE_CHANGE_FAILURE:
         {
             GstMessage * msg;
             GstBus * bus;
-            GError * err = NULL;
+            GError * err = nullptr;
 
             bus = gst_pipeline_get_bus( GST_PIPELINE( pipeline ) );
             msg = gst_bus_poll( bus , GST_MESSAGE_ERROR , 0 );
@@ -283,7 +283,7 @@ static bool is_music( std::shared_ptr<const char>& file_uri )
 
             if ( msg )
             {
-                gst_message_parse_error( msg , &err , NULL);
+                gst_message_parse_error( msg , &err , nullptr);
                 g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: %s\n", filename.get() , err->message );
                 g_clear_error( &err );
                 gst_message_unref( msg );
@@ -339,9 +339,9 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     ( void )src;
     GstPad * sink_pad = gst_element_get_static_pad( conver , "sink" );
     GstPadLinkReturn ret;
-    GstCaps * new_pad_caps = NULL;
-    GstStructure * new_pad_struct = NULL;
-    const gchar * new_pad_type = NULL;
+    GstCaps * new_pad_caps = nullptr;
+    GstStructure * new_pad_struct = nullptr;
+    const gchar * new_pad_type = nullptr;
 
     /* if our converter is already linked, we have nothing to do here */
     if ( gst_pad_is_linked( sink_pad ) )
@@ -351,7 +351,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     }
     
     /* Check the new pad's type */
-    new_pad_caps = gst_pad_query_caps( new_pad, NULL );
+    new_pad_caps = gst_pad_query_caps( new_pad, nullptr );
     new_pad_struct = gst_caps_get_structure( new_pad_caps , 0 );
     new_pad_type = gst_structure_get_name( new_pad_struct );
     if ( !g_str_has_prefix( new_pad_type , "audio/x-raw" ) )
@@ -369,7 +369,7 @@ static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement 
     
     handler_exit:
     /* Unreference the new pad's caps, if we got them */
-    if ( new_pad_caps != NULL )
+    if ( new_pad_caps != nullptr )
         gst_caps_unref( new_pad_caps );
     
     /* Unreference the this->sink pad */
@@ -411,7 +411,7 @@ static gboolean list_cycle( GstBus * bus , GstMessage * msg , Music * music )
     else
         i = i + 1;
     music->set_play_id( i );
-    g_object_set( source , "uri" , music->get_music_uri_list()[ i ].get() , NULL );
+    g_object_set( source , "uri" , music->get_music_uri_list()[ i ].get() , nullptr );
     gst_element_link( music->get_conver() , music->get_sink() );
     GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -433,7 +433,7 @@ static gboolean random_playing( GstBus * bus , GstMessage * msg , Music * music 
 
     std::size_t i = music->get_random_id();
     music->set_play_id( i );
-    g_object_set( source , "uri" , music->get_music_uri_list()[ i ].get() , NULL );
+    g_object_set( source , "uri" , music->get_music_uri_list()[ i ].get() , nullptr );
     gst_element_link( music->get_conver() , music->get_sink() );
     GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )

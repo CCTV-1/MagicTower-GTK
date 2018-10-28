@@ -1048,7 +1048,7 @@ namespace MagicTower
     {
         json_error_t json_error;
         json_t * root = json_loads( commodity_json , 0 , &json_error );
-        if ( root == NULL )
+        if ( root == nullptr )
         {
             json_decref( root );
             return false;
@@ -1772,7 +1772,7 @@ namespace MagicTower
 
         json_error_t json_error;
         json_t * root = json_loads( item_content , 0 , &json_error );
-        if ( root == NULL )
+        if ( root == nullptr )
         {
             json_decref( root );
             return ;
@@ -1815,7 +1815,7 @@ namespace MagicTower
     {
         json_error_t json_error;
         json_t * root = json_loads( content , 0 , &json_error );
-        if ( root == NULL )
+        if ( root == nullptr )
         {
             json_decref( root );
             return std::string( "无效按钮" );
