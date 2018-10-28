@@ -55,12 +55,8 @@ namespace MagicTower
     struct GameEnvironment
     {
         GtkBuilder * builder;
-        std::shared_ptr<GdkPixbuf> info_frame;
-        std::shared_ptr<PangoFontDescription> damage_font;
-        std::shared_ptr<PangoFontDescription> info_font;
         std::deque<std::string> game_message;
         std::deque< std::shared_ptr<gchar> > tips_content;
-        std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource;
 /* 
 CREATE TABLE events (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,14 +64,14 @@ CREATE TABLE events (
     event_content  TEXT
 );
 */
-        std::map< MagicTower::event_position_t , std::string > custom_events;
+        std::map<event_position_t , std::string> custom_events;
         Menu_t menu_items;
         std::size_t focus_item_id;
-        MagicTower::Music& music;
-        MagicTower::Hero hero;
+        Music& music;
+        Hero hero;
         //layer , x , y
         std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> temp_pos;
-        MagicTower::Tower towers;
+        Tower towers;
 /* CREATE TABLE access_layers (
     layer INT (32) PRIMARY KEY AUTOINCREMENT,
 ); */
@@ -86,15 +82,13 @@ CREATE TABLE events (
     y     INT (32)
 ); */
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > layers_jump;
-        std::vector<MagicTower::Stairs> stairs;
-        std::vector<MagicTower::Monster> monsters;
-        std::vector<MagicTower::Item> items;
-        std::vector<MagicTower::TowerGridLocation> path;
-        std::vector<MagicTower::Store> store_list;
+        std::vector<Stairs> stairs;
+        std::vector<Monster> monsters;
+        std::vector<Item> items;
+        std::vector<TowerGridLocation> path;
+        std::vector<Store> store_list;
         enum GAME_STATUS game_status;
         bool draw_path;
-        int mouse_x;
-        int mouse_y;
     };
 
     std::vector<TowerGridLocation> find_path( struct GameEnvironment * game_object , TowerGridLocation goal );

@@ -15,6 +15,21 @@
 
 static int PIXEL_SIZE;
 
+std::shared_ptr<PangoFontDescription> damage_font(
+    pango_font_description_from_string( "Microsoft YaHei UI 12" )
+    , []( PangoFontDescription * desc ){ pango_font_description_free( desc ); }
+);
+std::shared_ptr<PangoFontDescription> info_font(
+    pango_font_description_from_string( "Microsoft YaHei UI 16" )
+    , []( PangoFontDescription * desc ){ pango_font_description_free( desc ); }
+);
+
+int mouse_x = 0;
+int mouse_y = 0;
+
+std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource;
+std::shared_ptr<GdkPixbuf> info_frame;
+
 //signal handlers
 static gboolean draw_loop( gpointer data );
 static gboolean automatic_movement( gpointer data );
@@ -28,7 +43,6 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
 static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data );
 
 static void gdk_pixbuff_free( GdkPixbuf * pixbuf );
-static std::shared_ptr<GdkPixbuf> info_frame_factory( size_t width , size_t height );
 static void draw_path_line( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object , double x , double y , std::uint32_t monster_id );
@@ -38,6 +52,7 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
 static void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 
+static std::shared_ptr<GdkPixbuf> info_frame_factory( size_t width , size_t height );
 static std::vector<std::shared_ptr<const char> > get_music_uris( const char * music_path );
 static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( const char * image_path );
 
@@ -78,7 +93,8 @@ int main( int argc , char * argv[] )
     grid_width = grid_width/32*32;
     PIXEL_SIZE = grid_width;
 
-    std::map<std::string,std::shared_ptr<GdkPixbuf> > image_resource = laod_image_resource( IMAGE_RESOURCES_PATH );
+    image_resource = laod_image_resource( IMAGE_RESOURCES_PATH );
+    info_frame = info_frame_factory( towers.WIDTH/2 , towers.HEIGHT );
 
     GtkBuilder * builder = gtk_builder_new_from_file( UI_DEFINE_RESOURCES_PATH );
     GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( builder , "game_window" ) );
@@ -100,22 +116,10 @@ int main( int argc , char * argv[] )
     gtk_spin_button_set_adjustment( GTK_SPIN_BUTTON( x_spin_button ) , GTK_ADJUSTMENT( x_adjustment ) );
     gtk_spin_button_set_adjustment( GTK_SPIN_BUTTON( y_spin_button ) , GTK_ADJUSTMENT( y_adjustment ) );
 
-    //only call once
-    std::shared_ptr<GdkPixbuf> info_frame = info_frame_factory( towers.WIDTH/2 , towers.HEIGHT );
-
-    std::shared_ptr<PangoFontDescription> damage_font(
-        pango_font_description_from_string( "Microsoft YaHei UI 12" )
-        , []( PangoFontDescription * desc ){ pango_font_description_free( desc ); }
-    );
-    std::shared_ptr<PangoFontDescription> info_font(
-        pango_font_description_from_string( "Microsoft YaHei UI 16" )
-        , []( PangoFontDescription * desc ){ pango_font_description_free( desc ); }
-    );
-
     MagicTower::GameEnvironment game_object =
     {
-        builder , info_frame , damage_font , info_font , {} , {} , image_resource , custom_events , {} , 0 , music , hero , { 0 , 0 , 0 } ,
-        towers , access_layer, layers_jump , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true , 0 , 0
+        builder , {} , {} , custom_events , {} , 0 , music , hero , { 0 , 0 , 0 } , towers , access_layer,
+        layers_jump , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true
     };
 
     //test mode window signal handler
@@ -157,7 +161,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
             g_strdup_printf( IMAGE_RESOURCES_PATH"%s%" PRIu32 ".png" , image_type , image_id ) ,
             []( char * image_file_name ){ g_free( image_file_name ); }
         );
-        const GdkPixbuf * element = ( game_object->image_resource[ image_file_name.get() ] ).get();
+        const GdkPixbuf * element = ( image_resource[ image_file_name.get() ] ).get();
         if ( element == NULL )
         {
             g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , image_file_name.get() );
@@ -255,7 +259,7 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
     MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
     MagicTower::Hero& hero = game_object->hero;
     //Draw background image
-    gdk_cairo_set_source_pixbuf( cairo , game_object->info_frame.get() , 0 , 0 );
+    gdk_cairo_set_source_pixbuf( cairo , info_frame.get() , 0 , 0 );
     cairo_paint( cairo );
 
     //Draw text
@@ -285,7 +289,7 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
         std::shared_ptr<gchar> text(
             arr[i].first , []( gchar * text ){ g_free( text ); }
         );
-        draw_text( widget , cairo , game_object->info_font , 0 , widget_height/arr_size*i , text , arr[i].second );
+        draw_text( widget , cairo , info_font , 0 , widget_height/arr_size*i , text , arr[i].second );
     }
 
     return TRUE;
@@ -643,8 +647,8 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
                 {
                     if ( mouse_event->button == 3 )
                     {
-                        game_object->mouse_x = x + 0.5*PIXEL_SIZE;
-                        game_object->mouse_y = y + 0.5*PIXEL_SIZE;
+                        mouse_x = x + 0.5*PIXEL_SIZE;
+                        mouse_y = y + 0.5*PIXEL_SIZE;
                         game_object->game_status = MagicTower::GAME_STATUS::REVIEW_DETAIL;
                         break;
                     }
@@ -899,9 +903,9 @@ static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
     std::int32_t x , y;
     std::string detail_str;
     const char * str;
-    x = game_object->mouse_x - 0.5*PIXEL_SIZE;
+    x = mouse_x - 0.5*PIXEL_SIZE;
     x = x/PIXEL_SIZE;
-    y = game_object->mouse_y - 0.5*PIXEL_SIZE;
+    y = mouse_y - 0.5*PIXEL_SIZE;
     y = y/PIXEL_SIZE;
     auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
     if ( grid.type == MagicTower::GRID_TYPE::IS_MONSTER )
@@ -922,7 +926,7 @@ static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         return ;
     }
     std::shared_ptr<gchar> text( g_strdup_printf( str ) , []( gchar * text ){ g_free( text ); } );
-    draw_dialog( cairo , game_object , text , game_object->mouse_x - 0.5*PIXEL_SIZE , game_object->mouse_y - 0.5*PIXEL_SIZE );
+    draw_dialog( cairo , game_object , text , mouse_x - 0.5*PIXEL_SIZE , mouse_y - 0.5*PIXEL_SIZE );
 }
 
 static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object ,
@@ -938,7 +942,7 @@ static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
     pango_layout_set_text( layout.get() , damage_text.get() , -1 );
-    pango_layout_set_font_description( layout.get() , game_object->damage_font.get() );
+    pango_layout_set_font_description( layout.get() , damage_font.get() );
 
     cairo_save( cairo );
     cairo_move_to( cairo , x , y );
@@ -983,7 +987,7 @@ static void draw_message( cairo_t * cairo , MagicTower::GameEnvironment * game_o
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
     pango_layout_set_text( layout.get() , game_object->game_message.front().c_str() , -1 );
-    pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
+    pango_layout_set_font_description( layout.get() , info_font.get() );
     int layout_width = 0;
     int layout_height = 0;
     pango_layout_get_pixel_size( layout.get() , &layout_width , &layout_height );
@@ -1033,7 +1037,7 @@ static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_obje
         pango_cairo_create_layout( cairo )
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
-    pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
+    pango_layout_set_font_description( layout.get() , info_font.get() );
 
     cairo_save( cairo );
     for ( std::size_t i = 0 ; i < tips_size ; i++ )
@@ -1106,7 +1110,7 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
         pango_cairo_create_layout( cairo )
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
-    pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
+    pango_layout_set_font_description( layout.get() , info_font.get() );
     for ( size_t i = 0 ; i < item_total ; i++ )
     {
         if ( i == game_object->focus_item_id )
@@ -1144,7 +1148,7 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
     );
     pango_layout_set_text( layout.get() , text.get() , -1 );
-    pango_layout_set_font_description( layout.get() , game_object->info_font.get() );
+    pango_layout_set_font_description( layout.get() , info_font.get() );
     int layout_width , layout_height;
     pango_layout_get_pixel_size( layout.get() , &layout_width , &layout_height );
 
