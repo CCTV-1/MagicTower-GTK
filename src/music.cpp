@@ -29,11 +29,11 @@ Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_
 #endif
 
     if( this->pipeline == nullptr || this->source == nullptr || this->conver == nullptr || this->sink == nullptr )
-        throw gst_init_failure( std::string( "element could not be created\n" ) );
+        throw gst_init_failure( std::string( "element could not be created" ) );
 
     gst_bin_add_many( GST_BIN( this->pipeline ) , this->source , this->conver , this->sink , nullptr );
     if ( gst_element_link( this->conver , this->sink ) != TRUE )
-        throw gst_init_failure( std::string( "elements could not be linked\n" ) );
+        throw gst_init_failure( std::string( "elements could not be linked" ) );
 
     this->grand_gen = g_rand_new();
     this->play_signal_id = 0;
@@ -60,7 +60,7 @@ Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        throw music_play_failure( std::string( "unable to set the pipeline to the playing state\n" ) );
+        throw music_play_failure( std::string( "unable to set the pipeline to the playing state" ) );
     }
 }
 
@@ -78,7 +78,7 @@ gboolean Music::play( std::size_t id )
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return FALSE;
     }
     return TRUE;
@@ -86,39 +86,10 @@ gboolean Music::play( std::size_t id )
 
 gboolean Music::play_next()
 {
-    std::size_t i;
-    switch( this->mode )
-    {
-        case PLAY_MODE::SIGLE_CYCLE:
-            return TRUE;
-        case PLAY_MODE::LIST_CYCLE:
-        {
-            i = this->play_id;
-            if ( i <= this->music_uri_list.size() )
-                i = 0;
-            else
-                i = i + 1;
-            break;
-        }
-        case PLAY_MODE::RANDOM_PLAYING:
-        {
-            i = this->get_random_id();
-            break;
-        }
-        default :
-            return TRUE;
-    }
-    this->play_id = i;
-    gst_element_unlink( this->conver , this->sink );
-    gst_element_set_state( this->pipeline , GST_STATE_NULL );
-    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ i ].get() , nullptr );
-    gst_element_link( this->conver , this->sink );
-    GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
-    if ( ret == GST_STATE_CHANGE_FAILURE )
-    {
-        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
-        return FALSE;
-    }
+    std::shared_ptr<GstBus> bus(
+        gst_element_get_bus( this->pipeline ) , gst_object_unref
+    );
+    gst_bus_post( bus.get() , gst_message_new_eos( GST_OBJECT( bus.get() ) ) );
     return TRUE;
 }
 
@@ -165,12 +136,12 @@ enum PLAY_STATE Music::get_state()
 
     switch ( state )
     {
-        case GST_STATE_NULL:
-            return PLAY_STATE::STOP;
-        case GST_STATE_PLAYING :
+        case GST_STATE_PAUSED:
+            return PLAY_STATE::PAUSE;
+        case GST_STATE_PLAYING:
             return PLAY_STATE::PLAYING;
         default:
-            return PLAY_STATE::PAUSE;
+            return PLAY_STATE::STOP;
     }
     return PLAY_STATE::STOP;
 }
@@ -258,42 +229,36 @@ static bool is_music( std::shared_ptr<const char>& file_uri )
         g_filename_from_uri( file_uri.get() , nullptr , nullptr ),
         []( char * music_file_name ){ g_free( music_file_name ); }
     );
-    GstElement * pipeline = gst_pipeline_new( "format_check" );
+    std::shared_ptr<GstElement> pipeline( gst_pipeline_new( "format_check" ) , gst_object_unref );
     GstElement * source = gst_element_factory_make( "filesrc" , "source" );
     GstElement * typefind = gst_element_factory_make( "typefind" , "typefind" );
     GstElement * sink   = gst_element_factory_make( "fakesink" , "fakesink" );
-    gst_bin_add_many( GST_BIN( pipeline ) , source , typefind , sink , nullptr );
-    gst_element_link_many( source , typefind, sink , nullptr );
+    gst_bin_add_many( GST_BIN( pipeline.get() ) , source , typefind , sink , nullptr );
+    gst_element_link_many( source , typefind , sink , nullptr );
     g_signal_connect( G_OBJECT( typefind ) , "have-type" , G_CALLBACK( have_type_handler ) , &caps );
-    g_object_set(source , "location" , filename.get() , nullptr );
+    g_object_set( source , "location" , filename.get() , nullptr );
     GstState state = GST_STATE_NULL;
-    gst_element_set_state( GST_ELEMENT( pipeline ) , GST_STATE_PAUSED );
-    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( pipeline ) , &state , nullptr , -1 );
+    gst_element_set_state( GST_ELEMENT( pipeline.get() ) , GST_STATE_PAUSED );
+    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( pipeline.get() ) , &state , nullptr , -1 );
     switch( ret )
     {
         case GST_STATE_CHANGE_FAILURE:
         {
-            GstMessage * msg;
-            GstBus * bus;
+            std::shared_ptr<GstBus> bus( gst_pipeline_get_bus( GST_PIPELINE( pipeline.get() ) ) , gst_object_unref );
+            std::shared_ptr<GstMessage> msg( gst_bus_poll( bus.get() , GST_MESSAGE_ERROR , 0 ) , gst_message_unref );
             GError * err = nullptr;
 
-            bus = gst_pipeline_get_bus( GST_PIPELINE( pipeline ) );
-            msg = gst_bus_poll( bus , GST_MESSAGE_ERROR , 0 );
-            gst_object_unref( bus );
-
-            if ( msg )
+            if ( msg != nullptr )
             {
-                gst_message_parse_error( msg , &err , nullptr);
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: %s\n", filename.get() , err->message );
+                gst_message_parse_error( msg.get() , &err , nullptr );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: %s" , filename.get() , err->message );
                 g_clear_error( &err );
-                gst_message_unref( msg );
             }
             else
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: unknown error", filename.get() );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - FAILED: unknown error" , filename.get() );
             }
-            gst_element_set_state( pipeline , GST_STATE_NULL );
-            gst_object_unref( pipeline );
+            gst_element_set_state( pipeline.get() , GST_STATE_NULL );
             return false;
         }
         case GST_STATE_CHANGE_SUCCESS:
@@ -301,11 +266,8 @@ static bool is_music( std::shared_ptr<const char>& file_uri )
             #ifdef DEBUG
             if ( caps )
             {
-                gchar * caps_str;
-
-                caps_str = gst_caps_to_string( caps );
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s" , filename.get() , caps_str );
-                g_free( caps_str );
+                std::shared_ptr<gchar> caps_str( gst_caps_to_string( caps ) , g_free );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s" , filename.get() , caps_str.get() );
                 gst_caps_unref( caps );
             }
             else
@@ -319,8 +281,7 @@ static bool is_music( std::shared_ptr<const char>& file_uri )
             g_assert_not_reached();
     }
     
-    gst_element_set_state( pipeline , GST_STATE_NULL );
-    gst_object_unref( pipeline );
+    gst_element_set_state( pipeline.get() , GST_STATE_NULL );
     return true;
 }
 
@@ -337,55 +298,39 @@ static void have_type_handler( GstElement * typefind , guint probability , const
 static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement * conver )
 {
     ( void )src;
-    GstPad * sink_pad = gst_element_get_static_pad( conver , "sink" );
-    GstPadLinkReturn ret;
-    GstCaps * new_pad_caps = nullptr;
-    GstStructure * new_pad_struct = nullptr;
-    const gchar * new_pad_type = nullptr;
+    std::shared_ptr<GstPad> sink_pad( gst_element_get_static_pad( conver , "sink" ) , gst_object_unref );
 
     /* if our converter is already linked, we have nothing to do here */
-    if ( gst_pad_is_linked( sink_pad ) )
+    if ( gst_pad_is_linked( sink_pad.get() ) )
     {
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "We are already linked. ignoring." );
-        goto handler_exit;
+        return ;
     }
     
     /* Check the new pad's type */
-    new_pad_caps = gst_pad_query_caps( new_pad, nullptr );
-    new_pad_struct = gst_caps_get_structure( new_pad_caps , 0 );
-    new_pad_type = gst_structure_get_name( new_pad_struct );
+    std::shared_ptr<GstCaps> new_pad_caps( gst_pad_query_caps( new_pad , nullptr ) , gst_caps_unref );
+    GstStructure * new_pad_struct = gst_caps_get_structure( new_pad_caps.get() , 0 );
+    const gchar * new_pad_type = gst_structure_get_name( new_pad_struct );
+    
     if ( !g_str_has_prefix( new_pad_type , "audio/x-raw" ) )
     {
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "It has type '%s' which is not raw audio. Ignoring." , new_pad_type );
-        goto handler_exit;
+        return ;
     }
     
     /* Attempt the link */
-    ret = gst_pad_link( new_pad , sink_pad );
+    GstPadLinkReturn ret = gst_pad_link( new_pad , sink_pad.get() );
     if ( GST_PAD_LINK_FAILED( ret ) )
     {
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "Type is '%s' but link failed." , new_pad_type );
     }
     
-    handler_exit:
-    /* Unreference the new pad's caps, if we got them */
-    if ( new_pad_caps != nullptr )
-        gst_caps_unref( new_pad_caps );
-    
-    /* Unreference the this->sink pad */
-    gst_object_unref( sink_pad );
 }
 
 static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline )
 {
     ( void )bus;
     ( void )msg;
-    /*if ( gst_element_seek( pipeline , 1.0 , GST_FORMAT_TIME , GST_SEEK_FLAG_FLUSH ,
-        GST_SEEK_TYPE_SET , 0*GST_SECOND , GST_SEEK_TYPE_NONE ,
-        GST_CLOCK_TIME_NONE ) != TRUE )
-    {
-         g_printerr( "sigle_cycle failure\n" );
-    } */
     gst_element_set_state( pipeline , GST_STATE_NULL );
     GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )

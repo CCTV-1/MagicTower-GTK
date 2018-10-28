@@ -52,7 +52,7 @@ namespace MagicTower
         Music( std::vector<std::shared_ptr<const char> >& _play_list , 
             PLAY_MODE _mode = PLAY_MODE::RANDOM_PLAYING , std::size_t _play_id = 0 );
         ~Music();
-        
+
         gboolean play( std::size_t id );
         gboolean play_next();
         void play_stop();
