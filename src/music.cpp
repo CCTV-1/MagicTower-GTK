@@ -5,34 +5,19 @@ namespace MagicTower
 
 static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
 static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement * conver );
-static bool file_format_check( std::shared_ptr<const char>& file_uri );
+static bool is_music( std::shared_ptr<const char>& file_uri );
 static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline );
 static gboolean list_cycle( GstBus * bus , GstMessage * msg , Music * music );
 static gboolean random_playing( GstBus * bus , GstMessage * msg , Music * music );
 
-Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_MODE _mode , PLAY_STATE _state , std::size_t _play_id )
-    :music_uri_list( _music_uri_list ),mode( _mode ),state( _state ),play_id( _play_id )
+Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_MODE _mode , std::size_t _play_id )
+    :music_uri_list( _music_uri_list ),mode( _mode ),play_id( _play_id )
 {
     gboolean init_status = true;
     if ( gst_is_initialized() == false )
         init_status = gst_init_check( NULL , NULL , NULL );
     if ( init_status == false )
         throw gst_init_failure( std::string( "gstreamer initial failure" ) );
-    if ( this->music_uri_list.empty() )
-        throw music_list_empty( std::string( "music uri list is empty" ) );
-
-    //uri to file format check
-    for ( auto music_uri_iterator = this->music_uri_list.begin() ; music_uri_iterator != this->music_uri_list.end() ; )
-    {
-        bool is_music = file_format_check( *music_uri_iterator );
-        if ( is_music )
-            music_uri_iterator++;
-        else
-        {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , g_filename_from_uri( ( *music_uri_iterator ).get() , NULL , NULL ) );
-            this->music_uri_list.erase( music_uri_iterator );
-        }
-    }
 
     this->pipeline = gst_pipeline_new( "audio-player" );
     this->source = gst_element_factory_make( "uridecodebin" , "source" );
@@ -43,49 +28,35 @@ Music::Music( std::vector<std::shared_ptr<const char> >& _music_uri_list , PLAY_
     this->sink   = gst_element_factory_make( "playsink" , "sink" );
 #endif
 
-    if ( play_id > this->music_uri_list.size() )
-        this->play_id = 0;
     if( this->pipeline == NULL || this->source == NULL || this->conver == NULL || this->sink == NULL )
-        throw gst_element_make_failure( std::string( "element could not be created\n" ) );
+        throw gst_init_failure( std::string( "element could not be created\n" ) );
 
     gst_bin_add_many( GST_BIN( this->pipeline ) , this->source , this->conver , this->sink , NULL );
     if ( gst_element_link( this->conver , this->sink ) != TRUE )
-        throw gst_element_link_failure( std::string( "elements could not be linked\n" ) );
+        throw gst_init_failure( std::string( "elements could not be linked\n" ) );
 
     this->grand_gen = g_rand_new();
+    this->play_signal_id = 0;
+    if ( play_id > this->music_uri_list.size() )
+        this->play_id = 0;
 
-    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ play_id ].get() , NULL );
-    g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
+    this->set_play_mode( this->mode );
 
-    GstBus * bus = gst_element_get_bus( this->pipeline );
-    gst_bus_add_signal_watch( bus );
-    switch ( this->mode )
+    if ( this->music_uri_list.empty() )
+        throw music_list_empty( std::string( "music uri list is empty" ) );
+    //uri to file format check
+    for ( auto uri_iterator = this->music_uri_list.begin() ; uri_iterator != this->music_uri_list.end() ; )
     {
-        case PLAY_MODE::SIGLE_CYCLE:
+        if ( is_music( *uri_iterator ) )
+            uri_iterator++;
+        else
         {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
-            break;
-        }
-        case PLAY_MODE::LIST_CYCLE:
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
-            break;
-        }
-        case RANDOM_PLAYING:
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( random_playing ) , this );
-            break;
-        }
-        default :
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
-            break;
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , g_filename_from_uri( uri_iterator->get() , NULL , NULL ) );
+            this->music_uri_list.erase( uri_iterator );
         }
     }
-    gst_object_unref( bus );
-
-    if ( this->state != PLAY_STATE::PLAYING )
-        return ;
+    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ play_id ].get() , NULL );
+    g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
@@ -99,12 +70,10 @@ Music::~Music()
     gst_object_unref( this->pipeline );
 }
 
-/* gboolean Music::play_start( PLAY_MODE mode )
+gboolean Music::play( std::size_t id )
 {
-    this->mode = mode;
-    gint32 i = this->get_random_id();
-    this->set_play_id( i );
-    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ i ].get() , NULL );
+    this->play_id = id;
+    g_object_set( G_OBJECT( this->source ) , "uri" , this->music_uri_list[ id ].get() , NULL );
     g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -112,36 +81,8 @@ Music::~Music()
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the this->pipeline to the playing state" );
         return FALSE;
     }
-
-    GstBus * bus = gst_element_get_bus( this->pipeline );
-    gst_bus_add_signal_watch( bus );
-    switch ( mode )
-    {
-        case PLAY_MODE::SIGLE_CYCLE:
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
-            break;
-        }
-        case PLAY_MODE::LIST_CYCLE:
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
-            break;
-        }
-        case RANDOM_PLAYING:
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( random_playing ) , this );
-            break;
-        }
-        default :
-        {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
-            break;
-        }
-    }
-
-    gst_object_unref( bus );
     return TRUE;
-} */
+}
 
 gboolean Music::play_next()
 {
@@ -183,37 +124,26 @@ gboolean Music::play_next()
 
 void Music::play_stop()
 {
-    if ( this->state == PLAY_STATE::STOP )
-        return ;
     gst_element_set_state( this->pipeline , GST_STATE_READY );
-    this->state = PLAY_STATE::STOP;
 }
 
 void Music::play_pause()
 {
-    if ( this->state == PLAY_STATE::PAUSE )
-        return ;
     gst_element_set_state( this->pipeline , GST_STATE_PAUSED );
-    this->state = PLAY_STATE::PAUSE;
 }
 
 void Music::play_resume()
 {
-    if ( this->state != PLAY_STATE::PAUSE )
-        return ;
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
     {
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return ;
     }
-    this->state = PLAY_STATE::PLAYING;
 }
 
 void Music::play_restart()
 {
-    if ( this->state != PLAY_STATE::STOP )
-        return ;
     gst_element_set_state( this->pipeline , GST_STATE_READY );
     GstStateChangeReturn ret = gst_element_set_state( this->pipeline , GST_STATE_PLAYING );
     if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -221,12 +151,28 @@ void Music::play_restart()
         g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
         return ;
     }
-    this->state = PLAY_STATE::PLAYING;
 }
 
 enum PLAY_STATE Music::get_state()
 {
-    return this->state;
+    GstState state = GST_STATE_NULL;
+    GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( this->pipeline ) , &state , NULL , -1 );
+    if ( ret == GST_STATE_CHANGE_FAILURE )
+    {
+        g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable get the playing state" );
+        return PLAY_STATE::STOP;
+    }
+
+    switch ( state )
+    {
+        case GST_STATE_NULL:
+            return PLAY_STATE::STOP;
+        case GST_STATE_PLAYING :
+            return PLAY_STATE::PLAYING;
+        default:
+            return PLAY_STATE::PAUSE;
+    }
+    return PLAY_STATE::STOP;
 }
 
 std::size_t Music::get_play_id()
@@ -272,38 +218,40 @@ void Music::set_play_id( std::size_t play_id )
 
 void Music::set_play_mode( PLAY_MODE mode )
 {
-    if ( mode == this->mode )
-        return ;
     this->mode = mode;
-    GstBus * bus = gst_element_get_bus( this->pipeline );
-    g_signal_handler_disconnect( G_OBJECT( bus ) , this->play_signal_id );
+    std::shared_ptr<GstBus> bus(
+        gst_element_get_bus( this->pipeline ) , gst_object_unref
+    );
+    if ( this->play_signal_id == 0 )
+        gst_bus_add_signal_watch( bus.get() );
+    else
+        g_signal_handler_disconnect( G_OBJECT( bus.get() ) , this->play_signal_id );
     switch ( mode )
     {
         case PLAY_MODE::SIGLE_CYCLE:
         {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
             break;
         }
         case PLAY_MODE::LIST_CYCLE:
         {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( list_cycle ) , this->pipeline );
             break;
         }
         case RANDOM_PLAYING:
         {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( random_playing ) , this );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( random_playing ) , this );
             break;
         }
         default :
         {
-            this->play_signal_id = g_signal_connect( G_OBJECT( bus ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
+            this->play_signal_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->pipeline );
             break;
         }
     }
-    gst_object_unref( bus );
 }
 
-static bool file_format_check( std::shared_ptr<const char>& file_uri )
+static bool is_music( std::shared_ptr<const char>& file_uri )
 {
     GstCaps * caps = NULL;
     std::shared_ptr<gchar> filename(

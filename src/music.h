@@ -20,19 +20,6 @@ namespace MagicTower
     public:
         explicit gst_init_failure( const std::string &s ) : std::runtime_error(s) {}
     };
-
-    class gst_element_make_failure : public std::runtime_error
-    {
-    public:
-        explicit gst_element_make_failure( const std::string &s ) : std::runtime_error(s) {}
-    };
-
-    class gst_element_link_failure : public std::runtime_error
-    {
-    public:
-        explicit gst_element_link_failure( const std::string &s ) : std::runtime_error(s) {}
-    };
-
     class music_list_empty : public std::runtime_error
     {
     public:
@@ -63,9 +50,10 @@ namespace MagicTower
     {
     public:
         Music( std::vector<std::shared_ptr<const char> >& _play_list , 
-            PLAY_MODE _mode = PLAY_MODE::RANDOM_PLAYING , PLAY_STATE _state = PLAY_STATE::PLAYING , std::size_t _play_id = 0 );
+            PLAY_MODE _mode = PLAY_MODE::RANDOM_PLAYING , std::size_t _play_id = 0 );
         ~Music();
-        /* gboolean play_start( PLAY_MODE mode = PLAY_MODE::RANDOM_PLAYING ); */
+        
+        gboolean play( std::size_t id );
         gboolean play_next();
         void play_stop();
         void play_pause();
@@ -90,7 +78,6 @@ namespace MagicTower
     private:
         std::vector<std::shared_ptr<const char> >& music_uri_list;
         PLAY_MODE mode;
-        PLAY_STATE state;
         std::size_t play_id;
         GstElement * pipeline;
         GstElement * source;
