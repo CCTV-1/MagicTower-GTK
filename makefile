@@ -12,7 +12,7 @@ MagicTower : ./src/game.cpp ./build/database.o ./build/music.o ./build/game_even
 ./build/music.o : ./src/music.cpp ./src/music.h
 	g++ ./src/music.cpp $(GCC_CPP_OPTION) $(GST_FLAGS) -c -o ./build/music.o
 ./build/game_event.o : ./src/game_event.cpp ./src/game_event.h
-	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GTK_FLAGS) $(GST_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_event.o
+	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GTK_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_event.o
 ProfileTest : ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp
 	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp $(GCC_CPP_PROFILE_OPTION) $(GTK_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) -o ./build/bin/MagicTower
 	cd build/bin/ &&\
