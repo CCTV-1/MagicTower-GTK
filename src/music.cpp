@@ -11,14 +11,14 @@ namespace MagicTower
             mode( PLAY_MODE::RANDOM_PLAYING ),
             play_id( 0 ),
             handler_id( 0 ),
-            music_uri_list( {} )
+            music_uri_list( {} ),
+            grand_gen( g_rand_new() , g_rand_free )
         {
             gboolean init_status = true;
             if ( gst_is_initialized() == false )
                 init_status = gst_init_check( nullptr , nullptr , nullptr );
             if ( init_status == false )
                 throw music_init_failure( std::string( "gstreamer initial failure" ) );
-            this->grand_gen = g_rand_new();
             this->pipeline = gst_pipeline_new( "audio-player" );
             this->source = gst_element_factory_make( "uridecodebin" , "source" );
             this->conver = gst_element_factory_make( "audioconvert" , "conver" );
@@ -42,7 +42,7 @@ namespace MagicTower
         }
         gint32 get_random_id()
         {
-            return g_rand_int_range( this->grand_gen , 0 , this->music_uri_list.size() );
+            return g_rand_int_range( this->grand_gen.get() , 0 , this->music_uri_list.size() );
         }
 
         PLAY_MODE mode;
@@ -53,7 +53,7 @@ namespace MagicTower
         GstElement * source;
         GstElement * conver;
         GstElement * sink;
-        GRand * grand_gen;
+        std::shared_ptr<GRand> grand_gen;
     };
 
     static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
