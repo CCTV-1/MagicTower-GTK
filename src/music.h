@@ -60,7 +60,7 @@ namespace MagicTower
         Music( const Music& rhs )=delete;
         Music( Music&& rhs )=delete;
         Music& operator=( const Music& rhs )=delete;
-        Music& operator=( const Music&& rhs )=delete;
+        Music& operator=( Music&& rhs )=delete;
     private:
         MusicImp * imp_ptr;
     };
