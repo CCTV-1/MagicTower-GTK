@@ -88,7 +88,7 @@ namespace MagicTower
             {
                 for ( std::uint32_t x = 0 ; x < tower.WIDTH ; x++ )
                 {
-                    auto grid = get_tower_grid( tower, z , x , y );
+                    auto grid = get_tower_grid( tower , z , x , y );
                     map_str += " { " + std::to_string( grid.type ) + " , " + std::to_string( grid.id ) + " } ,";
                 }
                 map_str += "\n";
