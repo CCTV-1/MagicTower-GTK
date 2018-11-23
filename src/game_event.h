@@ -2,154 +2,69 @@
 #ifndef GAME_EVENT_H
 #define GAME_EVENT_H
 
-#include <cstdint>
-
-#include <deque>
-#include <functional>
-#include <map>
-#include <memory>
-#include <vector>
-#include <string>
-//#include <tuple>
-
-//ignore in gcc-8+ gtk library warning:unnecessary parentheses in declaration of '*'
-#pragma GCC diagnostic ignored "-Wparentheses"
-#include <gtk/gtk.h>
-#pragma GCC diagnostic warning "-Wparentheses"
-#include <jansson.h>
-
-#include "database.h"
-#include "music.h"
-#include "hero.h"
-#include "item.h"
-#include "monster.h"
-#include "stairs.h"
-#include "store.h"
-#include "tower.h"
-
-#define DATABSE_RESOURCES_PATH "../resources/database/magictower.db"
-#define UI_DEFINE_RESOURCES_PATH "../resources/UI/magictower.ui"
-#define IMAGE_RESOURCES_PATH "../resources/images/"
-#define MUSIC_RESOURCES_PATH "../resources/music/"
+#include "env_var.h"
 
 namespace MagicTower
-{   
-    enum GAME_STATUS:std::uint32_t
-    {
-        NORMAL = 0,
-        FIND_PATH,
-        DIALOG,
-        MESSAGE,
-        REVIEW_DETAIL,
-        GAME_MENU,
-        START_MENU,
-        STORE_MENU,
-        JUMP_MENU,
-        GAME_LOSE,
-        GAME_WIN,
-        UNKNOWN,
-    };
+{
+    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal );
 
-    typedef std::vector< std::pair<std::function< std::string(void) > , std::function< void(void) > > > Menu_t;
+    bool open_door( GameEnvironment * game_object , event_position_t position );
 
-    struct GameEnvironment
-    {
-        GtkBuilder * builder;
-        std::deque<std::string> game_message;
-        std::deque< std::shared_ptr<gchar> > tips_content;
-/* 
-CREATE TABLE events (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_position TEXT,
-    event_content  TEXT
-);
-*/
-        std::map<event_position_t , std::string> custom_events;
-        Menu_t menu_items;
-        std::size_t focus_item_id;
-        Music& music;
-        Hero hero;
-        //layer , x , y
-        std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> temp_pos;
-        Tower towers;
-/* CREATE TABLE access_layers (
-    layer INT (32) PRIMARY KEY AUTOINCREMENT,
-); */
-        std::map<std::uint32_t , bool> access_layer;
-/* CREATE TABLE jump_point (
-    layer INT (32) PRIMARY KEY AUTOINCREMENT,
-    x     INT (32),
-    y     INT (32)
-); */
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> > layers_jump;
-        std::vector<Stairs> stairs;
-        std::vector<Monster> monsters;
-        std::vector<Item> items;
-        std::vector<TowerGridLocation> path;
-        std::vector<Store> store_list;
-        enum GAME_STATUS game_status;
-        bool draw_path;
-    };
+    bool check_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id );
 
-    std::vector<TowerGridLocation> find_path( struct GameEnvironment * game_object , TowerGridLocation goal );
+    void set_tips( GameEnvironment * game_object , std::shared_ptr<gchar> tips_content );
 
-    bool open_door( struct GameEnvironment * game_object , event_position_t position );
+    void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id = GRID_TYPE::IS_FLOOR );
 
-    bool check_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id );
+    bool move_hero( GameEnvironment * game_object , event_position_t position );
 
-    void set_tips( struct GameEnvironment * game_object , std::shared_ptr<gchar> tips_content );
-
-    void set_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id = GRID_TYPE::IS_FLOOR );
-
-    bool move_hero( struct GameEnvironment * game_object , event_position_t position );
-
-    std::int64_t get_combat_damage( struct GameEnvironment * game_object , std::uint32_t monster_id );
+    std::int64_t get_combat_damage( GameEnvironment * game_object , std::uint32_t monster_id );
 
     //id start of 1
-    bool battle( struct GameEnvironment * game_object , std::uint32_t monster_id );
+    bool battle( GameEnvironment * game_object , std::uint32_t monster_id );
 
-    bool get_item( struct GameEnvironment * game_object , std::uint32_t item_id );
+    bool get_item( GameEnvironment * game_object , std::uint32_t item_id );
 
-    bool change_floor( struct GameEnvironment * game_object , std::uint32_t stair_id );
+    bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
 
-    bool trigger_custom_event( struct GameEnvironment * game_object , std::string& event_string_ptr );
+    bool trigger_custom_event( GameEnvironment * game_object , std::string& event_string_ptr );
 
     //if can't move return false.
-    bool trigger_collision_event( struct GameEnvironment * game_object );
+    bool trigger_collision_event( GameEnvironment * game_object );
 
-    bool shopping( struct GameEnvironment * game_object , const char * commodity_json );
+    bool shopping( GameEnvironment * game_object , const char * commodity_json );
 
-    void background_music_switch( struct GameEnvironment * game_object );
+    void background_music_switch( GameEnvironment * game_object );
 
-    void test_window_switch( struct GameEnvironment * game_object );
+    void test_window_switch( GameEnvironment * game_object );
 
-    void path_line_switch( struct GameEnvironment * game_object );
+    void path_line_switch( GameEnvironment * game_object );
 
-    void open_start_menu(  struct GameEnvironment * game_object );
+    void open_start_menu(  GameEnvironment * game_object );
 
-    void open_game_menu_v2(  struct GameEnvironment * game_object );
+    void open_game_menu_v2(  GameEnvironment * game_object );
 
-    void close_game_menu_v2( struct GameEnvironment * game_object );
+    void close_game_menu_v2( GameEnvironment * game_object );
 
-    void open_store_menu_v2( struct GameEnvironment * game_object );
+    void open_store_menu_v2( GameEnvironment * game_object );
     
-    void close_store_menu_v2( struct GameEnvironment * game_object );
+    void close_store_menu_v2( GameEnvironment * game_object );
 
-    void back_jump( struct GameEnvironment * game_object );
+    void back_jump( GameEnvironment * game_object );
     
-    void open_layer_jump( struct GameEnvironment * game_object );
+    void open_layer_jump( GameEnvironment * game_object );
 
-    void close_layer_jump( struct GameEnvironment * game_object );
+    void close_layer_jump( GameEnvironment * game_object );
 
-    void save_game_status( struct GameEnvironment * game_object , size_t save_id );
+    void save_game_status( GameEnvironment * game_object , size_t save_id );
 
-    void load_game_status( struct GameEnvironment * game_object , size_t save_id );
+    void load_game_status( GameEnvironment * game_object , size_t save_id );
 
-    void game_win( struct GameEnvironment * game_object );
+    void game_win( GameEnvironment * game_object );
 
-    void game_lose( struct GameEnvironment * game_object );
+    void game_lose( GameEnvironment * game_object );
 
-    void game_exit( struct GameEnvironment * game_object );
+    void game_exit( GameEnvironment * game_object );
 }
 
 #endif

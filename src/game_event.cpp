@@ -20,16 +20,19 @@
 
 namespace MagicTower
 {
+    //layer , x , y
+    std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> temp_pos;
+
     static std::int64_t get_combat_damage_of_last  ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_normal( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );
     static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
-    static bool try_jump( struct GameEnvironment * game_object );
-    static void set_jump_menu( struct GameEnvironment * game_object );
-    static void set_start_menu( struct GameEnvironment * game_object );
-    static void set_game_menu( struct GameEnvironment * game_object );
-    static void set_store_menu( struct GameEnvironment * game_object );
-    static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content );
+    static bool try_jump( GameEnvironment * game_object );
+    static void set_jump_menu( GameEnvironment * game_object );
+    static void set_start_menu( GameEnvironment * game_object );
+    static void set_game_menu( GameEnvironment * game_object );
+    static void set_store_menu( GameEnvironment * game_object );
+    static void set_sub_store_menu( GameEnvironment * game_object , const char * item_content );
     static std::string deserialize_commodity_content( const char * content );
     static gboolean remove_tips( gpointer data );
 
@@ -194,7 +197,7 @@ namespace MagicTower
         }
     }
 
-    std::vector<TowerGridLocation> find_path( struct GameEnvironment * game_object , TowerGridLocation goal )
+    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal )
     {
         Hero& hero = game_object->hero;
         Tower& tower = game_object->towers;
@@ -241,7 +244,7 @@ namespace MagicTower
         return path;
     }
 
-    bool open_door( struct GameEnvironment * game_object , event_position_t position )
+    bool open_door( GameEnvironment * game_object , event_position_t position )
     {
         Hero& hero = game_object->hero;
         Tower& tower = game_object->towers;
@@ -287,13 +290,13 @@ namespace MagicTower
         return false;
     }
 
-    bool check_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
+    bool check_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
     {
         auto grid = get_tower_grid( game_object->towers , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
         return ( grid.id == type_id );
     }
 
-    void save_game_status( struct GameEnvironment * game_object , size_t save_id )
+    void save_game_status( GameEnvironment * game_object , size_t save_id )
     {
         if ( g_file_test( "../save" , G_FILE_TEST_EXISTS ) == FALSE )
             g_mkdir_with_parents( "../save" , S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
@@ -330,7 +333,7 @@ namespace MagicTower
         set_tips( game_object , tips );
     }
 
-    void load_game_status( struct GameEnvironment * game_object , size_t save_id )
+    void load_game_status( GameEnvironment * game_object , size_t save_id )
     {
         std::shared_ptr<gchar> db_name(
             g_strdup_printf( "../save/%zd.db" , save_id ) ,
@@ -371,19 +374,19 @@ namespace MagicTower
         set_tips( game_object , tips );
     }
 
-    void set_tips( struct GameEnvironment * game_object , std::shared_ptr<gchar> tips_content )
+    void set_tips( GameEnvironment * game_object , std::shared_ptr<gchar> tips_content )
     {
         game_object->tips_content.push_back( tips_content );
         g_timeout_add( 1000 , remove_tips , game_object );
     }
 
-    void set_grid_type( struct GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
+    void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
     {
         TowerGrid target_grid = { type_id , static_cast<std::uint32_t>( 1 ) };
         set_tower_grid( game_object->towers , target_grid , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
     }
 
-    bool move_hero( struct GameEnvironment * game_object , event_position_t position )
+    bool move_hero( GameEnvironment * game_object , event_position_t position )
     {
         Hero& hero = game_object->hero;
         hero.x = std::get<0>( position );
@@ -392,7 +395,7 @@ namespace MagicTower
         return true;
     }
 
-    std::int64_t get_combat_damage( struct GameEnvironment * game_object , std::uint32_t monster_id )
+    std::int64_t get_combat_damage( GameEnvironment * game_object , std::uint32_t monster_id )
     {
         if ( monster_id - 1 >= game_object->monsters.size() )
         {
@@ -435,7 +438,7 @@ namespace MagicTower
         return -1;
     }
 
-    bool battle( struct GameEnvironment * game_object , std::uint32_t monster_id )
+    bool battle( GameEnvironment * game_object , std::uint32_t monster_id )
     {
         if ( monster_id - 1 >= game_object->monsters.size() )
             return false;
@@ -455,7 +458,7 @@ namespace MagicTower
         return true;
     }
 
-    bool get_item( struct GameEnvironment * game_object , std::uint32_t commodity_id )
+    bool get_item( GameEnvironment * game_object , std::uint32_t commodity_id )
     {
         Hero& hero = game_object->hero;
         if ( commodity_id - 1 >= game_object->items.size() )
@@ -588,7 +591,7 @@ namespace MagicTower
         return true;
     }
 
-    bool change_floor( struct GameEnvironment * game_object , std::uint32_t stair_id )
+    bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id )
     {
         if ( stair_id - 1 >= game_object->stairs.size() )
             return false;
@@ -610,7 +613,7 @@ namespace MagicTower
         return true;
     }
 
-    bool trigger_collision_event( struct GameEnvironment * game_object )
+    bool trigger_collision_event( GameEnvironment * game_object )
     {
         bool state = false;
         Hero& hero = game_object->hero;
@@ -681,7 +684,7 @@ namespace MagicTower
         return state;
     }
 
-    bool trigger_custom_event( struct GameEnvironment * game_object , std::string& event_json )
+    bool trigger_custom_event( GameEnvironment * game_object , std::string& event_json )
     {
         json_error_t json_error;
         json_t * root = json_loads( event_json.c_str() , 0 , &json_error );
@@ -1044,7 +1047,7 @@ namespace MagicTower
         return true;
     }
 
-    bool shopping( struct GameEnvironment * game_object , const char * commodity_json )
+    bool shopping( GameEnvironment * game_object , const char * commodity_json )
     {
         json_error_t json_error;
         json_t * root = json_loads( commodity_json , 0 , &json_error );
@@ -1241,7 +1244,7 @@ namespace MagicTower
         return true;
     }
 
-    void background_music_switch( struct GameEnvironment * game_object )
+    void background_music_switch( GameEnvironment * game_object )
     {
         static bool play_music = true;
         play_music = !play_music;
@@ -1252,7 +1255,7 @@ namespace MagicTower
             game_object->music.play_pause();
     }
 
-    void test_window_switch( struct GameEnvironment * game_object )
+    void test_window_switch( GameEnvironment * game_object )
     {
         static bool display_window = false;
         GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
@@ -1264,7 +1267,6 @@ namespace MagicTower
             if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
                 return ;
 
-            //sync_game_data( widget , data );
             GtkWidget * layer_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "layer_spin_button" ) );
             GtkWidget * x_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "x_spin_button" ) );
             GtkWidget * y_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "y_spin_button" ) );
@@ -1298,12 +1300,12 @@ namespace MagicTower
             gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
     }
 
-    void path_line_switch( struct GameEnvironment * game_object )
+    void path_line_switch( GameEnvironment * game_object )
     {
         game_object->draw_path = !game_object->draw_path;
     }
 
-    void open_layer_jump( struct GameEnvironment * game_object )
+    void open_layer_jump( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1319,18 +1321,18 @@ namespace MagicTower
 
         game_object->game_status = GAME_STATUS::JUMP_MENU;
         game_object->focus_item_id = 0;
-        game_object->temp_pos= { game_object->hero.layers , game_object->hero.x , game_object->hero.y };
+        temp_pos= { game_object->hero.layers , game_object->hero.x , game_object->hero.y };
         set_jump_menu( game_object );
     }
 
-    void close_layer_jump( struct GameEnvironment * game_object )
+    void close_layer_jump( GameEnvironment * game_object )
     {
         if ( game_object->game_status != GAME_STATUS::JUMP_MENU )
             return ;
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    void open_store_menu_v2( struct GameEnvironment * game_object )
+    void open_store_menu_v2( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1349,14 +1351,14 @@ namespace MagicTower
         set_store_menu( game_object );
     }
 
-    void close_store_menu_v2( struct GameEnvironment * game_object )
+    void close_store_menu_v2( GameEnvironment * game_object )
     {
         if ( game_object->game_status != GAME_STATUS::STORE_MENU )
             return ;
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    void open_start_menu(  struct GameEnvironment * game_object )
+    void open_start_menu(  GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1372,7 +1374,7 @@ namespace MagicTower
         set_start_menu( game_object );
     }
 
-    void open_game_menu_v2(  struct GameEnvironment * game_object )
+    void open_game_menu_v2(  GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1391,14 +1393,14 @@ namespace MagicTower
         set_game_menu( game_object );
     }
 
-    void close_game_menu_v2( struct GameEnvironment * game_object )
+    void close_game_menu_v2( GameEnvironment * game_object )
     {
         if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_MENU )
             return ;
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    void game_win( struct GameEnvironment * game_object )
+    void game_win( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1422,7 +1424,7 @@ namespace MagicTower
         game_object->game_status = GAME_STATUS::GAME_WIN;
     }
 
-    void game_lose( struct GameEnvironment * game_object )
+    void game_lose( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1446,7 +1448,7 @@ namespace MagicTower
         game_object->game_status = GAME_STATUS::GAME_LOSE;
     }
 
-    void game_exit( struct GameEnvironment * game_object )
+    void game_exit( GameEnvironment * game_object )
     {
         GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
         gtk_widget_destroy( game_window );
@@ -1542,14 +1544,14 @@ namespace MagicTower
         return -1;
     }
 
-    void back_jump( struct GameEnvironment * game_object )
+    void back_jump( GameEnvironment * game_object )
     {
-        game_object->hero.layers = std::get<0>( game_object->temp_pos );
-        game_object->hero.x = std::get<1>( game_object->temp_pos );
-        game_object->hero.y = std::get<2>( game_object->temp_pos );
+        game_object->hero.layers = std::get<0>( temp_pos );
+        game_object->hero.x = std::get<1>( temp_pos );
+        game_object->hero.y = std::get<2>( temp_pos );
     }
 
-    static bool try_jump( struct GameEnvironment * game_object )
+    static bool try_jump( GameEnvironment * game_object )
     {
         try
         {
@@ -1570,7 +1572,7 @@ namespace MagicTower
         }
     }
 
-    static void set_jump_menu( struct GameEnvironment * game_object )
+    static void set_jump_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
         game_object->menu_items.push_back({
@@ -1628,7 +1630,7 @@ namespace MagicTower
             [ game_object ](){
                 try
                 {
-                    game_object->layers_jump.at( std::get<0>( game_object->temp_pos ) );
+                    game_object->layers_jump.at( std::get<0>( temp_pos ) );
                 }
                 catch(const std::out_of_range& e)
                 {
@@ -1665,7 +1667,7 @@ namespace MagicTower
         });
     }
 
-    static void set_start_menu( struct GameEnvironment * game_object )
+    static void set_start_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
         game_object->menu_items.push_back({
@@ -1699,7 +1701,7 @@ namespace MagicTower
         });
     }
 
-    static void set_game_menu( struct GameEnvironment * game_object )
+    static void set_game_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
 
@@ -1745,7 +1747,7 @@ namespace MagicTower
         });
     }
 
-    static void set_store_menu( struct GameEnvironment * game_object )
+    static void set_store_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
         for ( auto store : game_object->store_list )
@@ -1766,7 +1768,7 @@ namespace MagicTower
         });
     }
 
-    static void set_sub_store_menu( struct GameEnvironment * game_object , const char * item_content )
+    static void set_sub_store_menu( GameEnvironment * game_object , const char * item_content )
     {
         game_object->focus_item_id = 0;
 
