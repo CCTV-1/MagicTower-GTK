@@ -53,32 +53,21 @@ static void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_obje
 static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 
 static std::shared_ptr<GdkPixbuf> info_frame_factory( size_t width , size_t height );
-static std::vector<std::shared_ptr<const char> > get_music_uris( const char * music_path );
-static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( const char * image_path );
+static std::vector<std::shared_ptr<const char> > load_music( const char * music_path );
+static std::map<std::string,std::shared_ptr<GdkPixbuf> > load_image_resource( const char * image_path );
 
 int main( int argc , char * argv[] )
 {
+    gtk_init( &argc , &argv );
     std::shared_ptr<char> self_dir_path(
         g_path_get_dirname( argv[0] ),
         []( char * path ){ g_free( path ); }
     );
     g_chdir( self_dir_path.get() );
 
-    std::vector<std::shared_ptr<const char> > music_list = get_music_uris( MUSIC_RESOURCES_PATH );
-    MagicTower::Music music( music_list );
+    std::vector<std::shared_ptr<const char> > music_list = load_music( MUSIC_RESOURCES_PATH );
 
-    MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
-    MagicTower::Tower towers = db.get_tower_info( 0 );
-    MagicTower::Hero hero = db.get_hero_info( 0 );
-    auto stairs = db.get_stairs_list();
-    auto store_list = db.get_store_list();
-    auto monsters = db.get_monster_list();
-    auto items = db.get_item_list();
-    auto custom_events = db.get_custom_events();
-    auto access_layer = db.get_access_layers();
-    auto layers_jump = db.get_jump_map();
-
-    gtk_init( &argc , &argv );
+    MagicTower::GameEnvironment game_object( music_list );
 
     GdkDisplay * default_display = gdk_display_get_default();
     GdkMonitor * monitor = gdk_display_get_monitor( default_display , 0 );
@@ -86,47 +75,39 @@ int main( int argc , char * argv[] )
     gdk_monitor_get_workarea( monitor , &workarea );
     int screen_width = workarea.width;
     int screen_height = workarea.height;
-    int grid_width = screen_width/towers.LENGTH/3*2;
-    int grid_height = screen_height/towers.WIDTH;
+    int grid_width = screen_width/game_object.towers.LENGTH/3*2;
+    int grid_height = screen_height/game_object.towers.WIDTH;
     if ( grid_width > grid_height )
         grid_width = grid_height;
-    grid_width = grid_width/32*32;
-    PIXEL_SIZE = grid_width;
+    PIXEL_SIZE = grid_width/32*32;
 
-    image_resource = laod_image_resource( IMAGE_RESOURCES_PATH );
-    info_frame = info_frame_factory( towers.WIDTH/2 , towers.HEIGHT );
+    image_resource = load_image_resource( IMAGE_RESOURCES_PATH );
+    info_frame = info_frame_factory( game_object.towers.WIDTH/2 , game_object.towers.HEIGHT );
 
-    GtkBuilder * builder = gtk_builder_new_from_file( UI_DEFINE_RESOURCES_PATH );
-    GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( builder , "game_window" ) );
-    GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( builder , "game_grid" ) );
-    GtkWidget * info_area   = GTK_WIDGET( gtk_builder_get_object( builder , "info_area"  ) );
-    GtkWidget * tower_area  = GTK_WIDGET( gtk_builder_get_object( builder , "tower_area" ) );
-
-    GtkWidget * apply_modify_button      = GTK_WIDGET( gtk_builder_get_object( builder , "apply_modify_button" ) );
-    GtkWidget * synchronize_data_button  = GTK_WIDGET( gtk_builder_get_object( builder , "synchronize_data_button" ) );
-    GtkWidget * layer_spin_button        = GTK_WIDGET( gtk_builder_get_object( builder , "layer_spin_button" ) );
-    GtkWidget * x_spin_button            = GTK_WIDGET( gtk_builder_get_object( builder , "x_spin_button" ) );
-    GtkWidget * y_spin_button            = GTK_WIDGET( gtk_builder_get_object( builder , "y_spin_button" ) );
-
-    GtkAdjustment * layer_adjustment = gtk_adjustment_new( 1 , 1 , towers.HEIGHT , 1 , 10 , 0 );
-    GtkAdjustment * x_adjustment     = gtk_adjustment_new( 0 , 0 , towers.LENGTH - 1 , 1 , 10 , 0 );
-    GtkAdjustment * y_adjustment     = gtk_adjustment_new( 0 , 0 , towers.WIDTH - 1 , 1 , 10 , 0 );
-
+    GtkWidget * layer_spin_button    = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "layer_spin_button" ) );
+    GtkWidget * x_spin_button        = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "x_spin_button" ) );
+    GtkWidget * y_spin_button        = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "y_spin_button" ) );
+    GtkAdjustment * layer_adjustment = gtk_adjustment_new( 1 , 1 , game_object.towers.HEIGHT , 1 , 10 , 0 );
+    GtkAdjustment * x_adjustment     = gtk_adjustment_new( 0 , 0 , game_object.towers.LENGTH - 1 , 1 , 10 , 0 );
+    GtkAdjustment * y_adjustment     = gtk_adjustment_new( 0 , 0 , game_object.towers.WIDTH - 1 , 1 , 10 , 0 );
     gtk_spin_button_set_adjustment( GTK_SPIN_BUTTON( layer_spin_button ) , GTK_ADJUSTMENT( layer_adjustment ) );
     gtk_spin_button_set_adjustment( GTK_SPIN_BUTTON( x_spin_button ) , GTK_ADJUSTMENT( x_adjustment ) );
     gtk_spin_button_set_adjustment( GTK_SPIN_BUTTON( y_spin_button ) , GTK_ADJUSTMENT( y_adjustment ) );
 
-    MagicTower::GameEnvironment game_object =
-    {
-        builder , {} , {} , custom_events , {} , 0 , music , hero , { 0 , 0 , 0 } , towers , access_layer,
-        layers_jump , stairs , monsters , items , {} , store_list , MagicTower::GAME_STATUS::NORMAL , true
-    };
-
     //test mode window signal handler
+    GtkWidget * apply_modify_button     = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "apply_modify_button" ) );
+    GtkWidget * synchronize_data_button = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "synchronize_data_button" ) );
     g_signal_connect( G_OBJECT( apply_modify_button ) , "clicked" , G_CALLBACK( apply_game_data ) , &game_object );
     g_signal_connect( G_OBJECT( synchronize_data_button ) , "clicked" , G_CALLBACK( sync_game_data ) , &game_object );
 
     //game signal handler
+    GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "game_window" ) );
+    //GtkWidget * game_grid   = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "game_grid" ) );
+    GtkWidget * info_area   = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "info_area"  ) );
+    GtkWidget * tower_area  = GTK_WIDGET( gtk_builder_get_object( game_object.builder , "tower_area" ) );
+    int tower_width = ( game_object.towers.LENGTH )*PIXEL_SIZE;
+    int info_width = ( game_object.towers.LENGTH/2 )*PIXEL_SIZE;
+    int window_height = ( game_object.towers.LENGTH )*PIXEL_SIZE;
     g_signal_connect( G_OBJECT( info_area ) , "draw" , G_CALLBACK( draw_info ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "draw" , G_CALLBACK( draw_tower ) , &game_object );
     g_signal_connect( G_OBJECT( tower_area ) , "button-press-event" , G_CALLBACK( button_press_handler ) , &game_object );
@@ -136,11 +117,10 @@ int main( int argc , char * argv[] )
     gtk_widget_set_events( tower_area , gtk_widget_get_events( tower_area )
         | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_SCROLL_MASK
         | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK );
-
-    gtk_widget_set_size_request( GTK_WIDGET( tower_area ) , ( towers.LENGTH )*PIXEL_SIZE , ( towers.WIDTH )*PIXEL_SIZE );
-    gtk_widget_set_size_request( GTK_WIDGET( info_area ) , ( towers.LENGTH/2 )*PIXEL_SIZE , ( towers.WIDTH )*PIXEL_SIZE );
-    gtk_widget_set_size_request( GTK_WIDGET( game_grid ) , ( towers.LENGTH + towers.LENGTH/2 )*PIXEL_SIZE , ( towers.WIDTH )*PIXEL_SIZE );
-    gtk_widget_set_size_request( GTK_WIDGET( game_window ) , ( towers.LENGTH + towers.LENGTH/2 )*PIXEL_SIZE , ( towers.WIDTH )*PIXEL_SIZE );
+    gtk_widget_set_size_request( GTK_WIDGET( tower_area ) , tower_width , window_height );
+    gtk_widget_set_size_request( GTK_WIDGET( info_area ) ,info_width  , window_height );
+    //gtk_widget_set_size_request( GTK_WIDGET( game_grid ) , tower_width + info_width , window_height );
+    gtk_widget_set_size_request( GTK_WIDGET( game_window ) , tower_width + info_width , window_height );
     gtk_widget_show_all( game_window );
 
     g_timeout_add( 50 , draw_loop , &game_object );
@@ -176,7 +156,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
     {
         for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
         {
-            auto grid = get_tower_grid( game_object->towers, game_object->hero.layers , x , y );
+            auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
             switch( grid.type )
             {
                 case MagicTower::GRID_TYPE::IS_FLOOR:
@@ -228,7 +208,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
         }
     }
 
-    draw_path_line(  cairo , game_object );
+    draw_path_line( cairo , game_object );
 
     //draw hero
     draw_grid( ( game_object->hero ).x , ( game_object->hero ).y , "hero" , 1 );
@@ -405,6 +385,11 @@ static gboolean key_press_handler( GtkWidget * widget , GdkEventKey * event , gp
                 {
                     MagicTower::open_layer_jump( game_object );
                     break;
+                }
+                case GDK_KEY_N:
+                case GDK_KEY_n:
+                {
+                    game_object->music.play_next();
                 }
                 default :
                     break;
@@ -788,7 +773,7 @@ static gboolean sync_game_data( GtkWidget * widget , gpointer data )
     return FALSE;
 }
 
-static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( const char * image_path )
+static std::map<std::string,std::shared_ptr<GdkPixbuf> > load_image_resource( const char * image_path )
 {
     std::shared_ptr<GDir> dir_ptr(
         g_dir_open( image_path , 0 , nullptr ) ,
@@ -822,7 +807,7 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > laod_image_resource( co
     return image_resource;
 }
 
-static std::vector<std::shared_ptr<const char> > get_music_uris( const char * music_path )
+static std::vector<std::shared_ptr<const char> > load_music( const char * music_path )
 {
     std::shared_ptr<GDir> dir_ptr(
         g_dir_open( music_path , 0 , nullptr ) ,
@@ -1005,7 +990,7 @@ static void draw_message( cairo_t * cairo , MagicTower::GameEnvironment * game_o
 
     cairo_save( cairo );
     //draw box
-    cairo_move_to( cairo, box_start_x , box_start_y );
+    cairo_move_to( cairo , box_start_x , box_start_y );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
     cairo_rel_line_to( cairo , 0 , box_height );
     cairo_rel_line_to( cairo , box_width , 0 );
@@ -1092,7 +1077,7 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
     
     cairo_save( cairo );
     //draw box
-    cairo_move_to( cairo, box_start_x , box_start_y );
+    cairo_move_to( cairo , box_start_x , box_start_y );
     cairo_set_source_rgba( cairo , 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
     cairo_rel_line_to( cairo , 0 , box_height );
     cairo_rel_line_to( cairo , box_width , 0 );
