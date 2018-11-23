@@ -16,7 +16,8 @@
 
 namespace MagicTower
 {
-    DataBase::DataBase( std::string filename ): db_filename(filename)
+    DataBase::DataBase( std::string filename ):
+        db_filename(filename)
     {
         this->sqlite3_error_code = sqlite3_open_v2( this->db_filename.c_str() , &( this->db_handler ) 
             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE , nullptr );
@@ -144,7 +145,7 @@ namespace MagicTower
         Hero hero;
         const char sql_statement[] = "SELECT layers,x,y,level,life,attack,defense,gold,experience,yellow_key,"
         "blue_key,red_key FROM hero WHERE id = ?";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -201,7 +202,7 @@ namespace MagicTower
         std::vector<struct TowerGrid> maps;
 
         const char sql_statement[] = "SELECT length,width,height,content FROM tower WHERE id = ?";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -251,7 +252,7 @@ namespace MagicTower
     {
         std::map<event_position_t , std::string > events;
         const char sql_statement[] = "SELECT event_position,event_content FROM events";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -300,7 +301,7 @@ namespace MagicTower
         std::uint32_t x = 0;
         std::uint32_t y = 0;
         const char sql_statement[] = "SELECT layer,x,y FROM jump_point";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -341,7 +342,7 @@ namespace MagicTower
         std::map<std::uint32_t , bool> access_layers;
         std::uint32_t layer = 0;
         const char sql_statement[] = "SELECT layer FROM access_layers";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -379,7 +380,7 @@ namespace MagicTower
     {
         std::vector<Item> items;
         const char sql_statement[] = "SELECT id,name,type,value FROM item";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -427,7 +428,7 @@ namespace MagicTower
     {
         std::vector<Monster> monsters;
         const char sql_statement[] = "SELECT id,type,type_value,name,level,life,attack,defense,gold,experience FROM monster";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -476,7 +477,7 @@ namespace MagicTower
     {
         std::vector<Stairs> stairs;
         const char sql_statement[] = "SELECT id,type,layers,x,y FROM stairs";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
@@ -517,7 +518,7 @@ namespace MagicTower
     {
         std::vector<Store> stores;
         const char sql_statement[] = "SELECT usability,name,content FROM stores";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler ,  sql_statement 
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
