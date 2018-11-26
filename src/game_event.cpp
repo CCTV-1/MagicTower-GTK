@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <cstdint>
 #include <cinttypes>
 
@@ -9,7 +10,7 @@
 #include <vector>
 #include <utility>
 #include <queue>
-//#include <tuple>
+#include <tuple>
 #include <algorithm>
 
 #include <sys/stat.h>
@@ -769,7 +770,8 @@ namespace MagicTower
             if ( check_grid_type( game_object , { args[0] , args[1] , args[2] } , static_cast<GRID_TYPE>( args[3] ) ) == true )
             {
                 json_t * true_event_node = json_object_get( root , "true" );
-                std::string true_event_json( json_dumps( true_event_node , JSON_INDENT( 4 ) ) );
+                std::shared_ptr<char> event_json( json_dumps( true_event_node , JSON_INDENT( 4 ) ) , free );
+                std::string true_event_json( event_json.get() );
                 trigger_custom_event( game_object , true_event_json );
                 json_t * new_true_event_node = json_loads( true_event_json.c_str() , 0 , &json_error );
                 json_object_set( root , "true" , new_true_event_node );
@@ -778,7 +780,8 @@ namespace MagicTower
             else
             {
                 json_t * false_event_node = json_object_get( root , "false" );
-                std::string false_event_json( json_dumps( false_event_node , JSON_INDENT( 4 ) ) );
+                std::shared_ptr<char> event_json( json_dumps( false_event_node , JSON_INDENT( 4 ) ) , free );
+                std::string false_event_json( event_json.get() );
                 trigger_custom_event( game_object , false_event_json );
                 json_t * new_false_event_node = json_loads( false_event_json.c_str() , 0 , &json_error );
                 json_object_set( root , "false" , new_false_event_node );
@@ -1011,10 +1014,7 @@ namespace MagicTower
                 json_decref( root );
                 return false;
             }
-            std::shared_ptr<char> commodity_json(
-                json_dumps( argumens_node , JSON_INDENT( 4 ) ),
-                []( char * commodity_json ){ free( commodity_json ); }
-            );
+            std::shared_ptr<char> commodity_json( json_dumps( argumens_node , JSON_INDENT( 4 ) ) , free );
             if ( shopping( game_object , commodity_json.get() ) == false )
             {
                 json_decref( root );
@@ -1042,7 +1042,8 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unknown event type ignore event" );
         }
 
-        event_json = json_dumps( root , JSON_INDENT( 4 ) );
+        std::shared_ptr<char> event_json_ptr( json_dumps( root , JSON_INDENT( 4 ) ) , free ); 
+        event_json = std::string( event_json_ptr.get() );
         json_decref( root );
         return true;
     }
@@ -1801,7 +1802,8 @@ namespace MagicTower
                 json_decref( root );
                 return ;
             }
-            std::string commodity_content = json_dumps( commodity_node , JSON_INDENT( 4 ) );
+            std::shared_ptr<char> commodity_json( json_dumps( commodity_node , JSON_INDENT( 4 ) ) , free );
+            std::string commodity_content( commodity_json.get() );
             game_object->menu_items.push_back({
                 [ commodity_content ](){ return deserialize_commodity_content( commodity_content.c_str() ); },
                 [ game_object , commodity_content ](){ shopping( game_object , commodity_content.c_str() ); }
