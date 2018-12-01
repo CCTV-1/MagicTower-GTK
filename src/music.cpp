@@ -15,25 +15,42 @@ namespace MagicTower
             grand_gen( g_rand_new() , g_rand_free )
         {
             gboolean init_status = true;
-            if ( gst_is_initialized() == false )
+            if ( gst_is_initialized() == FALSE )
                 init_status = gst_init_check( nullptr , nullptr , nullptr );
             if ( init_status == false )
                 throw music_init_failure( std::string( "gstreamer initial failure" ) );
-            this->pipeline = gst_pipeline_new( "audio-player" );
-            this->source = gst_element_factory_make( "uridecodebin" , "source" );
-            this->conver = gst_element_factory_make( "audioconvert" , "conver" );
-        #if 0 //def G_OS_WIN32
-            this->sink   = gst_element_factory_make( "directsoundsink" , "sink" );
-        #else
-            this->sink   = gst_element_factory_make( "playsink" , "sink" );
-        #endif
-    
-            if( this->pipeline == nullptr || this->source == nullptr || this->conver == nullptr || this->sink == nullptr )
-                throw music_init_failure( std::string( "element could not be created" ) );
+            if ( ( this->pipeline = gst_pipeline_new( "audio-player" ) ) == nullptr )
+            {
+                throw music_init_failure( std::string( "gstreamer pipeline could not be created" ) );
+            }
+            if ( ( this->source = gst_element_factory_make( "uridecodebin" , "source" ) ) == nullptr )
+            {
+                gst_object_unref( this->pipeline );
+                throw music_init_failure( std::string( "gstreamer element uridecodebin could not be created" ) );
+            }
+            if ( ( this->conver = gst_element_factory_make( "audioconvert" , "conver" ) ) == nullptr )
+            {
+                gst_object_unref( this->pipeline );
+                gst_object_unref( this->source );
+                throw music_init_failure( std::string( "gstreamer element audioconvert could not be created" ) );
+            }
+            if ( ( this->sink = gst_element_factory_make( "playsink" , "sink" ) ) == nullptr )
+            {
+                gst_object_unref( this->pipeline );
+                gst_object_unref( this->source );
+                gst_object_unref( this->conver );
+                throw music_init_failure( std::string( "gstreamer element playsink could not be created" ) );
+            }
     
             gst_bin_add_many( GST_BIN( this->pipeline ) , this->source , this->conver , this->sink , nullptr );
             if ( gst_element_link( this->conver , this->sink ) != TRUE )
+            {
+                gst_object_unref( this->pipeline );
+                gst_object_unref( this->source );
+                gst_object_unref( this->conver );
+                gst_object_unref( this->sink );
                 throw music_init_failure( std::string( "elements could not be linked" ) );
+            }
         }
         ~MusicImp()
         {
@@ -168,7 +185,7 @@ namespace MagicTower
     {
         for ( auto uri : uri_list )
         {
-            if ( is_music( uri )  == true )
+            if ( is_music( uri ) == true )
             {
                 this->imp_ptr->music_uri_list.insert( this->imp_ptr->music_uri_list.end() , uri );
             }
