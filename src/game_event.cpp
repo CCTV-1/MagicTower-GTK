@@ -301,14 +301,8 @@ namespace MagicTower
     {
         if ( g_file_test( "../save" , G_FILE_TEST_EXISTS ) == FALSE )
             g_mkdir_with_parents( "../save" , S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
-        std::shared_ptr<gchar> db_name(
-            g_strdup_printf( "../save/%zd.db" , save_id ) ,
-            []( gchar * str ){ g_free( str ); }
-        );
-        std::shared_ptr<gchar> fail_tips(
-            g_strdup_printf( "保存存档 %zd 失败" , save_id ) ,
-            []( gchar * str ){ g_free( str ); }
-        );
+        std::shared_ptr<gchar> db_name( g_strdup_printf( "../save/%zd.db" , save_id ) , g_free );
+        std::shared_ptr<gchar> fail_tips( g_strdup_printf( "保存存档 %zd 失败" , save_id ) , g_free );
         try
         {
             MagicTower::DataBase db( db_name.get() );
@@ -327,23 +321,14 @@ namespace MagicTower
             set_tips( game_object , fail_tips );
             return ;
         }
-        std::shared_ptr<gchar> tips(
-            g_strdup_printf( "保存存档 %zd 成功" , save_id ) ,
-            []( gchar * str ){ g_free( str ); }
-        );
+        std::shared_ptr<gchar> tips( g_strdup_printf( "保存存档 %zd 成功" , save_id ) , g_free );
         set_tips( game_object , tips );
     }
 
     void load_game_status( GameEnvironment * game_object , size_t save_id )
     {
-        std::shared_ptr<gchar> db_name(
-            g_strdup_printf( "../save/%zd.db" , save_id ) ,
-            []( gchar * str ){ g_free( str ); }
-        );
-        std::shared_ptr<gchar> fail_tips(
-            g_strdup_printf( "读取存档 %zd 失败" , save_id ) ,
-            []( gchar * str ){ g_free( str ); }
-        );
+        std::shared_ptr<gchar> db_name( g_strdup_printf( "../save/%zd.db" , save_id ) , g_free );
+        std::shared_ptr<gchar> fail_tips( g_strdup_printf( "读取存档 %zd 失败" , save_id ) , g_free );
         if ( g_file_test( db_name.get() , G_FILE_TEST_EXISTS ) == FALSE )
         {
             fail_tips.reset( g_strdup_printf( "读取存档 %zd 不存在" , save_id ) );
@@ -368,10 +353,7 @@ namespace MagicTower
             set_tips( game_object , fail_tips );
             return ;
         }
-        std::shared_ptr<gchar> tips(
-            g_strdup_printf( "读取存档 %zd 成功" , save_id ) ,
-            []( gchar * str ){ g_free( str ); }
-        );
+        std::shared_ptr<gchar> tips( g_strdup_printf( "读取存档 %zd 成功" , save_id ) , g_free );
         set_tips( game_object , tips );
     }
 
@@ -451,10 +433,7 @@ namespace MagicTower
         hero.life =  hero.life - damage;
         hero.gold = hero.gold + monster.gold;
         hero.experience = hero.experience + monster.experience;
-        std::shared_ptr<gchar> tips( 
-            g_strdup_printf( "击杀%s 获取金币 %u 经验 %u" , monster.name.c_str() , monster.gold , monster.experience ),
-            []( char * content ){ g_free( content ); }
-        );
+        std::shared_ptr<gchar> tips( g_strdup_printf( "击杀%s 获取金币 %u 经验 %u" , monster.name.c_str() , monster.gold , monster.experience ) , g_free );
         set_tips( game_object , tips );
         return true;
     }
@@ -469,10 +448,7 @@ namespace MagicTower
         {
             case ITEM_TYPE::CHANGE_LEVEL:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 等级提升 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 等级提升 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.level += item.ability_value;
                 hero.life += 1000*item.ability_value;
@@ -483,49 +459,35 @@ namespace MagicTower
             case ITEM_TYPE::CHANGE_LIFE:
             {
                 std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 生命增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                    g_strdup_printf( "获得 %s , 生命增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.life += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_ATTACK:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 攻击提升 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 攻击提升 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.attack += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_DEFENSE:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 防御提升 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 防御提升 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.defense += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_GOLD:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 金币增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 金币增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.gold += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_EXPERIENCE:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 经验值增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 经验值增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.experience += item.ability_value;
                 break;
@@ -533,39 +495,28 @@ namespace MagicTower
             case ITEM_TYPE::CHANGE_YELLOW_KEY:
             {
                 std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 黄钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                    g_strdup_printf( "获得 %s , 黄钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.yellow_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_BLUE_KEY:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 蓝钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 蓝钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.blue_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_RED_KEY:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 红钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 红钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.red_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_ALL_KEY:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 各类钥匙增加 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 各类钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
                 set_tips( game_object , tips );
                 hero.yellow_key += item.ability_value;
                 hero.blue_key += item.ability_value;
@@ -574,10 +525,7 @@ namespace MagicTower
             }
             case ITEM_TYPE::CHANGE_ALL_ABILITY:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 全属性提升百分之 %d" , item.item_name.c_str() , item.ability_value  ),
-                    []( gchar * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 全属性提升百分之 %d" , item.item_name.c_str() , item.ability_value  ) , g_free );
                 set_tips( game_object , tips );
                 hero.life += hero.life/item.ability_value;
                 hero.attack += hero.attack/item.ability_value;
@@ -940,10 +888,7 @@ namespace MagicTower
             if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
             {
                 game_object->store_list[ arg ].usability = true;
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "解锁商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ),
-                    []( char * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "解锁商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ) , g_free );
                 set_tips( game_object , tips );
             }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
@@ -980,10 +925,7 @@ namespace MagicTower
             if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
             {
                 game_object->store_list[ arg ].usability = false;
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "锁定商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ),
-                    []( char * content ){ g_free( content ); }
-                );
+                std::shared_ptr<gchar> tips( g_strdup_printf( "锁定商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ) , g_free );
                 set_tips( game_object , tips );
             }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
@@ -1564,10 +1506,7 @@ namespace MagicTower
         }
         catch(const std::out_of_range& e)
         {
-            std::shared_ptr<gchar> tips(
-                g_strdup_printf( "该层禁止跃入" ),
-                []( gchar * content ){ g_free( content ); }
-            );
+            std::shared_ptr<gchar> tips( g_strdup_printf( "该层禁止跃入" ) , g_free );
             set_tips( game_object , tips );
             return false;
         }
@@ -1593,10 +1532,7 @@ namespace MagicTower
                 }
                 else
                 {
-                    std::shared_ptr<gchar> tips(
-                        g_strdup_printf( "已是最上层" ),
-                        []( gchar * content ){ g_free( content ); }
-                    );
+                    std::shared_ptr<gchar> tips( g_strdup_printf( "已是最上层" ) , g_free );
                     set_tips( game_object , tips );
                 }
             }
@@ -1611,10 +1547,7 @@ namespace MagicTower
                 }
                 else
                 {
-                    std::shared_ptr<gchar> tips(
-                        g_strdup_printf( "已是最下层" ),
-                        []( gchar * content ){ g_free( content ); }
-                    );
+                    std::shared_ptr<gchar> tips( g_strdup_printf( "已是最下层" ) , g_free );
                     set_tips( game_object , tips );
                 }
             }
@@ -1635,20 +1568,14 @@ namespace MagicTower
                 }
                 catch(const std::out_of_range& e)
                 {
-                    std::shared_ptr<gchar> tips(
-                        g_strdup_printf( "所在层禁止跳跃楼层" ),
-                        []( gchar * content ){ g_free( content ); }
-                    );
+                    std::shared_ptr<gchar> tips( g_strdup_printf( "所在层禁止跳跃楼层" ) , g_free );
                     set_tips( game_object , tips );
                     back_jump( game_object );
                     return ;
                 }
                 if ( game_object->access_layer[ game_object->hero.layers ] == false )
                 {
-                    std::shared_ptr<gchar> tips(
-                        g_strdup_printf( "所选择的楼层当前禁止跃入" ),
-                        []( gchar * content ){ g_free( content ); }
-                    );
+                    std::shared_ptr<gchar> tips( g_strdup_printf( "所选择的楼层当前禁止跃入" ) , g_free );
                     set_tips( game_object , tips );
                     back_jump( game_object );
                     return ;

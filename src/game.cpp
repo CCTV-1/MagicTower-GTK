@@ -43,7 +43,6 @@ static gboolean button_press_handler( GtkWidget * widget , GdkEventMotion * even
 static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data );
 static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data );
 
-static void gdk_pixbuff_free( GdkPixbuf * pixbuf );
 static void draw_path_line( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_object );
 static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_object , double x , double y , std::uint32_t monster_id );
@@ -60,10 +59,7 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > load_image_resource( co
 int main( int argc , char * argv[] )
 {
     gtk_init( &argc , &argv );
-    std::shared_ptr<char> self_dir_path(
-        g_path_get_dirname( argv[0] ),
-        []( char * path ){ g_free( path ); }
-    );
+    std::shared_ptr<char> self_dir_path( g_path_get_dirname( argv[0] ) , g_free );
     g_chdir( self_dir_path.get() );
 
     std::vector<std::shared_ptr<const char> > music_list = load_music( MUSIC_RESOURCES_PATH );
@@ -141,10 +137,7 @@ static gboolean draw_tower( GtkWidget * widget , cairo_t * cairo , gpointer data
     //GDK coordinate origin : Top left corner,left -> right x add,up -> down y add.
     auto draw_grid = [ &game_object , cairo ]( std::uint32_t x , std::uint32_t y , const char * image_type , std::uint32_t image_id )
     {
-        std::shared_ptr<char> image_file_name(
-            g_strdup_printf( IMAGE_RESOURCES_PATH"%s%" PRIu32 ".png" , image_type , image_id ) ,
-            []( char * image_file_name ){ g_free( image_file_name ); }
-        );
+        std::shared_ptr<char> image_file_name( g_strdup_printf( IMAGE_RESOURCES_PATH"%s%" PRIu32 ".png" , image_type , image_id ) , g_free );
         const GdkPixbuf * element = ( image_resource[ image_file_name.get() ] ).get();
         if ( element == nullptr )
         {
@@ -270,9 +263,7 @@ static gboolean draw_info( GtkWidget * widget , cairo_t * cairo , gpointer data 
     std::size_t arr_size = arr.size();
     for ( std::size_t i = 0 ; i < arr_size ; i++ )
     {
-        std::shared_ptr<gchar> text(
-            arr[i].first , []( gchar * text ){ g_free( text ); }
-        );
+        std::shared_ptr<gchar> text( arr[i].first , g_free );
         draw_text( widget , cairo , info_font , 0 , widget_height/arr_size*i , text , arr[i].second );
     }
 
@@ -795,17 +786,14 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > load_image_resource( co
     const gchar * filename;
     while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
     {
-        std::shared_ptr<char> image_file_name(
-            g_strdup_printf( IMAGE_RESOURCES_PATH"%s" , filename ) ,
-            []( char * image_file_name ){ g_free( image_file_name ); }
-        );
+        std::shared_ptr<char> image_file_name( g_strdup_printf( IMAGE_RESOURCES_PATH"%s" , filename ) , g_free );
         GdkPixbuf * pixbuf = gdk_pixbuf_new_from_file_at_size( image_file_name.get() , PIXEL_SIZE , PIXEL_SIZE , nullptr );
         if ( pixbuf == nullptr )
         {
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_file_name.get() );
             continue;
         }
-        std::shared_ptr<GdkPixbuf> image_pixbuf( pixbuf , gdk_pixbuff_free );
+        std::shared_ptr<GdkPixbuf> image_pixbuf( pixbuf , g_object_unref );
         image_resource.insert({ std::string( image_file_name.get() ) , image_pixbuf });
     }
     return image_resource;
@@ -813,10 +801,7 @@ static std::map<std::string,std::shared_ptr<GdkPixbuf> > load_image_resource( co
 
 static std::vector<std::shared_ptr<const char> > load_music( const char * music_path )
 {
-    std::shared_ptr<GDir> dir_ptr(
-        g_dir_open( music_path , 0 , nullptr ) ,
-        []( GDir * dir_ptr ){ g_dir_close( dir_ptr ); }
-    );
+    std::shared_ptr<GDir> dir_ptr( g_dir_open( music_path , 0 , nullptr ) , g_dir_close );
 
     if ( g_file_test( music_path , G_FILE_TEST_EXISTS ) != TRUE )
         return {};
@@ -829,27 +814,13 @@ static std::vector<std::shared_ptr<const char> > load_music( const char * music_
     const gchar * filename;
     while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
     {
-        std::shared_ptr<char> music_file_name(
-            g_strdup_printf( "%s/%s" , music_path , filename ) ,
-            []( char * music_file_name ){ g_free( music_file_name ); }
-        );
-        std::shared_ptr<GFile> gfile_obj(
-            g_file_new_for_path( music_file_name.get() ) ,
-            []( GFile * gfile_obj ){ g_object_unref( gfile_obj ); }
-        );
-        std::shared_ptr<const char> file_uri(
-            g_file_get_uri( gfile_obj.get() ) ,
-            []( char * file_uri ){ g_free( file_uri ); }
-        );
+        std::shared_ptr<char> music_file_name( g_strdup_printf( "%s/%s" , music_path , filename ) , g_free );
+        std::shared_ptr<GFile> gfile_obj( g_file_new_for_path( music_file_name.get() ) , g_object_unref );
+        std::shared_ptr<const char> file_uri( g_file_get_uri( gfile_obj.get() ) , g_free );
         uri_array.push_back( file_uri );
     }
 
     return uri_array;
-}
-
-static void gdk_pixbuff_free( GdkPixbuf * pixbuf )
-{
-    g_object_unref( pixbuf );
 }
 
 static void game_exit( GtkWidget * widget , gpointer data )
@@ -914,7 +885,7 @@ static void draw_detail( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
         return ;
     }
-    std::shared_ptr<gchar> text( g_strdup_printf( str ) , []( gchar * text ){ g_free( text ); } );
+    std::shared_ptr<gchar> text( g_strdup_printf( str ) , g_free );
     draw_dialog( cairo , game_object , text , mouse_x - 0.5*PIXEL_SIZE , mouse_y - 0.5*PIXEL_SIZE );
 }
 
@@ -923,8 +894,7 @@ static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
 {
     int64_t damage = MagicTower::get_combat_damage( game_object , monster_id );
     std::shared_ptr<gchar> damage_text(
-        ( damage >= 0 ) ? ( g_strdup_printf( "%" PRId64 , damage ) ) : ( g_strdup_printf( "????" ) ) ,
-        []( gchar * damage_text ){ g_free( damage_text ); }
+        ( damage >= 0 ) ? ( g_strdup_printf( "%" PRId64 , damage ) ) : ( g_strdup_printf( "????" ) ) , g_free
     );
     pango_layout_set_text( layout.get() , damage_text.get() , -1 );
     pango_layout_set_font_description( layout.get() , damage_font.get() );
@@ -1196,7 +1166,7 @@ static std::shared_ptr<GdkPixbuf> info_frame_factory( size_t width , size_t heig
 {
     std::shared_ptr<GdkPixbuf> info_frame(
         gdk_pixbuf_new( GDK_COLORSPACE_RGB , TRUE , 8 , width*PIXEL_SIZE , height*PIXEL_SIZE ) ,
-        gdk_pixbuff_free
+        g_object_unref
     );
 
     GdkPixbuf * bg_pixbuf = gdk_pixbuf_new_from_file_at_size( IMAGE_RESOURCES_PATH"floor11.png" , PIXEL_SIZE , PIXEL_SIZE , nullptr );
@@ -1205,7 +1175,7 @@ static std::shared_ptr<GdkPixbuf> info_frame_factory( size_t width , size_t heig
         g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , IMAGE_RESOURCES_PATH"floor11.png" );
         return info_frame;
     }
-    std::shared_ptr<GdkPixbuf> info_bg( bg_pixbuf , gdk_pixbuff_free );
+    std::shared_ptr<GdkPixbuf> info_bg( bg_pixbuf , g_object_unref );
 
     for ( size_t y = 0 ; y < height ; y++ )
     {

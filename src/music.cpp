@@ -109,9 +109,7 @@ namespace MagicTower
 
     bool Music::play_next()
     {
-        std::shared_ptr<GstBus> bus(
-            gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref
-        );
+        std::shared_ptr<GstBus> bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
         gst_bus_post( bus.get() , gst_message_new_eos( GST_OBJECT( bus.get() ) ) );
         return TRUE;
     }
@@ -211,9 +209,7 @@ namespace MagicTower
     void Music::set_play_mode( PLAY_MODE mode )
     {
         this->imp_ptr->mode = mode;
-        std::shared_ptr<GstBus> bus(
-            gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref
-        );
+        std::shared_ptr<GstBus> bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
         if ( this->imp_ptr->handler_id == 0 )
             gst_bus_add_signal_watch( bus.get() );
         else
@@ -246,10 +242,7 @@ namespace MagicTower
     static bool is_music( std::shared_ptr<const char>& file_uri )
     {
         GstCaps * caps = nullptr;
-        std::shared_ptr<gchar> filename(
-            g_filename_from_uri( file_uri.get() , nullptr , nullptr ),
-            []( char * music_file_name ){ g_free( music_file_name ); }
-        );
+        std::shared_ptr<gchar> filename( g_filename_from_uri( file_uri.get() , nullptr , nullptr ) , g_free );
         std::shared_ptr<GstElement> pipeline( gst_pipeline_new( "format_check" ) , gst_object_unref );
         GstElement * source = gst_element_factory_make( "filesrc" , "source" );
         GstElement * typefind = gst_element_factory_make( "typefind" , "typefind" );
