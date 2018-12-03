@@ -16,13 +16,14 @@
 static int PIXEL_SIZE;
 
 std::shared_ptr<PangoFontDescription> damage_font(
-    pango_font_description_from_string( "Microsoft YaHei UI 12" )
-    , []( PangoFontDescription * desc ){ pango_font_description_free( desc ); }
+    pango_font_description_from_string( "Microsoft YaHei UI 12" ),
+    pango_font_description_free
 );
 std::shared_ptr<PangoFontDescription> info_font(
-    pango_font_description_from_string( "Microsoft YaHei UI 16" )
-    , []( PangoFontDescription * desc ){ pango_font_description_free( desc ); }
+    pango_font_description_from_string( "Microsoft YaHei UI 16" ),
+    pango_font_description_free
 );
+std::shared_ptr<PangoLayout> layout;
 
 int mouse_x = 0;
 int mouse_y = 0;
@@ -81,6 +82,9 @@ int main( int argc , char * argv[] )
         grid_width = grid_height;
     PIXEL_SIZE = grid_width/32*32;
 
+    std::shared_ptr<PangoContext> context( pango_font_map_create_context(pango_cairo_font_map_get_default()), g_object_unref );
+    std::shared_ptr<PangoLayout> temp( pango_layout_new( context.get() ) , g_object_unref );
+    layout = std::move(temp);
     image_resource = load_image_resource( IMAGE_RESOURCES_PATH );
     info_frame = info_frame_factory( game_object.towers.WIDTH/2 , game_object.towers.HEIGHT );
 
@@ -922,10 +926,6 @@ static void draw_damage( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
         ( damage >= 0 ) ? ( g_strdup_printf( "%" PRId64 , damage ) ) : ( g_strdup_printf( "????" ) ) ,
         []( gchar * damage_text ){ g_free( damage_text ); }
     );
-    std::shared_ptr<PangoLayout> layout(
-        pango_cairo_create_layout( cairo )
-        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
-    );
     pango_layout_set_text( layout.get() , damage_text.get() , -1 );
     pango_layout_set_font_description( layout.get() , damage_font.get() );
 
@@ -967,10 +967,6 @@ static void draw_message( cairo_t * cairo , MagicTower::GameEnvironment * game_o
     GtkWidget * widget = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "tower_area" ) );
     int widget_width = gtk_widget_get_allocated_width( widget );
     int widget_height = gtk_widget_get_allocated_height( widget );
-    std::shared_ptr<PangoLayout> layout(
-        pango_cairo_create_layout( cairo )
-        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
-    );
     pango_layout_set_text( layout.get() , game_object->game_message.front().c_str() , -1 );
     pango_layout_set_font_description( layout.get() , info_font.get() );
     int layout_width = 0;
@@ -1018,10 +1014,6 @@ static void draw_tips( cairo_t * cairo , MagicTower::GameEnvironment * game_obje
     
 
     std::size_t tips_size = game_object->tips_content.size();
-    std::shared_ptr<PangoLayout> layout(
-        pango_cairo_create_layout( cairo )
-        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
-    );
     pango_layout_set_font_description( layout.get() , info_font.get() );
 
     cairo_save( cairo );
@@ -1091,10 +1083,6 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
     //draw content
     size_t item_total = game_object->menu_items.size();
     double item_size = box_height/item_total;
-    std::shared_ptr<PangoLayout> layout(
-        pango_cairo_create_layout( cairo )
-        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
-    );
     pango_layout_set_font_description( layout.get() , info_font.get() );
     for ( size_t i = 0 ; i < item_total ; i++ )
     {
@@ -1128,10 +1116,6 @@ void draw_menu( cairo_t * cairo , MagicTower::GameEnvironment * game_object )
 
 static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_object , std::shared_ptr<gchar> text , double x , double y )
 {
-    std::shared_ptr<PangoLayout> layout(
-        pango_cairo_create_layout( cairo )
-        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
-    );
     pango_layout_set_text( layout.get() , text.get() , -1 );
     pango_layout_set_font_description( layout.get() , info_font.get() );
     int layout_width , layout_height;
@@ -1172,10 +1156,6 @@ static void draw_dialog( cairo_t * cairo , MagicTower::GameEnvironment * game_ob
 static void draw_text( GtkWidget * widget , cairo_t * cairo , std::shared_ptr<PangoFontDescription> font_desc ,
     double x , double y , std::shared_ptr<gchar> text , int mode )
 {
-    std::shared_ptr<PangoLayout> layout(
-        pango_cairo_create_layout( cairo )
-        ,  []( PangoLayout * layout ){ g_object_unref( layout ); }
-    );
     pango_layout_set_text( layout.get() , text.get() , -1 );
     pango_layout_set_font_description( layout.get() , font_desc.get() );
     
