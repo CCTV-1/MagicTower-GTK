@@ -22,61 +22,6 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkGrid" id="game_end_menu">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="row_homogeneous">True</property>
-    <property name="column_homogeneous">True</property>
-    <child>
-      <object class="GtkButton" id="restart_game_button">
-        <property name="label" translatable="yes">重新游戏</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-      </object>
-      <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">2</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkButton">
-        <property name="label" translatable="yes">加载存档</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-      </object>
-      <packing>
-        <property name="left_attach">1</property>
-        <property name="top_attach">2</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkButton" id="exit_game_button_1">
-        <property name="label" translatable="yes">退出游戏</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-      </object>
-      <packing>
-        <property name="left_attach">2</property>
-        <property name="top_attach">2</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkLabel" id="story_text_label">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">剧情文本</property>
-      </object>
-      <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">0</property>
-        <property name="width">3</property>
-        <property name="height">2</property>
-      </packing>
-    </child>
-  </object>
   <object class="GtkGrid" id="game_menu">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -277,7 +222,6 @@
   </object>
   <object class="GtkWindow" id="test_mode_window">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">测试窗口</property>
     <property name="resizable">False</property>
     <property name="deletable">False</property>
     <child type="titlebar">
@@ -427,6 +371,8 @@
           <object class="GtkSpinButton" id="x_spin_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -437,6 +383,8 @@
           <object class="GtkSpinButton" id="y_spin_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -448,6 +396,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">life_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -459,6 +409,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">level_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -470,6 +422,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">attack_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -480,6 +434,8 @@
           <object class="GtkSpinButton" id="layer_spin_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -491,6 +447,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">gold_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">3</property>
@@ -502,6 +460,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">experience_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">3</property>
@@ -513,6 +473,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">blue_key_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">3</property>
@@ -524,6 +486,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">yellow_key_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">3</property>
@@ -535,6 +499,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">red_key_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">3</property>
@@ -557,6 +523,8 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="adjustment">defense_range</property>
+            <property name="numeric">True</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="left_attach">3</property>
