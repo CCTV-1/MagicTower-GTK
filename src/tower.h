@@ -13,14 +13,14 @@ namespace MagicTower
 {
     enum GRID_TYPE:std::uint32_t
     {
-        IS_BOUNDARY = 0,
-        IS_FLOOR,
-        IS_WALL,
-        IS_STAIRS,
-        IS_DOOR,
-        IS_NPC,
-        IS_MONSTER,
-        IS_ITEM
+        BOUNDARY = 0,
+        FLOOR,
+        WALL,
+        STAIRS,
+        DOOR,
+        NPC,
+        MONSTER,
+        ITEM
     };
 
     struct TowerGrid
