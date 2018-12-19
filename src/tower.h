@@ -23,9 +23,6 @@ namespace MagicTower
         IS_ITEM
     };
 
-    #ifdef _cplusplus
-    extern "C"
-    #endif
     struct TowerGrid
     {
         //see enum GridType
@@ -51,9 +48,6 @@ namespace MagicTower
         content BLOB
     );
      */
-    #ifdef _cplusplus
-    extern "C"
-    #endif
     struct Tower
     {
         std::uint32_t HEIGHT = 1;
