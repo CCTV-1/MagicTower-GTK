@@ -6,16 +6,18 @@ JANSSON_FLAGS=$(shell pkg-config --cflags --libs jansson)
 GCC_CPP_OPTION=-Wall -Wextra -Wpedantic -std=gnu++14 -O3
 GCC_CPP_PROFILE_OPTION=-Wall -Wextra -Wpedantic -std=gnu++14 -O0 -g3 -pg -m64
 
-MagicTower : ./src/game.cpp ./build/database.o ./build/music.o ./build/game_event.o
-	g++ ./src/game.cpp ./build/database.o ./build/music.o ./build/game_event.o $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) -o ./build/bin/MagicTower
+MagicTower : ./src/game.cpp ./build/database.o ./build/music.o ./build/game_event.o ./build/game_window.o
+	g++ ./src/game.cpp ./build/database.o ./build/music.o ./build/game_event.o ./build/game_window.o $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) -o ./build/bin/MagicTower
 ./build/database.o : ./src/database.cpp ./src/database.h
 	g++ ./src/database.cpp $(GCC_CPP_OPTION) $(SQLITE3_FLAGS) -c -o ./build/database.o
 ./build/music.o : ./src/music.cpp ./src/music.h
 	g++ ./src/music.cpp $(GCC_CPP_OPTION) $(GST_FLAGS) -c -o ./build/music.o
+./build/game_window.o : ./src/game_window.cpp ./src/game_window.h
+	g++ ./src/game_window.cpp $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GLIBMM_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_window.o
 ./build/game_event.o : ./src/game_event.cpp ./src/game_event.h
-	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GLIBMM_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_event.o
-ProfileTest : ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp
-	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp $(GCC_CPP_PROFILE_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) -o ./build/bin/MagicTower
+	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GLIBMM_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_event.o
+ProfileTest : ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp
+	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp $(GCC_CPP_PROFILE_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) -o ./build/bin/MagicTower
 	cd build/bin/ &&\
 	./MagicTower &&\
 	gprof MagicTower gmon.out > analysis.txt
@@ -28,3 +30,4 @@ clean :
 	rm ./build/database.o
 	rm ./build/music.o
 	rm ./build/game_event.o
+	rm ./build/game_window.o
