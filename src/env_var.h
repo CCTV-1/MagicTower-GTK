@@ -7,15 +7,9 @@
 #include <deque>
 #include <functional>
 #include <map>
-#include <memory>
 #include <vector>
 #include <string>
-//#include <tuple>
 
-//ignore in gcc-8+ gtk library warning:unnecessary parentheses in declaration of '*'
-#pragma GCC diagnostic ignored "-Wparentheses"
-#include <gtk/gtk.h>
-#pragma GCC diagnostic warning "-Wparentheses"
 #include <jansson.h>
 
 #include "database.h"
@@ -28,9 +22,6 @@
 #include "tower.h"
 
 #define DATABSE_RESOURCES_PATH "../resources/database/magictower.db"
-#define UI_DEFINE_RESOURCES_PATH "../resources/UI/magictower.ui"
-#define IMAGE_RESOURCES_PATH "../resources/images/"
-#define MUSIC_RESOURCES_PATH "../resources/music/"
 
 namespace MagicTower
 {
@@ -47,6 +38,7 @@ namespace MagicTower
         JUMP_MENU,
         GAME_LOSE,
         GAME_WIN,
+        GAME_END,
         UNKNOWN,
     };
 
@@ -54,8 +46,29 @@ namespace MagicTower
 
     struct GameEnvironment
     {
+        GameEnvironment():
+            game_message( {} ),
+            tips_content( {} ),
+            custom_events( {} ),
+            menu_items( {} ),
+            focus_item_id( 0 ),
+            music(),
+            path( {} ),
+            game_status( GAME_STATUS::NORMAL ),
+            draw_path( true )
+        {
+            DataBase db( DATABSE_RESOURCES_PATH );
+            this->towers = db.get_tower_info( 0 );
+            this->hero = db.get_hero_info( 0 );
+            this->stairs = db.get_stairs_list();
+            this->store_list = db.get_store_list();
+            this->monsters = db.get_monster_list();
+            this->items = db.get_item_list();
+            this->custom_events = db.get_custom_events();
+            this->access_layer = db.get_access_layers();
+            this->layers_jump = db.get_jump_map();
+        }
         GameEnvironment( std::vector<std::shared_ptr<const char> > music_list ):
-            timer( g_timer_new() , g_timer_destroy ),
             game_message( {} ),
             tips_content( {} ),
             custom_events( {} ),
@@ -66,7 +79,6 @@ namespace MagicTower
             game_status( GAME_STATUS::NORMAL ),
             draw_path( true )
         {
-            this->builder = gtk_builder_new_from_file( UI_DEFINE_RESOURCES_PATH );
             DataBase db( DATABSE_RESOURCES_PATH );
             this->towers = db.get_tower_info( 0 );
             this->hero = db.get_hero_info( 0 );
@@ -83,10 +95,8 @@ namespace MagicTower
         {
             ;
         }
-        GtkBuilder * builder;
-        std::shared_ptr<GTimer> timer;
         std::deque<std::string> game_message;
-        std::deque<std::shared_ptr<gchar> > tips_content;
+        std::deque<std::string> tips_content;
 /* 
 CREATE TABLE events (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,

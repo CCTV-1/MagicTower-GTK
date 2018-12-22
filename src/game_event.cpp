@@ -15,19 +15,20 @@
 
 #include <sys/stat.h>
 
-#include <glib.h>
+#include <glibmm.h>
 
 #include "game_event.h"
+#include "env_var.h"
 
 namespace MagicTower
 {
     //layer , x , y
     std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> temp_pos;
 
-    static std::int64_t get_combat_damage_of_last  ( Hero& hero , Monster& monster );
-    static std::int64_t get_combat_damage_of_normal( Hero& hero , Monster& monster );
-    static std::int64_t get_combat_damage_of_first ( Hero& hero , Monster& monster );
-    static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster );
+    static std::int64_t get_combat_damage_of_last  ( const Hero& hero , const Monster& monster );
+    static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster );
+    static std::int64_t get_combat_damage_of_first ( const Hero& hero , const Monster& monster );
+    static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster );
     static bool try_jump( GameEnvironment * game_object );
     static void set_jump_menu( GameEnvironment * game_object );
     static void set_start_menu( GameEnvironment * game_object );
@@ -35,7 +36,7 @@ namespace MagicTower
     static void set_store_menu( GameEnvironment * game_object );
     static void set_sub_store_menu( GameEnvironment * game_object , const char * item_content );
     static std::string deserialize_commodity_content( const char * content );
-    static gboolean remove_tips( gpointer data );
+    static void remove_tips( GameEnvironment * game_object );
 
     // Helpers for TowerGridLocation
     bool operator==( TowerGridLocation a , TowerGridLocation b )
@@ -206,11 +207,11 @@ namespace MagicTower
         if ( start == goal )
             return {};
         auto goal_grid = get_tower_grid( tower , hero.layers , goal.x , goal.y );
-        if ( goal_grid.type == MagicTower::GRID_TYPE::IS_BOUNDARY )
+        if ( goal_grid.type == MagicTower::GRID_TYPE::BOUNDARY )
         {
             return {};
         }
-        if ( goal_grid.type == MagicTower::GRID_TYPE::IS_WALL )
+        if ( goal_grid.type == MagicTower::GRID_TYPE::WALL )
         {
             return {};
         }
@@ -224,13 +225,13 @@ namespace MagicTower
                 auto grid = get_tower_grid( tower , hero.layers , x , y );
                 switch ( grid.type )
                 {
-                    case MagicTower::GRID_TYPE::IS_BOUNDARY:
-                    case MagicTower::GRID_TYPE::IS_WALL:
-                    //case MagicTower::GRID_TYPE::IS_NPC:
+                    case MagicTower::GRID_TYPE::BOUNDARY:
+                    case MagicTower::GRID_TYPE::WALL:
+                    //case MagicTower::GRID_TYPE::NPC:
                         game_map.walls.insert( { std::int64_t( x ) , std::int64_t( y ) } );
                         break;
-                    case MagicTower::GRID_TYPE::IS_FLOOR:
-                    case MagicTower::GRID_TYPE::IS_ITEM:
+                    case MagicTower::GRID_TYPE::FLOOR:
+                    case MagicTower::GRID_TYPE::ITEM:
                         break;
                     default :
                         game_map.forests.insert( { std::int64_t( x ) , std::int64_t( y ) } );
@@ -250,7 +251,7 @@ namespace MagicTower
         Hero& hero = game_object->hero;
         Tower& tower = game_object->towers;
         auto grid = get_tower_grid( tower , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
-        if ( grid.type != GRID_TYPE::IS_DOOR )
+        if ( grid.type != GRID_TYPE::DOOR )
             return false;
 
         switch( grid.id )
@@ -297,12 +298,12 @@ namespace MagicTower
         return ( grid.id == type_id );
     }
 
-    void save_game_status( GameEnvironment * game_object , size_t save_id )
+    void save_game( GameEnvironment * game_object , size_t save_id )
     {
         if ( g_file_test( "../save" , G_FILE_TEST_EXISTS ) == FALSE )
             g_mkdir_with_parents( "../save" , S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
         std::shared_ptr<gchar> db_name( g_strdup_printf( "../save/%zd.db" , save_id ) , g_free );
-        std::shared_ptr<gchar> fail_tips( g_strdup_printf( "保存存档 %zd 失败" , save_id ) , g_free );
+        std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
         {
             MagicTower::DataBase db( db_name.get() );
@@ -321,17 +322,17 @@ namespace MagicTower
             set_tips( game_object , fail_tips );
             return ;
         }
-        std::shared_ptr<gchar> tips( g_strdup_printf( "保存存档 %zd 成功" , save_id ) , g_free );
+        std::string tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "成功" );
         set_tips( game_object , tips );
     }
 
-    void load_game_status( GameEnvironment * game_object , size_t save_id )
+    void load_game( GameEnvironment * game_object , size_t save_id )
     {
         std::shared_ptr<gchar> db_name( g_strdup_printf( "../save/%zd.db" , save_id ) , g_free );
-        std::shared_ptr<gchar> fail_tips( g_strdup_printf( "读取存档 %zd 失败" , save_id ) , g_free );
+        std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         if ( g_file_test( db_name.get() , G_FILE_TEST_EXISTS ) == FALSE )
         {
-            fail_tips.reset( g_strdup_printf( "读取存档 %zd 不存在" , save_id ) );
+            fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
             set_tips( game_object , fail_tips );
             return ;
         }
@@ -353,14 +354,14 @@ namespace MagicTower
             set_tips( game_object , fail_tips );
             return ;
         }
-        std::shared_ptr<gchar> tips( g_strdup_printf( "读取存档 %zd 成功" , save_id ) , g_free );
+        std::string tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "成功" );
         set_tips( game_object , tips );
     }
 
-    void set_tips( GameEnvironment * game_object , std::shared_ptr<gchar> tips_content )
+    void set_tips( GameEnvironment * game_object , std::string tips_content )
     {
         game_object->tips_content.push_back( tips_content );
-        g_timeout_add( 1000 , remove_tips , game_object );
+        Glib::signal_timeout().connect_once( sigc::bind( &remove_tips , game_object ) , 1000 );
     }
 
     void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
@@ -433,7 +434,8 @@ namespace MagicTower
         hero.life =  hero.life - damage;
         hero.gold = hero.gold + monster.gold;
         hero.experience = hero.experience + monster.experience;
-        std::shared_ptr<gchar> tips( g_strdup_printf( "击杀%s 获取金币 %u 经验 %u" , monster.name.c_str() , monster.gold , monster.experience ) , g_free );
+        std::string tips = std::string( "击杀:" ) + monster.name + std::string( ",获取金币:" ) + std::to_string( monster.gold )
+            + std::string( ",经验:" ) + std::to_string( monster.experience );
         set_tips( game_object , tips );
         return true;
     }
@@ -444,12 +446,12 @@ namespace MagicTower
         if ( commodity_id - 1 >= game_object->items.size() )
             return false;
         Item& item = game_object->items[ commodity_id - 1 ];
+        std::string tips = std::string( "获得:" ) + item.item_name;
         switch( item.ability_type )
         {
             case ITEM_TYPE::CHANGE_LEVEL:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 等级提升 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",等级提升:" );
                 hero.level += item.ability_value;
                 hero.life += 1000*item.ability_value;
                 hero.attack += 7*item.ability_value;
@@ -458,66 +460,55 @@ namespace MagicTower
             }
             case ITEM_TYPE::CHANGE_LIFE:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 生命增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",生命增加:" );
                 hero.life += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_ATTACK:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 攻击提升 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",攻击提升:" );
                 hero.attack += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_DEFENSE:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 防御提升 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",防御提升:" );
                 hero.defense += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_GOLD:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 金币增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",金币增加:" );
                 hero.gold += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_EXPERIENCE:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 经验值增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",经验值增加:" );
                 hero.experience += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_YELLOW_KEY:
             {
-                std::shared_ptr<gchar> tips(
-                    g_strdup_printf( "获得 %s , 黄钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",黄钥匙增加:" );
                 hero.yellow_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_BLUE_KEY:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 蓝钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",蓝钥匙增加:" );
                 hero.blue_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_RED_KEY:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 红钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",红钥匙增加:" );
                 hero.red_key += item.ability_value;
                 break;
             }
             case ITEM_TYPE::CHANGE_ALL_KEY:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 各类钥匙增加 %d" , item.item_name.c_str() , item.ability_value ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",各类钥匙增加:" );
                 hero.yellow_key += item.ability_value;
                 hero.blue_key += item.ability_value;
                 hero.red_key += item.ability_value;
@@ -525,8 +516,7 @@ namespace MagicTower
             }
             case ITEM_TYPE::CHANGE_ALL_ABILITY:
             {
-                std::shared_ptr<gchar> tips( g_strdup_printf( "获得 %s , 全属性提升百分之 %d" , item.item_name.c_str() , item.ability_value  ) , g_free );
-                set_tips( game_object , tips );
+                tips += std::string( ",全属性提升百分之:" );
                 hero.life += hero.life/item.ability_value;
                 hero.attack += hero.attack/item.ability_value;
                 hero.defense += hero.defense/item.ability_value;
@@ -537,6 +527,8 @@ namespace MagicTower
                 break;
             }
         }
+        tips += std::to_string( item.ability_value );
+        set_tips( game_object , tips );
         return true;
     }
 
@@ -578,28 +570,28 @@ namespace MagicTower
         auto grid = get_tower_grid( tower , hero.layers , hero.x , hero.y );
         switch( grid.type )
         {
-            case GRID_TYPE::IS_FLOOR:
+            case GRID_TYPE::FLOOR:
             {
                 state = true;
                 break;
             }
-            case GRID_TYPE::IS_STAIRS:
+            case GRID_TYPE::STAIRS:
             {
                 state = change_floor( game_object , grid.id );
                 break;
             }
-            case GRID_TYPE::IS_DOOR:
+            case GRID_TYPE::DOOR:
             {
                 open_door( game_object , { hero.x , hero.y , hero.layers } );
                 state = false;
                 break;
             }
-            case GRID_TYPE::IS_NPC:
+            case GRID_TYPE::NPC:
             {
                 state = false;
                 break;
             }
-            case GRID_TYPE::IS_MONSTER:
+            case GRID_TYPE::MONSTER:
             {
                 state = battle( game_object , grid.id );
                 if ( state == true )
@@ -612,7 +604,7 @@ namespace MagicTower
                 state = false;
                 break;
             }
-            case GRID_TYPE::IS_ITEM:
+            case GRID_TYPE::ITEM:
             {
                 state = get_item( game_object , grid.id );
                 if ( state == true )
@@ -888,7 +880,7 @@ namespace MagicTower
             if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
             {
                 game_object->store_list[ arg ].usability = true;
-                std::shared_ptr<gchar> tips( g_strdup_printf( "解锁商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ) , g_free );
+                std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ arg ] ).name;
                 set_tips( game_object , tips );
             }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
@@ -925,7 +917,7 @@ namespace MagicTower
             if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
             {
                 game_object->store_list[ arg ].usability = false;
-                std::shared_ptr<gchar> tips( g_strdup_printf( "锁定商店: %s" , ( game_object->store_list[ arg ] ).name.c_str() ) , g_free );
+                std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ arg ] ).name;
                 set_tips( game_object , tips );
             }
             json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
@@ -1200,7 +1192,8 @@ namespace MagicTower
 
     void test_window_switch( GameEnvironment * game_object )
     {
-        static bool display_window = false;
+        ( void )game_object;
+/*         static bool display_window = false;
         GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
         GtkWidget * test_func_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_func_grid" ) );
         display_window = !display_window;
@@ -1210,37 +1203,33 @@ namespace MagicTower
             if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
                 return ;
 
-            GtkWidget * layer_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "layer_spin_button" ) );
-            GtkWidget * x_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "x_spin_button" ) );
-            GtkWidget * y_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "y_spin_button" ) );
-            GtkWidget * level_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "level_spin_button" ) );
-            GtkWidget * life_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "life_spin_button" ) );
-            GtkWidget * attack_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "attack_spin_button" ) );
-            GtkWidget * defense_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "defense_spin_button" ) );
-            GtkWidget * gold_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "gold_spin_button" ) );
-            GtkWidget * experience_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "experience_spin_button" ) );
-            GtkWidget * yellow_key_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "yellow_key_spin_button" ) );
-            GtkWidget * blue_key_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "blue_key_spin_button" ) );
-            GtkWidget * red_key_spin_button = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "red_key_spin_button" ) );
+            auto set_spin_button_value = [ game_object ]( const char * button_name , gdouble value )
+            {
+                GtkSpinButton * widget = GTK_SPIN_BUTTON( gtk_builder_get_object( game_object->builder , button_name ) );
+                if ( widget == nullptr )
+                    return ;
+                gtk_spin_button_set_value( widget , value );
+            };
+        
+            set_spin_button_value( "layer_spin_button" , static_cast<gdouble>( game_object->hero.layers ) + 1 );
+            set_spin_button_value( "x_spin_button" , static_cast<gdouble>( game_object->hero.x ) );
+            set_spin_button_value( "y_spin_button" , static_cast<gdouble>( game_object->hero.y ) );
+            set_spin_button_value( "level_spin_button" , static_cast<gdouble>( game_object->hero.level ) );
+            set_spin_button_value( "life_spin_button" , static_cast<gdouble>( game_object->hero.life ) );
+            set_spin_button_value( "attack_spin_button" , static_cast<gdouble>( game_object->hero.attack ) );
+            set_spin_button_value( "defense_spin_button" , static_cast<gdouble>( game_object->hero.defense ) );
+            set_spin_button_value( "gold_spin_button" , static_cast<gdouble>( game_object->hero.gold ) );
+            set_spin_button_value( "experience_spin_button" , static_cast<gdouble>( game_object->hero.experience ) );
+            set_spin_button_value( "yellow_key_spin_button" , static_cast<gdouble>( game_object->hero.yellow_key ) );
+            set_spin_button_value( "blue_key_spin_button" , static_cast<gdouble>( game_object->hero.blue_key ) );
+            set_spin_button_value( "red_key_spin_button" , static_cast<gdouble>( game_object->hero.red_key ) );
 
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( layer_spin_button ) , static_cast<gdouble>( game_object->hero.layers ) + 1 );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( x_spin_button ) , static_cast<gdouble>( game_object->hero.x ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( y_spin_button ) , static_cast<gdouble>( game_object->hero.y ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( level_spin_button ) , static_cast<gdouble>( game_object->hero.level ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( life_spin_button ) , static_cast<gdouble>( game_object->hero.life ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( attack_spin_button ) , static_cast<gdouble>( game_object->hero.attack ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( defense_spin_button ) , static_cast<gdouble>( game_object->hero.defense ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( gold_spin_button ) , static_cast<gdouble>( game_object->hero.gold ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( experience_spin_button ) , static_cast<gdouble>( game_object->hero.experience ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( yellow_key_spin_button ) , static_cast<gdouble>( game_object->hero.yellow_key ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( blue_key_spin_button ) , static_cast<gdouble>( game_object->hero.blue_key ) );
-            gtk_spin_button_set_value( GTK_SPIN_BUTTON( red_key_spin_button ) , static_cast<gdouble>( game_object->hero.red_key ) );
 
             gtk_widget_show_all( GTK_WIDGET( test_func_grid ) );
             gtk_widget_show_all( GTK_WIDGET( test_mode_window ) );
         }
         else if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-            gtk_widget_hide( GTK_WIDGET( test_mode_window ) );
+            gtk_widget_hide( GTK_WIDGET( test_mode_window ) ); */
     }
 
     void path_line_switch( GameEnvironment * game_object )
@@ -1301,7 +1290,7 @@ namespace MagicTower
         game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
     }
 
-    void open_start_menu(  GameEnvironment * game_object )
+    void open_start_menu( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1317,7 +1306,7 @@ namespace MagicTower
         set_start_menu( game_object );
     }
 
-    void open_game_menu_v2(  GameEnvironment * game_object )
+    void open_game_menu_v2( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1361,7 +1350,7 @@ namespace MagicTower
         game_object->game_message.push_back(
             std::string( "你的得分为:" ) + std::to_string(
                 game_object->hero.life + ( game_object->hero.attack +
-                game_object->hero.defense )*( game_object->hero.level )
+                game_object->hero.defense )*10 + ( game_object->hero.level )*100
             )
         );
         game_object->game_status = GAME_STATUS::GAME_WIN;
@@ -1391,14 +1380,12 @@ namespace MagicTower
         game_object->game_status = GAME_STATUS::GAME_LOSE;
     }
 
-    void game_exit( GameEnvironment * game_object )
+    void exit_game( GameEnvironment * game_object )
     {
-        GtkWidget * game_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "game_window" ) );
-        gtk_widget_destroy( game_window );
-        gtk_main_quit();
+        game_object->game_status = GAME_STATUS::GAME_END;
     }
 
-    static std::int64_t get_combat_damage_of_last( Hero& hero , Monster& monster )
+    static std::int64_t get_combat_damage_of_last( const Hero& hero , const Monster& monster )
     {
         //if don't cast to int64_t when attack < defense the result underflow to UINT32_MAX - result
         std::int64_t hero_combat_damage = static_cast<std::int64_t>( hero.attack ) - monster.defense;
@@ -1423,7 +1410,7 @@ namespace MagicTower
         return ( hero_combat_count - 1 )*monster_combat_damage;
     }
 
-    static std::int64_t get_combat_damage_of_normal( Hero& hero , Monster& monster )
+    static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster )
     {
         if ( hero.level > monster.level )
             return get_combat_damage_of_last( hero , monster );
@@ -1432,7 +1419,7 @@ namespace MagicTower
         return -1;
     }
 
-    static std::int64_t get_combat_damage_of_first( Hero& hero , Monster& monster )
+    static std::int64_t get_combat_damage_of_first( const Hero& hero , const Monster& monster )
     {
         //if don't cast to int64_t when attack < defense the result underflow to UINT32_MAX - result
         std::int64_t hero_combat_damage = static_cast<std::int64_t>( hero.attack ) - monster.defense;
@@ -1454,7 +1441,7 @@ namespace MagicTower
         return hero_combat_count*monster_combat_damage;
     }
 
-    static std::int64_t get_combat_damage_of_double( Hero& hero , Monster& monster )
+    static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster )
     {
         //if don't cast to int64_t when attack < defense the result underflow to UINT32_MAX - result
         std::int64_t hero_combat_damage = static_cast<std::int64_t>( hero.attack ) - monster.defense;
@@ -1506,7 +1493,7 @@ namespace MagicTower
         }
         catch(const std::out_of_range& e)
         {
-            std::shared_ptr<gchar> tips( g_strdup_printf( "该层禁止跃入" ) , g_free );
+            std::string tips = std::string( "该层禁止跃入" );
             set_tips( game_object , tips );
             return false;
         }
@@ -1532,7 +1519,7 @@ namespace MagicTower
                 }
                 else
                 {
-                    std::shared_ptr<gchar> tips( g_strdup_printf( "已是最上层" ) , g_free );
+                    std::string tips = std::string( "已是最上层" );
                     set_tips( game_object , tips );
                 }
             }
@@ -1547,7 +1534,7 @@ namespace MagicTower
                 }
                 else
                 {
-                    std::shared_ptr<gchar> tips( g_strdup_printf( "已是最下层" ) , g_free );
+                    std::string tips = std::string( "已是最下层" );
                     set_tips( game_object , tips );
                 }
             }
@@ -1568,14 +1555,14 @@ namespace MagicTower
                 }
                 catch(const std::out_of_range& e)
                 {
-                    std::shared_ptr<gchar> tips( g_strdup_printf( "所在层禁止跳跃楼层" ) , g_free );
+                    std::string tips = std::string( "所在层禁止跳跃楼层" );
                     set_tips( game_object , tips );
                     back_jump( game_object );
                     return ;
                 }
                 if ( game_object->access_layer[ game_object->hero.layers ] == false )
                 {
-                    std::shared_ptr<gchar> tips( g_strdup_printf( "所选择的楼层当前禁止跃入" ) , g_free );
+                    std::string tips = std::string( "所选择的楼层当前禁止跃入" );
                     set_tips( game_object , tips );
                     back_jump( game_object );
                     return ;
@@ -1617,14 +1604,14 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "读取存档" ); },
             [ game_object ](){
-                load_game_status( game_object , 1 );
+                load_game( game_object , 1 );
                 game_object->game_status = GAME_STATUS::NORMAL;
             }
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "退出游戏" ); },
             [ game_object ](){
-                game_exit( game_object );
+                exit_game( game_object );
             }
         });
     }
@@ -1635,11 +1622,11 @@ namespace MagicTower
 
         game_object->menu_items.push_back({
             [](){ return std::string( "保存存档" ); },
-            [ game_object ](){ save_game_status( game_object , 1 ); }
+            [ game_object ](){ save_game( game_object , 1 ); }
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "读取存档" ); },
-            [ game_object ](){ load_game_status( game_object , 1 ); }
+            [ game_object ](){ load_game( game_object , 1 ); }
         });
         game_object->menu_items.push_back({
             [ game_object ](){
@@ -1652,11 +1639,12 @@ namespace MagicTower
         });
         game_object->menu_items.push_back({
             [ game_object ](){
-                GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
+                /* GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
                 if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
                     return std::string( "测试模式: 开" );
                 else
-                    return std::string( "测试模式: 关" );
+                    return std::string( "测试模式: 关" ); */
+                return std::string( "测试模式: 未知状态" );
             },
             [ game_object ](){ test_window_switch( game_object ); }
         });
@@ -1873,12 +1861,10 @@ namespace MagicTower
         return deserialize_string;
     }
 
-    static gboolean remove_tips( gpointer data )
+    static void remove_tips( GameEnvironment * game_object )
     {
-        MagicTower::GameEnvironment * game_object = static_cast<MagicTower::GameEnvironment *>( data );
         if ( game_object->tips_content.empty() )
-            return FALSE;
+            return ;
         game_object->tips_content.pop_front();
-        return FALSE;
     }
 }
