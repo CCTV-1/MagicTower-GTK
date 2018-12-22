@@ -195,7 +195,8 @@ namespace MagicTower
             }
             else
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , g_filename_from_uri( uri.get() , nullptr , nullptr ) );
+                std::shared_ptr<gchar> filename( g_filename_from_uri( uri.get() , nullptr , nullptr ) , g_free );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , filename.get() );
                 continue;
             }
         }
@@ -204,7 +205,7 @@ namespace MagicTower
     void Music::set_music_uri_list( std::vector<std::shared_ptr<const char> > uri_list )
     {
         this->imp_ptr->music_uri_list.clear();
-        add_music_uri_list( uri_list );
+        add_music_uri_list( std::move( uri_list ) );
     }
 
     std::vector<std::shared_ptr<const char> > Music::get_music_uri_list()
