@@ -37,6 +37,7 @@ namespace MagicTower
     class Music
     {
     public:
+        Music();
         Music( std::vector<std::shared_ptr<const char> > _play_list );
         ~Music();
 

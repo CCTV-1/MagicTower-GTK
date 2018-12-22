@@ -80,6 +80,12 @@ namespace MagicTower
     static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
     static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
 
+    Music::Music():
+        imp_ptr( new MusicImp )
+    {
+        ;
+    }
+
     Music::Music( std::vector<std::shared_ptr<const char> > _music_uri_list ):
         imp_ptr( new MusicImp )
     {
