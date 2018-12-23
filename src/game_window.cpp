@@ -37,12 +37,12 @@ namespace MagicTower
     {
     public:
         GameWindowImp():
-            game_object( new MagicTower::GameEnvironment() ),
+            game_object( new GameEnvironment() ),
             main_loop(),
             font_desc( "Microsoft YaHei 16" )
         {
             std::vector<std::shared_ptr<const char> > music_list = this->load_music( MUSIC_RESOURCES_PATH );
-            this->game_object->music.set_play_mode( MagicTower::PLAY_MODE::RANDOM_PLAYING );
+            this->game_object->music.set_play_mode( PLAY_MODE::RANDOM_PLAYING );
             this->game_object->music.set_music_uri_list( music_list );
             this->game_object->music.play( 0 );
 
@@ -126,7 +126,7 @@ namespace MagicTower
 
         void run()
         {
-            while( this->game_object->game_status != MagicTower::GAME_STATUS::GAME_END )
+            while( this->game_object->game_status != GAME_STATUS::GAME_END )
                 main_loop.iteration();
         }
 
@@ -228,27 +228,27 @@ namespace MagicTower
         bool automatic_movement( void )
         {
             auto game_object = this->game_object;
-            if ( game_object->game_status != MagicTower::GAME_STATUS::FIND_PATH )
+            if ( game_object->game_status != GAME_STATUS::FIND_PATH )
             {
                 return true;
             }
             if ( game_object->path.empty() )
             {
-                game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                game_object->game_status = GAME_STATUS::NORMAL;
                 return true;
             }
-            MagicTower::TowerGridLocation goal = game_object->path.back();
-            MagicTower::TowerGridLocation temp = { ( game_object->hero ).x , ( game_object->hero ).y };
+            TowerGridLocation goal = game_object->path.back();
+            TowerGridLocation temp = { ( game_object->hero ).x , ( game_object->hero ).y };
             ( game_object->hero ).x = goal.x;
             ( game_object->hero ).y = goal.y;
-            bool flags = MagicTower::trigger_collision_event( game_object );
+            bool flags = trigger_collision_event( game_object );
             if ( flags == false )
             {
                 ( game_object->hero ).x = temp.x;
                 ( game_object->hero ).y = temp.y;
                 //if goal is npc,game status set to dialog,now can't set game status to NORMAL
-                if ( game_object->game_status == MagicTower::GAME_STATUS::FIND_PATH )
-                    game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                if ( game_object->game_status == GAME_STATUS::FIND_PATH )
+                    game_object->game_status = GAME_STATUS::NORMAL;
                 return true;
             }
             game_object->path.pop_back();
@@ -257,7 +257,7 @@ namespace MagicTower
 
         void apply_game_data( void )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             auto get_spin_button_value = [ this ]( const char * button_name ) -> std::uint32_t
             {
                 Gtk::SpinButton * widget = nullptr;
@@ -283,7 +283,7 @@ namespace MagicTower
 
         void sync_game_data( void )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             auto set_spin_button_value = [ this ]( const char * button_name , gdouble value )
             {
                 Gtk::SpinButton * widget = nullptr;
@@ -324,7 +324,7 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_maps( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             for( size_t y = 0 ; y < game_object->towers.LENGTH ; y++ )
             {
                 for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
@@ -332,41 +332,41 @@ namespace MagicTower
                     auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
                     switch( grid.type )
                     {
-                        case MagicTower::GRID_TYPE::FLOOR:
+                        case GRID_TYPE::FLOOR:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , grid.id );
                             break;
                         }
-                        case MagicTower::GRID_TYPE::WALL:
+                        case GRID_TYPE::WALL:
                         {
                             this->draw_grid_image( cairo_context , x , y , "wall" , grid.id );
                             break;
                         }
-                        case MagicTower::GRID_TYPE::STAIRS:
+                        case GRID_TYPE::STAIRS:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
                             this->draw_grid_image( cairo_context , x , y , "stairs" , game_object->stairs[ grid.id - 1 ].type );
                             break;
                         }
-                        case MagicTower::GRID_TYPE::DOOR:
+                        case GRID_TYPE::DOOR:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
                             this->draw_grid_image( cairo_context , x , y , "door" , grid.id );
                             break;
                         }
-                        case MagicTower::GRID_TYPE::NPC:
+                        case GRID_TYPE::NPC:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
                             this->draw_grid_image( cairo_context , x , y , "npc" , grid.id );
                             break;
                         }
-                        case MagicTower::GRID_TYPE::MONSTER:
+                        case GRID_TYPE::MONSTER:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
                             this->draw_grid_image( cairo_context , x , y , "monster" , grid.id );
                             break;
                         }
-                        case MagicTower::GRID_TYPE::ITEM:
+                        case GRID_TYPE::ITEM:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
                             this->draw_grid_image( cairo_context , x , y , "item" , grid.id );
@@ -387,8 +387,8 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_path_line( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
-            if ( game_object->game_status != MagicTower::GAME_STATUS::FIND_PATH )
+            GameEnvironment * game_object = this->game_object;
+            if ( game_object->game_status != GAME_STATUS::FIND_PATH )
                 return false;
             if ( game_object->path.empty() )
                 return false;
@@ -424,16 +424,16 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_damage( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             for( size_t y = 0 ; y < game_object->towers.LENGTH ; y++ )
             {
                 for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
                 {
                     auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
-                    if ( grid.type == MagicTower::GRID_TYPE::MONSTER )
+                    if ( grid.type == GRID_TYPE::MONSTER )
                     {
                         //todo:cache damage list
-                        std::int64_t damage = MagicTower::get_combat_damage( game_object , grid.id );
+                        std::int64_t damage = get_combat_damage( game_object , grid.id );
                         std::string damage_text;
                         if ( damage >= 0 )
                             damage_text = std::to_string( damage );
@@ -471,8 +471,8 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_detail( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
-            if ( game_object->game_status != MagicTower::GAME_STATUS::REVIEW_DETAIL )
+            GameEnvironment * game_object = this->game_object;
+            if ( game_object->game_status != GAME_STATUS::REVIEW_DETAIL )
                 return false;
 
             std::int32_t x , y;
@@ -480,19 +480,19 @@ namespace MagicTower
             x = this->click_x/this->pixel_size;
             y = this->click_y/this->pixel_size;
             auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
-            if ( grid.type == MagicTower::GRID_TYPE::MONSTER )
+            if ( grid.type == GRID_TYPE::MONSTER )
             {
                 auto monster = game_object->monsters[ grid.id - 1 ];
                 detail_str = dump_monster_info( monster );
             }
-            else if( grid.type == MagicTower::GRID_TYPE::ITEM )
+            else if( grid.type == GRID_TYPE::ITEM )
             {
                 auto item = game_object->items[ grid.id - 1 ];
                 detail_str = dump_item_info( item );
             }
             else
             {
-                game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                game_object->game_status = GAME_STATUS::NORMAL;
                 return false;
             }
             this->draw_dialog( cairo_context , detail_str , click_x , click_y );
@@ -503,7 +503,7 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_tips( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             if ( game_object->tips_content.empty() )
                 return false;
 
@@ -542,14 +542,14 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_menu( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             Gdk::Rectangle menu_rectangle = this->get_menu_ractangle();
             switch ( game_object->game_status )
             {
-                case MagicTower::GAME_STATUS::START_MENU:
-                case MagicTower::GAME_STATUS::STORE_MENU:
-                case MagicTower::GAME_STATUS::GAME_MENU:
-                case MagicTower::GAME_STATUS::JUMP_MENU:
+                case GAME_STATUS::START_MENU:
+                case GAME_STATUS::STORE_MENU:
+                case GAME_STATUS::GAME_MENU:
+                case GAME_STATUS::JUMP_MENU:
                     break;
                 default:
                     return false;
@@ -612,13 +612,13 @@ namespace MagicTower
         //draw signal handler end
         bool draw_message( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             Gdk::Rectangle maximum_rectangle = this->game_area->get_allocation();
             switch ( game_object->game_status )
             {
-                case MagicTower::GAME_STATUS::MESSAGE:
-                case MagicTower::GAME_STATUS::GAME_LOSE:
-                case MagicTower::GAME_STATUS::GAME_WIN:
+                case GAME_STATUS::MESSAGE:
+                case GAME_STATUS::GAME_LOSE:
+                case GAME_STATUS::GAME_WIN:
                     break;
                 default:
                     return true;
@@ -670,7 +670,7 @@ namespace MagicTower
 
         void draw_dialog( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::string text , std::uint32_t x , std::uint32_t y )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             this->layout->set_text( text );
             int layout_width , layout_height;
             this->layout->get_pixel_size( layout_width , layout_height );
@@ -706,111 +706,9 @@ namespace MagicTower
             cairo_context->restore();
         }
 
-        bool draw_tower( const Cairo::RefPtr<Cairo::Context> & cairo_context )
-        {
-            ( void )cairo_context;
-            /* MagicTower::GameEnvironment * game_object = this->game_object;
-            auto draw_grid = [ this , cairo_context ]( std::uint32_t x , std::uint32_t y , std::string image_type , std::uint32_t image_id )
-            {
-                std::string image_file_name = std::string( IMAGE_RESOURCES_PATH ) + image_type + std::to_string( image_id ) + std::string( ".png" );
-                const Glib::RefPtr<Gdk::Pixbuf> element = this->image_resource[ image_file_name ];
-                if ( element.get() == nullptr )
-                {
-                    g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , image_file_name.c_str() );
-                    return ;
-                }
-                Gdk::Cairo::set_source_pixbuf( cairo_context , element , x*this->pixel_size , y*this->pixel_size );
-                cairo_context->paint();
-            }; */
-
-            //draw maps
-            /* for( size_t y = 0 ; y < game_object->towers.LENGTH ; y++ )
-            {
-                for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
-                {
-                    auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
-                    switch( grid.type )
-                    {
-                        case MagicTower::GRID_TYPE::FLOOR:
-                        {
-                            draw_grid( x , y , "floor" , grid.id );
-                            break;
-                        }
-                        case MagicTower::GRID_TYPE::WALL:
-                        {
-                            draw_grid( x , y , "wall" , grid.id );
-                            break;
-                        }
-                        case MagicTower::GRID_TYPE::STAIRS:
-                        {
-                            draw_grid( x , y , "floor" , 1 );
-                            draw_grid( x , y , "stairs" , game_object->stairs[ grid.id - 1 ].type );
-                            break;
-                        }
-                        case MagicTower::GRID_TYPE::DOOR:
-                        {
-                            draw_grid( x , y , "floor" , 1 );
-                            draw_grid( x , y , "door" , grid.id );
-                            break;
-                        }
-                        case MagicTower::GRID_TYPE::NPC:
-                        {
-                            draw_grid( x , y , "floor" , 1 );
-                            draw_grid( x , y , "npc" , grid.id );
-                            break;
-                        }
-                        case MagicTower::GRID_TYPE::MONSTER:
-                        {
-                            draw_grid( x , y , "floor" , 1 );
-                            draw_grid( x , y , "monster" , grid.id );
-                            break;
-                        }
-                        case MagicTower::GRID_TYPE::ITEM:
-                        {
-                            draw_grid( x , y , "floor" , 1 );
-                            draw_grid( x , y , "item" , grid.id );
-                            break;
-                        }
-                        default :
-                        {
-                            draw_grid( x , y , "boundary" , 1 );
-                            break;
-                        }
-                    }
-                }
-            } */
-
-            /* draw_path_line( cairo_context , game_object ); */
-
-            //draw hero
-            //draw_grid( ( game_object->hero ).x , ( game_object->hero ).y , "hero" , 1 );
-
-            //draw battle damage
-            /* for( size_t y = 0 ; y < game_object->towers.LENGTH ; y++ )
-            {
-                for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
-                {
-                    auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
-                    if ( grid.type == MagicTower::GRID_TYPE::MONSTER )
-                    {
-                        //todo:cache damage list
-                        std::int64_t damage = MagicTower::get_combat_damage( game_object , grid.id );
-                        draw_damage( cairo_context , game_object , x*this->pixel_size , ( y + 0.5 )*this->pixel_size , damage );
-                    }
-                }
-            } */
-
-            /* draw_tips( cairo_context , game_object );
-            draw_detail( cairo_context , game_object , this->click_x , this->click_y );
-            draw_menu( cairo_context , game_object , this->get_menu_ractangle() );
-            draw_message( cairo_context , game_object , this->game_area->get_allocation() ); */
-
-            return true;
-        }
-
         bool draw_info( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
-            MagicTower::Hero& hero = this->game_object->hero;
+            Hero& hero = this->game_object->hero;
             //draw background image
             Gdk::Cairo::set_source_pixbuf( cairo_context , this->info_frame , 0.0 , 0.0 );
             cairo_context->paint();
@@ -882,13 +780,13 @@ namespace MagicTower
 
         bool scroll_signal_handler( GdkEventScroll * event )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             switch ( game_object->game_status )
             {
-                case MagicTower::GAME_STATUS::START_MENU:
-                case MagicTower::GAME_STATUS::GAME_MENU:
-                case MagicTower::GAME_STATUS::STORE_MENU:
-                case MagicTower::GAME_STATUS::JUMP_MENU:
+                case GAME_STATUS::START_MENU:
+                case GAME_STATUS::GAME_MENU:
+                case GAME_STATUS::STORE_MENU:
+                case GAME_STATUS::JUMP_MENU:
                 {
                     switch ( event->direction )
                     {
@@ -926,23 +824,23 @@ namespace MagicTower
 
         bool key_press_handler( GdkEventKey * event )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             switch ( game_object->game_status )
             {
-                case MagicTower::GAME_STATUS::DIALOG:
-                case MagicTower::GAME_STATUS::REVIEW_DETAIL:
+                case GAME_STATUS::DIALOG:
+                case GAME_STATUS::REVIEW_DETAIL:
                 {
-                    game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                    game_object->game_status = GAME_STATUS::NORMAL;
                     break;
                 }
-                case MagicTower::GAME_STATUS::NORMAL:
+                case GAME_STATUS::NORMAL:
                 {
                     switch( event->keyval )
                     {
                         case GDK_KEY_Left:
                         {
                             ( game_object->hero ).x -= 1;
-                            bool flags = MagicTower::trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object );
                             if ( flags == false )
                                 ( game_object->hero ).x += 1;
                             break;
@@ -950,7 +848,7 @@ namespace MagicTower
                         case GDK_KEY_Right:
                         {
                             ( game_object->hero ).x += 1;
-                            bool flags = MagicTower::trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object );
                             if ( flags == false )
                                 ( game_object->hero ).x -= 1;
                             break;
@@ -958,7 +856,7 @@ namespace MagicTower
                         case GDK_KEY_Up:
                         {
                             ( game_object->hero ).y -= 1;
-                            bool flags = MagicTower::trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object );
                             if ( flags == false )
                                 ( game_object->hero ).y += 1;
                             break;
@@ -966,26 +864,26 @@ namespace MagicTower
                         case GDK_KEY_Down:
                         {
                             ( game_object->hero ).y += 1;
-                            bool flags = MagicTower::trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object );
                             if ( flags == false )
                                 ( game_object->hero ).y -= 1;
                             break;
                         }
                         case GDK_KEY_Escape:
                         {
-                            MagicTower::open_game_menu_v2( game_object );
+                            open_game_menu_v2( game_object );
                             break;
                         }
                         case GDK_KEY_s:
                         case GDK_KEY_S:
                         {
-                            MagicTower::open_store_menu_v2( game_object );
+                            open_store_menu_v2( game_object );
                             break;
                         }
                         case GDK_KEY_j:
                         case GDK_KEY_J:
                         {
-                            MagicTower::open_layer_jump( game_object );
+                            open_layer_jump( game_object );
                             break;
                         }
                         case GDK_KEY_N:
@@ -998,7 +896,7 @@ namespace MagicTower
                     }
                     break;
                 }
-                case MagicTower::GAME_STATUS::START_MENU:
+                case GAME_STATUS::START_MENU:
                 {
                     switch( event->keyval )
                     {
@@ -1028,17 +926,17 @@ namespace MagicTower
                     }
                     break;
                 }
-                case MagicTower::GAME_STATUS::MESSAGE:
+                case GAME_STATUS::MESSAGE:
                 {
                     //check don't send message
                     if ( game_object->game_message.empty() )
-                        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                        game_object->game_status = GAME_STATUS::NORMAL;
                     game_object->game_message.pop_front();
                     if ( game_object->game_message.empty() )
-                        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                        game_object->game_status = GAME_STATUS::NORMAL;
                     break;
                 }
-                case MagicTower::GAME_STATUS::GAME_MENU:
+                case GAME_STATUS::GAME_MENU:
                 {
                     switch( event->keyval )
                     {
@@ -1065,7 +963,7 @@ namespace MagicTower
                         }
                         case GDK_KEY_Escape:
                         {
-                            MagicTower::close_game_menu_v2( game_object );
+                            close_game_menu_v2( game_object );
                             break;
                         }
                         default :
@@ -1073,7 +971,7 @@ namespace MagicTower
                     }
                     break;
                 }
-                case MagicTower::GAME_STATUS::STORE_MENU:
+                case GAME_STATUS::STORE_MENU:
                 {
                     switch( event->keyval )
                     {
@@ -1101,13 +999,13 @@ namespace MagicTower
                         case GDK_KEY_s:
                         case GDK_KEY_S:
                         {
-                            MagicTower::close_store_menu_v2( game_object );
+                            close_store_menu_v2( game_object );
                             break;
                         }
                     }
                     break;
                 }
-                case MagicTower::GAME_STATUS::JUMP_MENU:
+                case GAME_STATUS::JUMP_MENU:
                 {
                     switch( event->keyval )
                     {
@@ -1135,22 +1033,22 @@ namespace MagicTower
                         case GDK_KEY_j:
                         case GDK_KEY_J:
                         {
-                            MagicTower::back_jump( game_object );
-                            MagicTower::close_layer_jump( game_object );
+                            back_jump( game_object );
+                            close_layer_jump( game_object );
                             break;
                         }
                     }
                     break;
                 }
-                case MagicTower::GAME_STATUS::GAME_LOSE:
-                case MagicTower::GAME_STATUS::GAME_WIN:
+                case GAME_STATUS::GAME_LOSE:
+                case GAME_STATUS::GAME_WIN:
                 {
                     //check don't send message
                     if ( game_object->game_message.empty() )
-                        MagicTower::open_start_menu( game_object );
+                        open_start_menu( game_object );
                     game_object->game_message.pop_front();
                     if ( game_object->game_message.empty() )
-                        MagicTower::open_start_menu( game_object );
+                        open_start_menu( game_object );
                     break;
                 }
                 default:
@@ -1164,7 +1062,7 @@ namespace MagicTower
 
         bool button_press_handler( GdkEventButton * event )
         {
-            MagicTower::GameEnvironment * game_object = this->game_object;
+            GameEnvironment * game_object = this->game_object;
             gint x = event->x , y = event->y;
             //gdk_window_get_device_position( event->window , event->device , &x , &y , nullptr );
 
@@ -1179,49 +1077,49 @@ namespace MagicTower
                 {
                     switch ( game_object->game_status )
                     {
-                        case MagicTower::GAME_STATUS::REVIEW_DETAIL:
-                        case MagicTower::GAME_STATUS::DIALOG:
+                        case GAME_STATUS::REVIEW_DETAIL:
+                        case GAME_STATUS::DIALOG:
                         {
-                            game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                            game_object->game_status = GAME_STATUS::NORMAL;
                             break;
                         }
-                        case MagicTower::GAME_STATUS::MESSAGE:
+                        case GAME_STATUS::MESSAGE:
                         {
                             //check don't send message
                             if ( game_object->game_message.empty() )
-                                game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                                game_object->game_status = GAME_STATUS::NORMAL;
                             game_object->game_message.pop_front();
                             if ( game_object->game_message.empty() )
-                                game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+                                game_object->game_status = GAME_STATUS::NORMAL;
                             break;
                         }
-                        //if event->button == 1,behavior equal to MagicTower::GAME_STATUS::FIND_PATH,so don't break.
+                        //if event->button == 1,behavior equal to GAME_STATUS::FIND_PATH,so don't break.
                         #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-                        case MagicTower::GAME_STATUS::NORMAL:
+                        case GAME_STATUS::NORMAL:
                         {
                             if ( event->button == 3 )
                             {
                                 this->click_x = x;
                                 this->click_y = y;
-                                game_object->game_status = MagicTower::GAME_STATUS::REVIEW_DETAIL;
+                                game_object->game_status = GAME_STATUS::REVIEW_DETAIL;
                                 break;
                             }
                         }
                         #pragma GCC diagnostic warning "-Wimplicit-fallthrough" 
-                        case MagicTower::GAME_STATUS::FIND_PATH:
+                        case GAME_STATUS::FIND_PATH:
                         {
                             if ( event->button == 1 )
                             {
-                                game_object->path = MagicTower::find_path( game_object , { x/this->pixel_size , y/this->pixel_size } );
-                                game_object->game_status = MagicTower::GAME_STATUS::FIND_PATH;
+                                game_object->path = find_path( game_object , { x/this->pixel_size , y/this->pixel_size } );
+                                game_object->game_status = GAME_STATUS::FIND_PATH;
                                 break;
                             }
                             break;
                         }
-                        case MagicTower::GAME_STATUS::START_MENU:
-                        case MagicTower::GAME_STATUS::STORE_MENU:
-                        case MagicTower::GAME_STATUS::GAME_MENU:
-                        case MagicTower::GAME_STATUS::JUMP_MENU:
+                        case GAME_STATUS::START_MENU:
+                        case GAME_STATUS::STORE_MENU:
+                        case GAME_STATUS::GAME_MENU:
+                        case GAME_STATUS::JUMP_MENU:
                         {
                             Gdk::Rectangle menu_ractangle = this->get_menu_ractangle();
                             if ( x > menu_ractangle.get_x() &&
@@ -1235,15 +1133,15 @@ namespace MagicTower
                             }
                             break;
                         }
-                        case MagicTower::GAME_STATUS::GAME_LOSE:
-                        case MagicTower::GAME_STATUS::GAME_WIN:
+                        case GAME_STATUS::GAME_LOSE:
+                        case GAME_STATUS::GAME_WIN:
                         {
                             //check don't send message
                             if ( game_object->game_message.empty() )
-                                MagicTower::open_start_menu( game_object );
+                                open_start_menu( game_object );
                             game_object->game_message.pop_front();
                             if ( game_object->game_message.empty() )
-                                MagicTower::open_start_menu( game_object );
+                                open_start_menu( game_object );
                             break;
                         }
                         default:
@@ -1264,12 +1162,12 @@ namespace MagicTower
         bool exit_game( GdkEventAny * event )
         {
             ( void )event;
-            this->game_object->game_status = MagicTower::GAME_END;
+            this->game_object->game_status = GAME_END;
             return true;
         }
 
     private:
-        MagicTower::GameEnvironment * game_object;
+        GameEnvironment * game_object;
         Gtk::Main main_loop;
         Pango::FontDescription font_desc;
         Glib::RefPtr<Pango::Layout> layout;
