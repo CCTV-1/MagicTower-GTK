@@ -1,7 +1,7 @@
 # MagicTower-GTK
 
 Dependency Library:
-  -  ```GTK3 3.22```+ 
+  -  ```GTKMM3 3.22```+ 
   -  ```GStreamer 1.12```+
   -  ```SQLITE3 3.21```+
   -  ```jansson 2.11```+
