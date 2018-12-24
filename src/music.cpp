@@ -5,6 +5,7 @@
 
 namespace MagicTower
 {
+    static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement * conver );
     struct MusicImp
     {
         MusicImp():
@@ -51,6 +52,7 @@ namespace MagicTower
                 gst_object_unref( this->sink );
                 throw music_init_failure( std::string( "elements could not be linked" ) );
             }
+            g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
         }
         ~MusicImp()
         {
@@ -74,7 +76,6 @@ namespace MagicTower
     };
 
     static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
-    static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement * conver );
     static bool is_music( std::shared_ptr<const char>& file_uri );
     static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline );
     static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
@@ -103,7 +104,6 @@ namespace MagicTower
     {
         this->imp_ptr->play_id = id;
         g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , this->imp_ptr->music_uri_list[ id ].get() , nullptr );
-        g_signal_connect( this->imp_ptr->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->imp_ptr->conver );
         GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )
         {
