@@ -132,9 +132,8 @@ namespace MagicTower
     {
         std::set<TowerGridLocation> forests;
         GridWithWeights( std::int64_t w, std::int64_t h ) : SquareGrid( w , h ) {}
-        double cost( TowerGridLocation from_node , TowerGridLocation to_node ) const
+        double cost( TowerGridLocation , TowerGridLocation to_node ) const
         {
-            ( void )from_node;
             //efficiency:1;bypass any forests:this->width*this->height;so 
             return forests.find( to_node ) != forests.end() ? this->width + this->height : 1;
         }
@@ -1190,9 +1189,8 @@ namespace MagicTower
             game_object->music.play_pause();
     }
 
-    void test_window_switch( GameEnvironment * game_object )
+    void test_window_switch( GameEnvironment * )
     {
-        ( void )game_object;
 /*         static bool display_window = false;
         GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
         GtkWidget * test_func_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_func_grid" ) );

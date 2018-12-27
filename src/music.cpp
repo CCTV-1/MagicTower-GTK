@@ -306,19 +306,16 @@ namespace MagicTower
         return true;
     }
 
-    static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps )
+    static void have_type_handler( GstElement * , guint , const GstCaps * caps , GstCaps ** p_caps )
     {
-        ( void )probability;
-        ( void )typefind;
         if ( p_caps )
         {
             *p_caps = gst_caps_copy( caps );
         }
     }
 
-    static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement * conver )
+    static void pad_added_handler( GstElement * , GstPad * new_pad , GstElement * conver )
     {
-        ( void )src;
         std::shared_ptr<GstPad> sink_pad( gst_element_get_static_pad( conver , "sink" ) , gst_object_unref );
 
         /* if our converter is already linked, we have nothing to do here */
@@ -348,10 +345,8 @@ namespace MagicTower
 
     }
 
-    static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline )
+    static gboolean sigle_cycle( GstBus * , GstMessage * , GstElement * pipeline )
     {
-        ( void )bus;
-        ( void )msg;
         gst_element_set_state( pipeline , GST_STATE_NULL );
         GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -362,10 +357,8 @@ namespace MagicTower
         return TRUE;
     }
 
-    static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr )
+    static gboolean list_cycle( GstBus * , GstMessage * , MusicImp * imp_ptr )
     {
-        ( void )bus;
-        ( void )msg;
         GstElement * pipeline = imp_ptr->pipeline;
         GstElement * source = imp_ptr->source;
         gst_element_unlink( imp_ptr->conver , imp_ptr->sink );
@@ -388,10 +381,8 @@ namespace MagicTower
         return TRUE;
     }
 
-    static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr )
+    static gboolean random_playing( GstBus * , GstMessage * , MusicImp * imp_ptr )
     {
-        ( void )bus;
-        ( void )msg;
         GstElement * pipeline = imp_ptr->pipeline;
         GstElement * source = imp_ptr->source;
         gst_element_unlink( imp_ptr->conver , imp_ptr->sink );

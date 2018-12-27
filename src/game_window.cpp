@@ -1159,9 +1159,8 @@ namespace MagicTower
             return true;
         }
 
-        bool exit_game( GdkEventAny * event )
+        bool exit_game( GdkEventAny * )
         {
-            ( void )event;
             this->game_object->game_status = GAME_END;
             return true;
         }
