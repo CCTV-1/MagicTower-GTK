@@ -1,5 +1,6 @@
 GST_FLAGS=$(shell pkg-config --cflags --libs gstreamer-1.0)
 GLIBMM_FLAGS=$(shell pkg-config --cflags --libs glibmm-2.4)
+GIOMM_FLAGS=$(shell pkg-config --cflags --libs giomm-2.4)
 GTKMM_FLAGS=$(shell pkg-config --cflags --libs gtkmm-3.0)
 SQLITE3_FLAGS=$(shell pkg-config --cflags --libs sqlite3)
 JANSSON_FLAGS=$(shell pkg-config --cflags --libs jansson)
@@ -15,7 +16,7 @@ MagicTower : ./src/game.cpp ./build/database.o ./build/music.o ./build/game_even
 ./build/game_window.o : ./src/game_window.cpp ./src/game_window.h
 	g++ ./src/game_window.cpp $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GLIBMM_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_window.o
 ./build/game_event.o : ./src/game_event.cpp ./src/game_event.h
-	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GLIBMM_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_event.o
+	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GIOMM_FLAGS) $(JANSSON_FLAGS) -c -o ./build/game_event.o
 ProfileTest : ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp
 	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp $(GCC_CPP_PROFILE_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) -o ./build/bin/MagicTower
 	cd build/bin/ &&\
