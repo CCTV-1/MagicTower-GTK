@@ -13,9 +13,8 @@
 #include <tuple>
 #include <algorithm>
 
-#include <sys/stat.h>
-
-#include <glibmm.h>
+#include <glib.h> //g_log
+#include <giomm.h>
 
 #include "game_event.h"
 #include "env_var.h"
@@ -299,13 +298,15 @@ namespace MagicTower
 
     void save_game( GameEnvironment * game_object , size_t save_id )
     {
-        if ( g_file_test( "../save" , G_FILE_TEST_EXISTS ) == FALSE )
-            g_mkdir_with_parents( "../save" , S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
-        std::shared_ptr<gchar> db_name( g_strdup_printf( "../save/%zd.db" , save_id ) , g_free );
+        constexpr const char * save_path = "./save/";
+        std::shared_ptr<GFile> save_dir( g_file_new_for_path( save_path ) , g_object_unref );
+        //if doesn't exists create dir,else do nothing.
+        g_file_make_directory_with_parents( save_dir.get() , nullptr , nullptr );
+        std::string db_name = std::string( save_path ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
         {
-            MagicTower::DataBase db( db_name.get() );
+            MagicTower::DataBase db( db_name );
             db.set_tower_info( game_object->towers , 0 );
             db.set_hero_info( game_object->hero , 0 );
             db.set_stairs_list( game_object->stairs );
@@ -327,9 +328,10 @@ namespace MagicTower
 
     void load_game( GameEnvironment * game_object , size_t save_id )
     {
-        std::shared_ptr<gchar> db_name( g_strdup_printf( "../save/%zd.db" , save_id ) , g_free );
+        std::string db_name = std::string( "./save/" ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
-        if ( g_file_test( db_name.get() , G_FILE_TEST_EXISTS ) == FALSE )
+        std::shared_ptr<GFile> db_file( g_file_new_for_path( db_name.c_str() ) , g_object_unref );
+        if ( g_file_query_exists( db_file.get() , nullptr ) == FALSE )
         {
             fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
             set_tips( game_object , fail_tips );
@@ -337,7 +339,7 @@ namespace MagicTower
         }
         try
         {
-            MagicTower::DataBase db( db_name.get() );
+            MagicTower::DataBase db( db_name );
             game_object->towers = db.get_tower_info( 0 );
             game_object->hero = db.get_hero_info( 0 );
             game_object->stairs = db.get_stairs_list();
