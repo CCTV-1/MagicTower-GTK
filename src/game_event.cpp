@@ -38,24 +38,28 @@ namespace MagicTower
     static void remove_tips( GameEnvironment * game_object );
 
     // Helpers for TowerGridLocation
-    bool operator==( TowerGridLocation a , TowerGridLocation b )
+    static bool operator==( TowerGridLocation a , TowerGridLocation b )
     {
         return a.x == b.x && a.y == b.y;
     }
 
-    bool operator!=( TowerGridLocation a , TowerGridLocation b )
+    static bool operator!=( TowerGridLocation a , TowerGridLocation b )
     {
         return !( a == b );
     }
 
-    bool operator<( TowerGridLocation a, TowerGridLocation b )
+    static bool operator<( TowerGridLocation a, TowerGridLocation b )
     {
         return std::tie( a.x , a.y ) < std::tie( b.x , b.y );
     }
 
     struct SquareGrid
     {
-        static std::array<TowerGridLocation, 4> DIRS;
+        std::array<TowerGridLocation, 4> DIRS =
+        {
+            TowerGridLocation{ 1 , 0  } , TowerGridLocation{ 0 , -1 } ,
+            TowerGridLocation{ -1 , 0 } , TowerGridLocation{ 0 , 1 }
+        };
 
         std::int64_t width, height;
         std::set<TowerGridLocation> walls;
@@ -121,11 +125,6 @@ namespace MagicTower
         }
     };
 
-    std::array<TowerGridLocation, 4> SquareGrid::DIRS =
-    {
-        TowerGridLocation{ 1 , 0  } , TowerGridLocation{ 0 , -1 } ,
-        TowerGridLocation{ -1 , 0 } , TowerGridLocation{ 0 , 1 }
-    };
 
     struct GridWithWeights : SquareGrid
     {
@@ -139,7 +138,7 @@ namespace MagicTower
     };
 
     template <typename Location>
-    std::vector<Location> reconstruct_path( Location start , Location goal ,
+    static std::vector<Location> reconstruct_path( Location start , Location goal ,
         std::map<Location , Location> came_from )
     {
         std::vector<Location> path;
@@ -159,13 +158,13 @@ namespace MagicTower
         return path;
     }
 
-    inline double heuristic( TowerGridLocation a , TowerGridLocation b )
+    static inline double heuristic( TowerGridLocation a , TowerGridLocation b )
     {
         return std::abs( a.x -  b.x ) + std::abs( a.y -  b.y );
     }
 
     template <typename Location, typename Graph>
-    void a_star_search( Graph graph , Location start , Location goal,
+    static void a_star_search( Graph graph , Location start , Location goal,
         std::map<Location, Location> &came_from , std::map<Location, double> &cost_so_far )
     {
         PriorityQueue<Location, double> frontier;
