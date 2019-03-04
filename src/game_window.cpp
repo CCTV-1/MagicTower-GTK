@@ -515,23 +515,18 @@ namespace MagicTower
                 this->layout->set_text( game_object->tips_content[i] );
                 int layout_width , layout_height;
                 this->layout->get_pixel_size( layout_width , layout_height );
-                cairo_context->move_to( 0 , 0 + i*layout_height );
                 cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
-                cairo_context->rel_line_to( layout_width , 0 );
-                cairo_context->rel_line_to( 0 , layout_height );
-                cairo_context->rel_line_to( -1*layout_width , 0 );
-                cairo_context->close_path();
-
                 cairo_context->set_line_width( 2 );
+                cairo_context->rectangle( 0 , 0 + i*layout_height , layout_width , layout_height );
                 cairo_context->fill_preserve();
                 cairo_context->set_source_rgba( 0 , 0 , 0 , 1.0 );
                 cairo_context->stroke();
 
                 cairo_context->move_to( 0 ,  0 + i*layout_height );
+                cairo_context->set_line_width( 0.5 );
                 cairo_context->set_source_rgb( 1.0 , 1.0 , 1.0 );
                 this->layout->show_in_cairo_context( cairo_context );
                 cairo_context->fill_preserve();
-                cairo_context->set_line_width( 0.5 );
                 cairo_context->stroke();
             }
             cairo_context->restore();
@@ -563,14 +558,9 @@ namespace MagicTower
 
             cairo_context->save();
             //draw box
-            cairo_context->move_to( box_start_x , box_start_y );
-            cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
-            cairo_context->rel_line_to( 0 , box_height );
-            cairo_context->rel_line_to( box_width , 0 );
-            cairo_context->rel_line_to( 0 , 0 - box_height );
-            cairo_context->rel_line_to( 0 - box_width , 0 );
-            cairo_context->close_path();
             cairo_context->set_line_width( 2 );
+            cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
+            cairo_context->rectangle( box_start_x , box_start_y , box_width , box_height );
             cairo_context->fill_preserve();
             cairo_context->set_source_rgba( 0 , 0 , 0 , 1.0 );
             cairo_context->stroke();
@@ -581,13 +571,9 @@ namespace MagicTower
             {
                 if ( i == game_object->focus_item_id )
                 {
-                    cairo_context->move_to( box_start_x + 2 , i*item_size + box_start_y + 2 );
-                    cairo_context->rel_line_to( box_width - 4 , 0 );
-                    cairo_context->rel_line_to( 0 , item_size - 4 );
-                    cairo_context->rel_line_to( -1*box_width + 4 , 0 );
-                    cairo_context->rel_line_to( 0 , -1*item_size + 4 );
                     cairo_context->set_source_rgba( 255/255.0 , 125/255.0 , 0/255.0 , 1.0 );
                     cairo_context->set_line_width( 2 );
+                    cairo_context->rectangle( box_start_x + 2 , i*item_size + box_start_y + 2 , box_width - 4 , item_size - 4 );
                     cairo_context->stroke();
                 }
                 std::string menu_name = game_object->menu_items[i].first();
@@ -646,14 +632,10 @@ namespace MagicTower
 
             cairo_context->save();
             //draw box
-            cairo_context->move_to( box_start_x , box_start_y );
-            cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
-            cairo_context->rel_line_to( 0 , box_height );
-            cairo_context->rel_line_to( box_width , 0 );
-            cairo_context->rel_line_to( 0 , 0 - box_height );
-            cairo_context->rel_line_to( 0 - box_width , 0 );
-            cairo_context->close_path();
             cairo_context->set_line_width( 2 );
+            cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.7 );
+            cairo_context->rectangle( box_start_x , box_start_y , box_width , box_height );
+
             cairo_context->fill_preserve();
             cairo_context->set_source_rgba( 0 , 0 , 0 , 1.0 );
             cairo_context->stroke();
@@ -685,14 +667,15 @@ namespace MagicTower
                 y -= layout_height;
 
             cairo_context->save();
-            cairo_context->move_to( x , y );
+            cairo_context->set_line_width( 2 );
             cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.8 );
+            cairo_context->rectangle( x , y , layout_width , layout_height );
+            /* cairo_context->move_to( x , y );
             cairo_context->rel_line_to( layout_width , 0 );
             cairo_context->rel_line_to( 0 , layout_height );
             cairo_context->rel_line_to( -1*layout_width , 0 );
-            cairo_context->close_path();
+            cairo_context->close_path(); */
 
-            cairo_context->set_line_width( 2 );
             cairo_context->fill_preserve();
             cairo_context->set_source_rgba( 0 , 0 , 0 , 1.0 );
             cairo_context->stroke();
