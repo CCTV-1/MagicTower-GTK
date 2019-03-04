@@ -670,11 +670,6 @@ namespace MagicTower
             cairo_context->set_line_width( 2 );
             cairo_context->set_source_rgba( 43.0/255 , 42.0/255 , 43.0/255 , 0.8 );
             cairo_context->rectangle( x , y , layout_width , layout_height );
-            /* cairo_context->move_to( x , y );
-            cairo_context->rel_line_to( layout_width , 0 );
-            cairo_context->rel_line_to( 0 , layout_height );
-            cairo_context->rel_line_to( -1*layout_width , 0 );
-            cairo_context->close_path(); */
 
             cairo_context->fill_preserve();
             cairo_context->set_source_rgba( 0 , 0 , 0 , 1.0 );
