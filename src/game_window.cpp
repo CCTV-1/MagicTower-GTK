@@ -146,7 +146,7 @@ namespace MagicTower
             {
                 for ( size_t x = 0 ; x < width ; x++ )
                 {
-                   bg_pixbuf->composite( info_frame , x*this->pixel_size , y*this->pixel_size , this->pixel_size , this->pixel_size ,
+                    bg_pixbuf->composite( info_frame , x*this->pixel_size , y*this->pixel_size , this->pixel_size , this->pixel_size ,
                     x*this->pixel_size , y*this->pixel_size , 1.0 , 1.0 , Gdk::InterpType::INTERP_NEAREST , 255 );
                 }
             }
@@ -293,18 +293,18 @@ namespace MagicTower
                 widget->set_value( value );
             };
 
-           set_spin_button_value( "layer_spin_button" , static_cast<gdouble>( game_object->hero.layers ) + 1 );
-           set_spin_button_value( "x_spin_button" , static_cast<gdouble>( game_object->hero.x ) );
-           set_spin_button_value( "y_spin_button" , static_cast<gdouble>( game_object->hero.y ) );
-           set_spin_button_value( "level_spin_button" , static_cast<gdouble>( game_object->hero.level ) );
-           set_spin_button_value( "life_spin_button" , static_cast<gdouble>( game_object->hero.life ) );
-           set_spin_button_value( "attack_spin_button" , static_cast<gdouble>( game_object->hero.attack ) );
-           set_spin_button_value( "defense_spin_button" , static_cast<gdouble>( game_object->hero.defense ) );
-           set_spin_button_value( "gold_spin_button" , static_cast<gdouble>( game_object->hero.gold ) );
-           set_spin_button_value( "experience_spin_button" , static_cast<gdouble>( game_object->hero.experience ) );
-           set_spin_button_value( "yellow_key_spin_button" , static_cast<gdouble>( game_object->hero.yellow_key ) );
-           set_spin_button_value( "blue_key_spin_button" , static_cast<gdouble>( game_object->hero.blue_key ) );
-           set_spin_button_value( "red_key_spin_button" , static_cast<gdouble>( game_object->hero.red_key ) );
+            set_spin_button_value( "layer_spin_button" , static_cast<gdouble>( game_object->hero.layers ) + 1 );
+            set_spin_button_value( "x_spin_button" , static_cast<gdouble>( game_object->hero.x ) );
+            set_spin_button_value( "y_spin_button" , static_cast<gdouble>( game_object->hero.y ) );
+            set_spin_button_value( "level_spin_button" , static_cast<gdouble>( game_object->hero.level ) );
+            set_spin_button_value( "life_spin_button" , static_cast<gdouble>( game_object->hero.life ) );
+            set_spin_button_value( "attack_spin_button" , static_cast<gdouble>( game_object->hero.attack ) );
+            set_spin_button_value( "defense_spin_button" , static_cast<gdouble>( game_object->hero.defense ) );
+            set_spin_button_value( "gold_spin_button" , static_cast<gdouble>( game_object->hero.gold ) );
+            set_spin_button_value( "experience_spin_button" , static_cast<gdouble>( game_object->hero.experience ) );
+            set_spin_button_value( "yellow_key_spin_button" , static_cast<gdouble>( game_object->hero.yellow_key ) );
+            set_spin_button_value( "blue_key_spin_button" , static_cast<gdouble>( game_object->hero.blue_key ) );
+            set_spin_button_value( "red_key_spin_button" , static_cast<gdouble>( game_object->hero.red_key ) );
         }
 
         //GDK coordinate origin : Top left corner,left -> right x add,up -> down y add.
