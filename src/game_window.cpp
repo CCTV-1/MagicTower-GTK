@@ -156,7 +156,7 @@ namespace MagicTower
 
         std::vector<std::shared_ptr<const char>> load_music( const char * music_path )
         {
-            std::shared_ptr<GDir> dir_ptr( g_dir_open( music_path , 0 , nullptr ) , g_dir_close );
+            std::unique_ptr< GDir , decltype( &g_dir_close ) > dir_ptr( g_dir_open( music_path , 0 , nullptr ) , g_dir_close );
 
             if ( g_file_test( music_path , G_FILE_TEST_EXISTS ) != TRUE )
                 return {};
@@ -169,8 +169,8 @@ namespace MagicTower
             const gchar * filename;
             while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
             {
-                std::shared_ptr<char> music_file_name( g_strdup_printf( "%s/%s" , music_path , filename ) , g_free );
-                std::shared_ptr<GFile> gfile_obj( g_file_new_for_path( music_file_name.get() ) , g_object_unref );
+                std::unique_ptr< char , decltype( &g_free ) > music_file_name( g_strdup_printf( "%s/%s" , music_path , filename ) , g_free );
+                std::unique_ptr< GFile , decltype( &g_object_unref ) > gfile_obj( g_file_new_for_path( music_file_name.get() ) , g_object_unref );
                 std::shared_ptr<const char> file_uri( g_file_get_uri( gfile_obj.get() ) , g_free );
                 uri_array.push_back( file_uri );
             }
@@ -180,7 +180,7 @@ namespace MagicTower
 
         std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> load_image_resource( const char * image_path )
         {
-            std::shared_ptr<GDir> dir_ptr( g_dir_open( image_path , 0 , nullptr ) , g_dir_close );
+            std::unique_ptr< GDir , decltype( &g_dir_close ) > dir_ptr( g_dir_open( image_path , 0 , nullptr ) , g_dir_close );
             std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> image_resource;
 
             //exists and type check
@@ -1161,7 +1161,7 @@ namespace MagicTower
 
     GameWindow::GameWindow( std::string program_name )
     {
-        std::shared_ptr<char> self_dir_path( g_path_get_dirname( program_name.c_str() ) , g_free );
+        std::unique_ptr< char , decltype( &g_free ) > self_dir_path( g_path_get_dirname( program_name.c_str() ) , g_free );
         g_chdir( self_dir_path.get() );
         this->imp_ptr = new GameWindowImp;
     }

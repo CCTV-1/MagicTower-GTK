@@ -72,7 +72,7 @@ namespace MagicTower
         GstElement * source;
         GstElement * conver;
         GstElement * sink;
-        std::shared_ptr<GRand> grand_gen;
+        std::unique_ptr< GRand , decltype( &g_rand_free ) > grand_gen;
     };
 
     static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
@@ -115,7 +115,7 @@ namespace MagicTower
 
     bool Music::play_next()
     {
-        std::shared_ptr<GstBus> bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
+        std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
         gst_bus_post( bus.get() , gst_message_new_eos( GST_OBJECT( bus.get() ) ) );
         return TRUE;
     }
@@ -195,7 +195,7 @@ namespace MagicTower
             }
             else
             {
-                std::shared_ptr<gchar> filename( g_filename_from_uri( uri.get() , nullptr , nullptr ) , g_free );
+                std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( uri.get() , nullptr , nullptr ) , g_free );
                 g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , filename.get() );
                 continue;
             }
@@ -216,7 +216,7 @@ namespace MagicTower
     void Music::set_play_mode( PLAY_MODE mode )
     {
         this->imp_ptr->mode = mode;
-        std::shared_ptr<GstBus> bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
+        std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
         if ( this->imp_ptr->handler_id == 0 )
             gst_bus_add_signal_watch( bus.get() );
         else
@@ -249,8 +249,8 @@ namespace MagicTower
     static bool is_music( std::shared_ptr<const char>& file_uri )
     {
         GstCaps * caps = nullptr;
-        std::shared_ptr<gchar> filename( g_filename_from_uri( file_uri.get() , nullptr , nullptr ) , g_free );
-        std::shared_ptr<GstElement> pipeline( gst_pipeline_new( "format_check" ) , gst_object_unref );
+        std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( file_uri.get() , nullptr , nullptr ) , g_free );
+        std::unique_ptr< GstElement , decltype( &gst_object_unref ) > pipeline( gst_pipeline_new( "format_check" ) , gst_object_unref );
         GstElement * source = gst_element_factory_make( "filesrc" , "source" );
         GstElement * typefind = gst_element_factory_make( "typefind" , "typefind" );
         GstElement * sink   = gst_element_factory_make( "fakesink" , "fakesink" );
@@ -265,8 +265,8 @@ namespace MagicTower
         {
             case GST_STATE_CHANGE_FAILURE:
             {
-                std::shared_ptr<GstBus> bus( gst_pipeline_get_bus( GST_PIPELINE( pipeline.get() ) ) , gst_object_unref );
-                std::shared_ptr<GstMessage> msg( gst_bus_poll( bus.get() , GST_MESSAGE_ERROR , 0 ) , gst_message_unref );
+                std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_pipeline_get_bus( GST_PIPELINE( pipeline.get() ) ) , gst_object_unref );
+                std::unique_ptr< GstMessage , decltype( &gst_message_unref ) > msg( gst_bus_poll( bus.get() , GST_MESSAGE_ERROR , 0 ) , gst_message_unref );
                 GError * err = nullptr;
     
                 if ( msg != nullptr )
@@ -287,7 +287,7 @@ namespace MagicTower
                 #ifdef DEBUG
                 if ( caps )
                 {
-                    std::shared_ptr<gchar> caps_str( gst_caps_to_string( caps ) , g_free );
+                    std::unique_ptr< gchar , decltype( &g_free ) > caps_str( gst_caps_to_string( caps ) , g_free );
                     g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s - %s" , filename.get() , caps_str.get() );
                     gst_caps_unref( caps );
                 }
@@ -301,7 +301,7 @@ namespace MagicTower
             default:
                 g_assert_not_reached();
         }
- 
+
         gst_element_set_state( pipeline.get() , GST_STATE_NULL );
         return true;
     }
@@ -316,7 +316,7 @@ namespace MagicTower
 
     static void pad_added_handler( GstElement * , GstPad * new_pad , GstElement * conver )
     {
-        std::shared_ptr<GstPad> sink_pad( gst_element_get_static_pad( conver , "sink" ) , gst_object_unref );
+        std::unique_ptr< GstPad , decltype( &gst_object_unref ) > sink_pad( gst_element_get_static_pad( conver , "sink" ) , gst_object_unref );
 
         /* if our converter is already linked, we have nothing to do here */
         if ( gst_pad_is_linked( sink_pad.get() ) )
@@ -326,7 +326,7 @@ namespace MagicTower
         }
 
         /* Check the new pad's type */
-        std::shared_ptr<GstCaps> new_pad_caps( gst_pad_query_caps( new_pad , nullptr ) , gst_caps_unref );
+        std::unique_ptr< GstCaps , decltype( &gst_caps_unref ) > new_pad_caps( gst_pad_query_caps( new_pad , nullptr ) , gst_caps_unref );
         GstStructure * new_pad_struct = gst_caps_get_structure( new_pad_caps.get() , 0 );
         const gchar * new_pad_type = gst_structure_get_name( new_pad_struct );
         

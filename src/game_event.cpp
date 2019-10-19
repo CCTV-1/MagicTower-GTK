@@ -298,7 +298,7 @@ namespace MagicTower
     void save_game( GameEnvironment * game_object , size_t save_id )
     {
         constexpr const char * save_path = "./save/";
-        std::shared_ptr<GFile> save_dir( g_file_new_for_path( save_path ) , g_object_unref );
+        std::unique_ptr< GFile , decltype( &g_object_unref ) > save_dir( g_file_new_for_path( save_path ) , g_object_unref );
         //if doesn't exists create dir,else do nothing.
         g_file_make_directory_with_parents( save_dir.get() , nullptr , nullptr );
         std::string db_name = std::string( save_path ) + std::to_string( save_id ) + std::string( ".db" );
@@ -329,7 +329,7 @@ namespace MagicTower
     {
         std::string db_name = std::string( "./save/" ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
-        std::shared_ptr<GFile> db_file( g_file_new_for_path( db_name.c_str() ) , g_object_unref );
+        std::unique_ptr< GFile , decltype( &g_object_unref ) > db_file( g_file_new_for_path( db_name.c_str() ) , g_object_unref );
         if ( g_file_query_exists( db_file.get() , nullptr ) == FALSE )
         {
             fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
@@ -628,28 +628,26 @@ namespace MagicTower
     bool trigger_custom_event( GameEnvironment * game_object , std::string& event_json )
     {
         json_error_t json_error;
-        json_t * root = json_loads( event_json.c_str() , 0 , &json_error );
-        json_t * type_node = json_object_get( root , "event_type" );
+        //json_t * root = json_loads( event_json.c_str() , 0 , &json_error );
+        std::unique_ptr< json_t , decltype( &json_decref ) > root( json_loads( event_json.c_str() , 0 , &json_error ) , json_decref );
+        json_t * type_node = json_object_get( root.get() , "event_type" );
         if( !json_is_string( type_node ) )
         {
-            json_decref( root );
             return false;
         }
         std::string event_type_string( json_string_value( type_node ) );
         if ( event_type_string == std::string( "SetGridType" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is false
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             size_t array_size = json_array_size( argumens_node );
             if ( array_size != 3 && array_size != 4 )
             {
-                json_decref( root );
                 return false;
             }
             json_int_t args[4];
@@ -658,7 +656,6 @@ namespace MagicTower
                 json_t * argumens = json_array_get( argumens_node , i );
                 if( !json_is_integer( argumens ) )
                 {
-                    json_decref( root );
                     return false;
                 }
                 args[i] = json_integer_value( argumens );
@@ -667,33 +664,30 @@ namespace MagicTower
                 set_grid_type( game_object , { args[0] , args[1] , args[2] } );
             else
                 set_grid_type( game_object , { args[0] , args[1] , args[2] } , static_cast<GRID_TYPE>( args[3] ) );
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "CheckGridType" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             size_t array_size = json_array_size( argumens_node );
             if ( array_size != 4 )
             {
-                json_decref( root );
                 return false;
             }
             json_int_t args[4];
@@ -702,104 +696,97 @@ namespace MagicTower
                 json_t * argumens = json_array_get( argumens_node , i );
                 if( !json_is_integer( argumens ) )
                 {
-                    json_decref( root );
                     return false;
                 }
                 args[i] = json_integer_value( argumens );
             }
             if ( check_grid_type( game_object , { args[0] , args[1] , args[2] } , static_cast<GRID_TYPE>( args[3] ) ) == true )
             {
-                json_t * true_event_node = json_object_get( root , "true" );
-                std::shared_ptr<char> event_json( json_dumps( true_event_node , JSON_INDENT( 4 ) ) , free );
+                json_t * true_event_node = json_object_get( root.get() , "true" );
+                std::unique_ptr< char , decltype( &free ) > event_json( json_dumps( true_event_node , JSON_INDENT( 4 ) ) , free );
                 std::string true_event_json( event_json.get() );
                 trigger_custom_event( game_object , true_event_json );
                 json_t * new_true_event_node = json_loads( true_event_json.c_str() , 0 , &json_error );
-                json_object_set( root , "true" , new_true_event_node );
+                json_object_set( root.get() , "true" , new_true_event_node );
                 json_decref( new_true_event_node );
             }
             else
             {
-                json_t * false_event_node = json_object_get( root , "false" );
-                std::shared_ptr<char> event_json( json_dumps( false_event_node , JSON_INDENT( 4 ) ) , free );
+                json_t * false_event_node = json_object_get( root.get() , "false" );
+                std::unique_ptr< char , decltype( &free ) > event_json( json_dumps( false_event_node , JSON_INDENT( 4 ) ) , free );
                 std::string false_event_json( event_json.get() );
                 trigger_custom_event( game_object , false_event_json );
                 json_t * new_false_event_node = json_loads( false_event_json.c_str() , 0 , &json_error );
-                json_object_set( root , "false" , new_false_event_node );
+                json_object_set( root.get() , "false" , new_false_event_node );
                 json_decref( new_false_event_node );
             }
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "GameWin" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
             game_win( game_object );
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "GameLose" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
             game_lose( game_object );
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "MoveHero" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             size_t array_size = json_array_size( argumens_node );
             if ( array_size != 3 )
             {
-                json_decref( root );
+
                 return false;
             }
             json_int_t args[3];
@@ -808,71 +795,64 @@ namespace MagicTower
                 json_t * argumens = json_array_get( argumens_node , i );
                 if( !json_is_integer( argumens ) )
                 {
-                    json_decref( root );
                     return false;
                 }
                 args[i] = json_integer_value( argumens );
             }
             move_hero( game_object , { args[0] , args[1] , args[2] } );
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "GetItem" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             size_t array_size = json_array_size( argumens_node );
             if ( array_size != 1 )
             {
-                json_decref( root );
                 return false;
             }
             json_t * argumens = json_array_get( argumens_node , 0 );
             json_int_t arg = json_integer_value( argumens );
             get_item( game_object , arg );
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "UnlockStore" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             size_t array_size = json_array_size( argumens_node );
             if ( array_size != 1 )
             {
-                json_decref( root );
                 return false;
             }
             json_t * argumens = json_array_get( argumens_node , 0 );
@@ -883,33 +863,30 @@ namespace MagicTower
                 std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ arg ] ).name;
                 set_tips( game_object , tips );
             }
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "lockStore" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             size_t array_size = json_array_size( argumens_node );
             if ( array_size != 1 )
             {
-                json_decref( root );
                 return false;
             }
             json_t * argumens = json_array_get( argumens_node , 0 );
@@ -920,52 +897,47 @@ namespace MagicTower
                 std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ arg ] ).name;
                 set_tips( game_object , tips );
             }
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "Shopping" ) )
         {
-            json_t * usability_node = json_object_get( root , "usability" ); 
+            json_t * usability_node = json_object_get( root.get() , "usability" ); 
             if ( json_boolean_value( usability_node ) == false )
             {
                 //if node non-existent,default value is true
-                json_decref( root );
                 return false;
             }
-            json_t * argumens_node = json_object_get( root , "argument" );
+            json_t * argumens_node = json_object_get( root.get() , "argument" );
             if ( !json_is_object( argumens_node ) )
             {
-                json_decref( root );
                 return false;
             }
-            std::shared_ptr<char> commodity_json( json_dumps( argumens_node , JSON_INDENT( 4 ) ) , free );
+            std::unique_ptr< char , decltype( &free ) > commodity_json( json_dumps( argumens_node , JSON_INDENT( 4 ) ) , free );
             if ( shopping( game_object , commodity_json.get() ) == false )
             {
-                json_decref( root );
                 return false;
             }
-            json_t * trigger_limit_node = json_object_get( root , "trigger_limit" );
+            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
             if( !json_is_integer( trigger_limit_node ) )
             {
-                json_decref( root );
                 return true;
             }
             json_int_t trigger_limit = json_integer_value( trigger_limit_node );
             if ( trigger_limit == 1 )
             {
-                json_object_set( root , "usability" , json_false() );
+                json_object_set( root.get() , "usability" , json_false() );
             }
-            json_object_set( root , "trigger_limit" , json_integer( trigger_limit - 1 ) );
+            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
         }
         else if ( event_type_string == std::string( "None" ) )
         {
@@ -976,9 +948,9 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unknown event type ignore event" );
         }
 
-        std::shared_ptr<char> event_json_ptr( json_dumps( root , JSON_INDENT( 4 ) ) , free ); 
+        std::unique_ptr< char , decltype( &free ) > event_json_ptr( json_dumps( root.get() , JSON_INDENT( 4 ) ) , free ); 
         event_json = std::string( event_json_ptr.get() );
-        json_decref( root );
+        //json_decref( root );
         return true;
     }
 
@@ -1716,7 +1688,7 @@ namespace MagicTower
                 json_decref( root );
                 return ;
             }
-            std::shared_ptr<char> commodity_json( json_dumps( commodity_node , JSON_INDENT( 4 ) ) , free );
+            std::unique_ptr< char , decltype( &free ) > commodity_json( json_dumps( commodity_node , JSON_INDENT( 4 ) ) , free );
             std::string commodity_content( commodity_json.get() );
             game_object->menu_items.push_back({
                 [ commodity_content ](){ return deserialize_commodity_content( commodity_content.c_str() ); },
