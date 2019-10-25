@@ -5,6 +5,7 @@ Dependency Library:
   -  ```GStreamer 1.12```+
   -  ```SQLITE3 3.21```+
   -  ```jansson 2.11```+
+  -  ```lua 5.3```+
 
 Language: 
  - ```C++11```+
