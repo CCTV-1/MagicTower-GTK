@@ -372,6 +372,10 @@ namespace MagicTower
 
     bool move_hero( GameEnvironment * game_object , event_position_t position )
     {
+        if ( game_object->game_status == GAME_STATUS::FIND_PATH )
+        {
+            game_object->game_status = GAME_STATUS::NORMAL;
+        }
         Hero& hero = game_object->hero;
         hero.x = std::get<0>( position );
         hero.y = std::get<1>( position );
@@ -628,7 +632,6 @@ namespace MagicTower
     bool trigger_custom_event( GameEnvironment * game_object , std::string& event_json )
     {
         json_error_t json_error;
-        //json_t * root = json_loads( event_json.c_str() , 0 , &json_error );
         std::unique_ptr< json_t , decltype( &json_decref ) > root( json_loads( event_json.c_str() , 0 , &json_error ) , json_decref );
         json_t * type_node = json_object_get( root.get() , "event_type" );
         if( !json_is_string( type_node ) )
@@ -950,7 +953,6 @@ namespace MagicTower
 
         std::unique_ptr< char , decltype( &free ) > event_json_ptr( json_dumps( root.get() , JSON_INDENT( 4 ) ) , free ); 
         event_json = std::string( event_json_ptr.get() );
-        //json_decref( root );
         return true;
     }
 
@@ -1164,7 +1166,7 @@ namespace MagicTower
 
     void test_window_switch( GameEnvironment * )
     {
-/*         static bool display_window = false;
+        /*static bool display_window = false;
         GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
         GtkWidget * test_func_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_func_grid" ) );
         display_window = !display_window;
@@ -1615,7 +1617,7 @@ namespace MagicTower
                     return std::string( "测试模式: 开" );
                 else
                     return std::string( "测试模式: 关" ); */
-                return std::string( "测试模式: 未知状态" );
+                return std::string( "测试模式: 被禁用" );
             },
             [ game_object ](){ test_window_switch( game_object ); }
         });
