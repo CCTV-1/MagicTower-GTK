@@ -50,7 +50,7 @@ if [ -d /mingw64/share/themes/Default ]; then
 fi
 
 load_info=$(strace $1);
-load_info=$(grep -e "loaded .:\\\\MSYS2\\\\" <<< $load_info)
+load_info=$(grep -e "loaded .:\\\\MSYS2\\\\mingw64\\\\bin" <<< $load_info)
 load_info=$(sort <<< $load_info)
 load_info=$(awk '{print $5}' <<< $load_info)
 load_info=$(sed 's/\\/\//g' <<< $load_info)
