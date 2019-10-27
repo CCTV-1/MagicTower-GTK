@@ -1,1 +1,1 @@
-set_tips("down layer to 1")
+set_tips("下到一楼")
