@@ -86,11 +86,6 @@ Z2FtZV9vYmplY3QK
 ## Todo
 - [ ] animation
 - [ ] game editor
-- [ ] distribution script
-- [ ] makefile
-- [ ] test case
-- [ ] debuger
-- [ ] code refactoring
 
 ## License
 ----
