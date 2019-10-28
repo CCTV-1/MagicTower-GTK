@@ -70,18 +70,6 @@ namespace MagicTower
             this->pixel_size = grid_width/32*32;
 
             this->builder_refptr = Gtk::Builder::create_from_file( UI_DEFINE_RESOURCES_PATH );
-            Gtk::SpinButton * layer_spin_button = nullptr;
-            this->builder_refptr->get_widget( "layer_spin_button" , layer_spin_button );
-            Glib::RefPtr<Gtk::Adjustment> layer_adjustment = Gtk::Adjustment::create( 1 , 1 , this->game_object->towers.HEIGHT , 1 , 10 , 0 );
-            layer_spin_button->set_adjustment( layer_adjustment );
-            Gtk::SpinButton * x_spin_button = nullptr;
-            this->builder_refptr->get_widget( "x_spin_button" , x_spin_button );
-            Glib::RefPtr<Gtk::Adjustment> x_adjustment = Gtk::Adjustment::create( 0 , 0 , this->game_object->towers.LENGTH , 1 , 1 , 0 );
-            x_spin_button->set_adjustment( x_adjustment );
-            Gtk::SpinButton * y_spin_button = nullptr;
-            this->builder_refptr->get_widget( "y_spin_button" , y_spin_button );
-            Glib::RefPtr<Gtk::Adjustment> y_adjustment = Gtk::Adjustment::create( 0 , 0 , this->game_object->towers.WIDTH , 1 , 1 , 0 );
-            y_spin_button->set_adjustment( y_adjustment );
 
             int tower_width = ( this->game_object->towers.LENGTH )*this->pixel_size;
             int info_width = ( this->game_object->towers.LENGTH/2 )*this->pixel_size;
