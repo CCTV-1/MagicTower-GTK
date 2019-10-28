@@ -303,8 +303,16 @@ namespace MagicTower
     {
         constexpr const char * save_path = "./save/";
         Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( save_path );
-        //if doesn't exists create dir,else do nothing.
-        save_dir->make_directory_with_parents();
+        try
+        {
+            save_dir->make_directory_with_parents();
+        }
+        catch( const Glib::Error& e )
+        {
+            //if dir exists,do nothing.
+            g_log( __func__ , G_LOG_LEVEL_WARNING , "%s" , e.what().c_str() );
+        }
+
         std::string db_name = std::string( save_path ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
