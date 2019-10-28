@@ -985,7 +985,7 @@ sqlite document:
             throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 1 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 2 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_bind_count_failure( std::string( sql_statement ) );
