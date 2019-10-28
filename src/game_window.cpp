@@ -83,13 +83,6 @@ namespace MagicTower
             Glib::RefPtr<Gtk::Adjustment> y_adjustment = Gtk::Adjustment::create( 0 , 0 , this->game_object->towers.WIDTH , 1 , 1 , 0 );
             y_spin_button->set_adjustment( y_adjustment );
 
-            Gtk::Button * apply_button = nullptr;
-            this->builder_refptr->get_widget( "apply_modify_button" , apply_button );
-            apply_button->signal_clicked().connect( sigc::mem_fun( *this, &GameWindowImp::apply_game_data ) );
-            Gtk::Button * sync_button = nullptr;
-            this->builder_refptr->get_widget( "synchronize_data_button" , sync_button );
-            sync_button->signal_clicked().connect( sigc::mem_fun( *this , &GameWindowImp::sync_game_data ) );
-
             int tower_width = ( this->game_object->towers.LENGTH )*this->pixel_size;
             int info_width = ( this->game_object->towers.LENGTH/2 )*this->pixel_size;
             int window_height = ( this->game_object->towers.LENGTH )*this->pixel_size;
@@ -123,7 +116,7 @@ namespace MagicTower
             this->layout = window->create_pango_layout( "字符串" );
             this->layout->set_font_description( this->font_desc );
 
-            Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::draw_loop ) , 50 );
+            Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::draw_loop ) , 100 );
             Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::automatic_movement ) , 100 );
 
             this->info_frame = info_background_image_factory( this->game_object->towers.WIDTH/2 , this->game_object->towers.HEIGHT );
@@ -138,8 +131,7 @@ namespace MagicTower
 
         void run()
         {
-            while( this->game_object->game_status != GAME_STATUS::GAME_END )
-                main_loop.iteration();
+            this->main_loop.run( std::ref( *this->window ) );
         }
 
     protected:
@@ -232,6 +224,10 @@ namespace MagicTower
 
         bool draw_loop( void )
         {
+            if ( this->game_object->game_status == GAME_STATUS::GAME_END )
+            {
+                this->main_loop.quit();
+            }
             this->info_area->queue_draw();
             this->game_area->queue_draw();
             return true;
@@ -253,7 +249,7 @@ namespace MagicTower
             TowerGridLocation temp = { ( game_object->hero ).x , ( game_object->hero ).y };
             ( game_object->hero ).x = goal.x;
             ( game_object->hero ).y = goal.y;
-            bool flags = trigger_collision_event( game_object );
+            bool flags = trigger_collision_event( game_object , this->script_engines.get() );
             if ( flags == false )
             {
                 ( game_object->hero ).x = temp.x;
@@ -263,71 +259,8 @@ namespace MagicTower
                     game_object->game_status = GAME_STATUS::NORMAL;
                 return true;
             }
-            else
-            {
-                std::string script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).layers ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-                if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
-                {
-                    if ( luaL_dofile( this->script_engines.get() , script_name.data() ) )
-                    {
-                        g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( script_engines.get() , -1 ) );
-                    }
-                }
-            }
             game_object->path.pop_back();
             return true;
-        }
-
-        void apply_game_data( void )
-        {
-            GameEnvironment * game_object = this->game_object;
-            auto get_spin_button_value = [ this ]( const char * button_name ) -> std::uint32_t
-            {
-                Gtk::SpinButton * widget = nullptr;
-                this->builder_refptr->get_widget( button_name , widget );
-                if ( widget == nullptr )
-                    return 0;
-                return widget->get_value();
-            };
-
-            game_object->hero.x = get_spin_button_value( "x_spin_button" );
-            game_object->hero.layers = get_spin_button_value( "layer_spin_button" ) - 1;
-            game_object->hero.y = get_spin_button_value( "y_spin_button" );
-            game_object->hero.level = get_spin_button_value( "level_spin_button" );
-            game_object->hero.life = get_spin_button_value( "life_spin_button" );
-            game_object->hero.attack = get_spin_button_value( "attack_spin_button" );
-            game_object->hero.defense = get_spin_button_value( "defense_spin_button" );
-            game_object->hero.gold = get_spin_button_value( "gold_spin_button" );
-            game_object->hero.experience = get_spin_button_value( "experience_spin_button" );
-            game_object->hero.yellow_key = get_spin_button_value( "yellow_key_spin_button" );
-            game_object->hero.blue_key = get_spin_button_value( "blue_key_spin_button" );
-            game_object->hero.red_key = get_spin_button_value( "red_key_spin_button" );
-        }
-
-        void sync_game_data( void )
-        {
-            GameEnvironment * game_object = this->game_object;
-            auto set_spin_button_value = [ this ]( const char * button_name , gdouble value )
-            {
-                Gtk::SpinButton * widget = nullptr;
-                this->builder_refptr->get_widget( button_name , widget );
-                if ( widget == nullptr )
-                    return ;
-                widget->set_value( value );
-            };
-
-            set_spin_button_value( "layer_spin_button" , static_cast<gdouble>( game_object->hero.layers ) + 1 );
-            set_spin_button_value( "x_spin_button" , static_cast<gdouble>( game_object->hero.x ) );
-            set_spin_button_value( "y_spin_button" , static_cast<gdouble>( game_object->hero.y ) );
-            set_spin_button_value( "level_spin_button" , static_cast<gdouble>( game_object->hero.level ) );
-            set_spin_button_value( "life_spin_button" , static_cast<gdouble>( game_object->hero.life ) );
-            set_spin_button_value( "attack_spin_button" , static_cast<gdouble>( game_object->hero.attack ) );
-            set_spin_button_value( "defense_spin_button" , static_cast<gdouble>( game_object->hero.defense ) );
-            set_spin_button_value( "gold_spin_button" , static_cast<gdouble>( game_object->hero.gold ) );
-            set_spin_button_value( "experience_spin_button" , static_cast<gdouble>( game_object->hero.experience ) );
-            set_spin_button_value( "yellow_key_spin_button" , static_cast<gdouble>( game_object->hero.yellow_key ) );
-            set_spin_button_value( "blue_key_spin_button" , static_cast<gdouble>( game_object->hero.blue_key ) );
-            set_spin_button_value( "red_key_spin_button" , static_cast<gdouble>( game_object->hero.red_key ) );
         }
 
         //GDK coordinate origin : Top left corner,left -> right x add,up -> down y add.
@@ -841,77 +774,33 @@ namespace MagicTower
                         case GDK_KEY_Left:
                         {
                             ( game_object->hero ).x -= 1;
-                            bool flags = trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object , this->script_engines.get() );
                             if ( flags == false )
                                 ( game_object->hero ).x += 1;
-                            else
-                            {
-                                std::string script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).layers ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-                                if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
-                                {
-                                    if ( luaL_dofile( this->script_engines.get() , script_name.data() ) )
-                                    {
-                                        g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( script_engines.get() , -1 ) );
-                                    }
-                                }
-                            }
                             break;
                         }
                         case GDK_KEY_Right:
                         {
                             ( game_object->hero ).x += 1;
-                            bool flags = trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object , this->script_engines.get() );
                             if ( flags == false )
                                 ( game_object->hero ).x -= 1;
-                            else
-                            {
-                                std::string script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).layers ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-                                if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
-                                {
-                                    if ( luaL_dofile( this->script_engines.get() , script_name.data() ) )
-                                    {
-                                        g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( script_engines.get() , -1 ) );
-                                    }
-                                }
-                            }
                             break;
                         }
                         case GDK_KEY_Up:
                         {
                             ( game_object->hero ).y -= 1;
-                            bool flags = trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object , this->script_engines.get() );
                             if ( flags == false )
                                 ( game_object->hero ).y += 1;
-                            else
-                            {
-                                std::string script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).layers ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-                                if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
-                                {
-                                    if ( luaL_dofile( this->script_engines.get() , script_name.data() ) )
-                                    {
-                                        g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( script_engines.get() , -1 ) );
-                                    }
-                                }
-                            }
                             break;
                         }
                         case GDK_KEY_Down:
                         {
                             ( game_object->hero ).y += 1;
-                            bool flags = trigger_collision_event( game_object );
+                            bool flags = trigger_collision_event( game_object , this->script_engines.get() );
                             if ( flags == false )
                                 ( game_object->hero ).y -= 1;
-                            else
-                            {
-                                std::string script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).layers ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-                                if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
-                                {
-                                    if ( luaL_dofile( this->script_engines.get() , script_name.data() ) )
-                                    {
-                                        g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( script_engines.get() , -1 ) );
-                                    }
-                                }
-                            }
                             break;
                         }
                         case GDK_KEY_Escape:
@@ -1228,31 +1117,6 @@ namespace MagicTower
                 }
             );
 
-            //void move_hero( number layer , number x , number y )
-            lua_register( this->script_engines.get() , "move_hero" ,
-                []( lua_State * L ) -> int
-                {
-                    int argument_count = lua_gettop( L );
-                    if ( argument_count <= 3 )
-                    {
-                        g_log( "lua_move_hero" , G_LOG_LEVEL_WARNING , "expecting exactly 3 arguments" );
-                        return 0;
-                    }
-                    //discard any extra arguments passed
-                    lua_settop( L , 3 );
-
-                    std::uint32_t layer = luaL_checkinteger( L , 1 );
-                    std::uint32_t x = luaL_checkinteger( L , 2 );
-                    std::uint32_t y = luaL_checkinteger( L , 3 );
-
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 4 );
-                    
-                    move_hero( game_object , { x , y , layer } );
-                    return 0;
-                }
-            );
-
             //void set_grid_type( number layer , number x , number y , number grid_id )
             lua_register( this->script_engines.get() , "set_grid_type" ,
                 []( lua_State * L ) -> int
@@ -1407,7 +1271,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
 
-                    //base64 flags_prefix_ -> ZmxhZ3NfcHJlZml4Xwo
+                    //base64 flags_prefix_ -> ZmxhZ3NfcHJlZml4Xwo=
                     std::string flags_name( std::string( "ZmxhZ3NfcHJlZml4Xwo=" ) + luaL_checkstring( L , 1 ) );
 
                     lua_getglobal( L , flags_name.c_str() );
@@ -1437,7 +1301,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 2 );
 
-                    //base64 flags_prefix_ -> ZmxhZ3NfcHJlZml4Xwo
+                    //base64 flags_prefix_ -> ZmxhZ3NfcHJlZml4Xwo=
                     std::string flags_name( std::string( "ZmxhZ3NfcHJlZml4Xwo=" ) + luaL_checkstring( L , 1 ) );
                     luaL_checktype( L , 2 , LUA_TNUMBER );
                     std::int64_t value = lua_tointeger( L , 2 );
@@ -1518,6 +1382,21 @@ namespace MagicTower
                 }
             );
 
+            //void close_menu( void )
+            lua_register( this->script_engines.get() , "close_menu" ,
+                []( lua_State * L ) -> int
+                {
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    if ( game_object->game_status == GAME_STATUS::GAME_MENU )
+                    {
+                        game_object->game_status = GAME_STATUS::NORMAL;
+                    }
+                    return 0;
+                }
+            );
+
             //void get_item( number item_id )
             lua_register( this->script_engines.get() , "get_item" ,
                 []( lua_State * L ) -> int
@@ -1537,6 +1416,81 @@ namespace MagicTower
                     GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
                     
                     get_item( game_object , item_id );
+                    return 0;
+                }
+            );
+
+            //void unlock_store( number store_id )
+            lua_register( this->script_engines.get() , "unlock_store" ,
+                []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_unlock_store" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+
+                    std::uint32_t store_id = luaL_checkinteger( L , 1 );
+
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+
+                    game_object->store_list[ store_id ].usability = true;
+                    std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ store_id ] ).name;
+                    set_tips( game_object , tips );
+                    return 0;
+                }
+            );
+
+            //void lock_store( number store_id )
+            lua_register( this->script_engines.get() , "lock_store" ,
+                []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_lock_store" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+
+                    std::uint32_t store_id = luaL_checkinteger( L , 1 );
+
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+
+                    game_object->store_list[ store_id ].usability = false;
+                    std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ store_id ] ).name;
+                    set_tips( game_object , tips );
+                    return 0;
+                }
+            );
+
+            //void move_hero( number layer , number x , number y )
+            lua_register( this->script_engines.get() , "move_hero" ,
+                []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 3 )
+                    {
+                        g_log( "lua_move_hero" , G_LOG_LEVEL_WARNING , "expecting exactly 3 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 3 );
+
+                    std::uint32_t layer = luaL_checkinteger( L , 1 );
+                    std::uint32_t x = luaL_checkinteger( L , 2 );
+                    std::uint32_t y = luaL_checkinteger( L , 3 );
+
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 4 );
+                    
+                    move_hero( game_object , { x , y , layer } );
                     return 0;
                 }
             );

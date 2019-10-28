@@ -13,11 +13,15 @@
 #include <tuple>
 #include <algorithm>
 
-#include <glib.h> //g_log
+#include <glibmm.h> //g_log
 #include <giomm.h>
+
+#include <lua.hpp>
 
 #include "game_event.h"
 #include "env_var.h"
+
+#define CUSTOM_SCRIPTS_PATH "../resources/scripts/"
 
 namespace MagicTower
 {
@@ -298,9 +302,9 @@ namespace MagicTower
     void save_game( GameEnvironment * game_object , size_t save_id )
     {
         constexpr const char * save_path = "./save/";
-        std::unique_ptr< GFile , decltype( &g_object_unref ) > save_dir( g_file_new_for_path( save_path ) , g_object_unref );
+        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( save_path );
         //if doesn't exists create dir,else do nothing.
-        g_file_make_directory_with_parents( save_dir.get() , nullptr , nullptr );
+        save_dir->make_directory_with_parents();
         std::string db_name = std::string( save_path ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
@@ -329,8 +333,8 @@ namespace MagicTower
     {
         std::string db_name = std::string( "./save/" ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
-        std::unique_ptr< GFile , decltype( &g_object_unref ) > db_file( g_file_new_for_path( db_name.c_str() ) , g_object_unref );
-        if ( g_file_query_exists( db_file.get() , nullptr ) == FALSE )
+        Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( db_name );
+        if ( db_file->query_exists() == false )
         {
             fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
             set_tips( game_object , fail_tips );
@@ -558,7 +562,7 @@ namespace MagicTower
         return true;
     }
 
-    bool trigger_collision_event( GameEnvironment * game_object )
+    bool trigger_collision_event( GameEnvironment * game_object , lua_State * lua_state )
     {
         bool state = false;
         Hero& hero = game_object->hero;
@@ -622,338 +626,16 @@ namespace MagicTower
             }
         }
 
-        auto event_iter = game_object->custom_events.find( { hero.x , hero.y , hero.layers } );
-        if ( event_iter != game_object->custom_events.end() )
-            trigger_custom_event( game_object , event_iter->second );
+        std::string script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).layers ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
+        if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
+        {
+            if ( luaL_dofile( lua_state , script_name.data() ) )
+            {
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( lua_state , -1 ) );
+            }
+        }
 
         return state;
-    }
-
-    bool trigger_custom_event( GameEnvironment * game_object , std::string& event_json )
-    {
-        json_error_t json_error;
-        std::unique_ptr< json_t , decltype( &json_decref ) > root( json_loads( event_json.c_str() , 0 , &json_error ) , json_decref );
-        json_t * type_node = json_object_get( root.get() , "event_type" );
-        if( !json_is_string( type_node ) )
-        {
-            return false;
-        }
-        std::string event_type_string( json_string_value( type_node ) );
-        if ( event_type_string == std::string( "SetGridType" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is false
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            size_t array_size = json_array_size( argumens_node );
-            if ( array_size != 3 && array_size != 4 )
-            {
-                return false;
-            }
-            json_int_t args[4];
-            for ( size_t i = 0 ; i < array_size ; i++ )
-            {
-                json_t * argumens = json_array_get( argumens_node , i );
-                if( !json_is_integer( argumens ) )
-                {
-                    return false;
-                }
-                args[i] = json_integer_value( argumens );
-            }
-            if ( array_size == 3 )
-                set_grid_type( game_object , { args[0] , args[1] , args[2] } );
-            else
-                set_grid_type( game_object , { args[0] , args[1] , args[2] } , static_cast<GRID_TYPE>( args[3] ) );
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "CheckGridType" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            size_t array_size = json_array_size( argumens_node );
-            if ( array_size != 4 )
-            {
-                return false;
-            }
-            json_int_t args[4];
-            for ( size_t i = 0 ; i < sizeof( args )/sizeof( args[0] ) ; i++ )
-            {
-                json_t * argumens = json_array_get( argumens_node , i );
-                if( !json_is_integer( argumens ) )
-                {
-                    return false;
-                }
-                args[i] = json_integer_value( argumens );
-            }
-            if ( check_grid_type( game_object , { args[0] , args[1] , args[2] } , static_cast<GRID_TYPE>( args[3] ) ) == true )
-            {
-                json_t * true_event_node = json_object_get( root.get() , "true" );
-                std::unique_ptr< char , decltype( &free ) > event_json( json_dumps( true_event_node , JSON_INDENT( 4 ) ) , free );
-                std::string true_event_json( event_json.get() );
-                trigger_custom_event( game_object , true_event_json );
-                json_t * new_true_event_node = json_loads( true_event_json.c_str() , 0 , &json_error );
-                json_object_set( root.get() , "true" , new_true_event_node );
-                json_decref( new_true_event_node );
-            }
-            else
-            {
-                json_t * false_event_node = json_object_get( root.get() , "false" );
-                std::unique_ptr< char , decltype( &free ) > event_json( json_dumps( false_event_node , JSON_INDENT( 4 ) ) , free );
-                std::string false_event_json( event_json.get() );
-                trigger_custom_event( game_object , false_event_json );
-                json_t * new_false_event_node = json_loads( false_event_json.c_str() , 0 , &json_error );
-                json_object_set( root.get() , "false" , new_false_event_node );
-                json_decref( new_false_event_node );
-            }
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "GameWin" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            game_win( game_object );
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "GameLose" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            game_lose( game_object );
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "MoveHero" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            size_t array_size = json_array_size( argumens_node );
-            if ( array_size != 3 )
-            {
-
-                return false;
-            }
-            json_int_t args[3];
-            for ( size_t i = 0 ; i < array_size ; i++ )
-            {
-                json_t * argumens = json_array_get( argumens_node , i );
-                if( !json_is_integer( argumens ) )
-                {
-                    return false;
-                }
-                args[i] = json_integer_value( argumens );
-            }
-            move_hero( game_object , { args[0] , args[1] , args[2] } );
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "GetItem" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            size_t array_size = json_array_size( argumens_node );
-            if ( array_size != 1 )
-            {
-                return false;
-            }
-            json_t * argumens = json_array_get( argumens_node , 0 );
-            json_int_t arg = json_integer_value( argumens );
-            get_item( game_object , arg );
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "UnlockStore" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            size_t array_size = json_array_size( argumens_node );
-            if ( array_size != 1 )
-            {
-                return false;
-            }
-            json_t * argumens = json_array_get( argumens_node , 0 );
-            json_int_t arg = json_integer_value( argumens );
-            if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
-            {
-                game_object->store_list[ arg ].usability = true;
-                std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ arg ] ).name;
-                set_tips( game_object , tips );
-            }
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "lockStore" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            size_t array_size = json_array_size( argumens_node );
-            if ( array_size != 1 )
-            {
-                return false;
-            }
-            json_t * argumens = json_array_get( argumens_node , 0 );
-            json_int_t arg = json_integer_value( argumens );
-            if ( game_object->store_list.size() > static_cast<std::size_t>( arg ) )
-            {
-                game_object->store_list[ arg ].usability = false;
-                std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ arg ] ).name;
-                set_tips( game_object , tips );
-            }
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "Shopping" ) )
-        {
-            json_t * usability_node = json_object_get( root.get() , "usability" ); 
-            if ( json_boolean_value( usability_node ) == false )
-            {
-                //if node non-existent,default value is true
-                return false;
-            }
-            json_t * argumens_node = json_object_get( root.get() , "argument" );
-            if ( !json_is_object( argumens_node ) )
-            {
-                return false;
-            }
-            std::unique_ptr< char , decltype( &free ) > commodity_json( json_dumps( argumens_node , JSON_INDENT( 4 ) ) , free );
-            if ( shopping( game_object , commodity_json.get() ) == false )
-            {
-                return false;
-            }
-            json_t * trigger_limit_node = json_object_get( root.get() , "trigger_limit" );
-            if( !json_is_integer( trigger_limit_node ) )
-            {
-                return true;
-            }
-            json_int_t trigger_limit = json_integer_value( trigger_limit_node );
-            if ( trigger_limit == 1 )
-            {
-                json_object_set( root.get() , "usability" , json_false() );
-            }
-            json_object_set( root.get() , "trigger_limit" , json_integer( trigger_limit - 1 ) );
-        }
-        else if ( event_type_string == std::string( "None" ) )
-        {
-            //do nothing
-        }
-        else
-        {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unknown event type ignore event" );
-        }
-
-        std::unique_ptr< char , decltype( &free ) > event_json_ptr( json_dumps( root.get() , JSON_INDENT( 4 ) ) , free ); 
-        event_json = std::string( event_json_ptr.get() );
-        return true;
     }
 
     bool shopping( GameEnvironment * game_object , const char * commodity_json )
@@ -1162,47 +844,6 @@ namespace MagicTower
             game_object->music.play_resume();
         else
             game_object->music.play_pause();
-    }
-
-    void test_window_switch( GameEnvironment * )
-    {
-        /*static bool display_window = false;
-        GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
-        GtkWidget * test_func_grid = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_func_grid" ) );
-        display_window = !display_window;
-
-        if ( display_window == true )
-        {
-            if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-                return ;
-
-            auto set_spin_button_value = [ game_object ]( const char * button_name , gdouble value )
-            {
-                GtkSpinButton * widget = GTK_SPIN_BUTTON( gtk_builder_get_object( game_object->builder , button_name ) );
-                if ( widget == nullptr )
-                    return ;
-                gtk_spin_button_set_value( widget , value );
-            };
-        
-            set_spin_button_value( "layer_spin_button" , static_cast<gdouble>( game_object->hero.layers ) + 1 );
-            set_spin_button_value( "x_spin_button" , static_cast<gdouble>( game_object->hero.x ) );
-            set_spin_button_value( "y_spin_button" , static_cast<gdouble>( game_object->hero.y ) );
-            set_spin_button_value( "level_spin_button" , static_cast<gdouble>( game_object->hero.level ) );
-            set_spin_button_value( "life_spin_button" , static_cast<gdouble>( game_object->hero.life ) );
-            set_spin_button_value( "attack_spin_button" , static_cast<gdouble>( game_object->hero.attack ) );
-            set_spin_button_value( "defense_spin_button" , static_cast<gdouble>( game_object->hero.defense ) );
-            set_spin_button_value( "gold_spin_button" , static_cast<gdouble>( game_object->hero.gold ) );
-            set_spin_button_value( "experience_spin_button" , static_cast<gdouble>( game_object->hero.experience ) );
-            set_spin_button_value( "yellow_key_spin_button" , static_cast<gdouble>( game_object->hero.yellow_key ) );
-            set_spin_button_value( "blue_key_spin_button" , static_cast<gdouble>( game_object->hero.blue_key ) );
-            set_spin_button_value( "red_key_spin_button" , static_cast<gdouble>( game_object->hero.red_key ) );
-
-
-            gtk_widget_show_all( GTK_WIDGET( test_func_grid ) );
-            gtk_widget_show_all( GTK_WIDGET( test_mode_window ) );
-        }
-        else if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-            gtk_widget_hide( GTK_WIDGET( test_mode_window ) ); */
     }
 
     void path_line_switch( GameEnvironment * game_object )
@@ -1609,17 +1250,6 @@ namespace MagicTower
                     return std::string( "背景音乐: 关" );
             },
             [ game_object ](){ background_music_switch( game_object ); }
-        });
-        game_object->menu_items.push_back({
-            [ game_object ](){
-                /* GtkWidget * test_mode_window = GTK_WIDGET( gtk_builder_get_object( game_object->builder , "test_mode_window" ) );
-                if ( gtk_widget_get_visible( GTK_WIDGET( test_mode_window ) ) )
-                    return std::string( "测试模式: 开" );
-                else
-                    return std::string( "测试模式: 关" ); */
-                return std::string( "测试模式: 被禁用" );
-            },
-            [ game_object ](){ test_window_switch( game_object ); }
         });
         game_object->menu_items.push_back({
             [ game_object ](){

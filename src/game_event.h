@@ -6,6 +6,8 @@
 
 #include "tower.h"
 
+struct lua_State;
+
 namespace MagicTower
 {
     struct GameEnvironment;
@@ -31,16 +33,12 @@ namespace MagicTower
 
     bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
 
-    bool trigger_custom_event( GameEnvironment * game_object , std::string& event_string_ptr );
-
     //if can't move return false.
-    bool trigger_collision_event( GameEnvironment * game_object );
+    bool trigger_collision_event( GameEnvironment * game_object , lua_State * lua_state );
 
     bool shopping( GameEnvironment * game_object , const char * commodity_json );
 
     void background_music_switch( GameEnvironment * game_object );
-
-    void test_window_switch( GameEnvironment * game_object );
 
     void path_line_switch( GameEnvironment * game_object );
 
