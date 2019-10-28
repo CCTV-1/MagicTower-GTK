@@ -339,7 +339,7 @@ namespace MagicTower
 
     std::map<std::string , std::uint32_t> DataBase::get_script_flags()
     {
-        std::map<std::uint32_t , bool> script_flags;
+        std::map<std::string , std::uint32_t> script_flags;
         const char sql_statement[] = "SELECT flag_name , flag_value FROM script_flags";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
@@ -357,9 +357,9 @@ namespace MagicTower
                 throw sqlite_table_format_failure( std::string( sql_statement ) );
             }
 
-            std::string flag_name( sqlite3_column_text( this->sql_statement_handler , 0 ) );
+            std::string flag_name( reinterpret_cast< const char * >( sqlite3_column_text( this->sql_statement_handler , 0 ) ) );
             std::uint32_t flag_value = sqlite3_column_int( this->sql_statement_handler , 1 );
-            script_flags[name] = flag_value;
+            script_flags[flag_name] = flag_value;
         }
         
         if ( this->sqlite3_error_code != SQLITE_DONE )
@@ -993,7 +993,7 @@ sqlite document:
 
         for( auto& flag : flags )
         {
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , flag.first );
+            sqlite3_bind_text( this->sql_statement_handler , 1 , flag.first.c_str() , flag.first.size() , SQLITE_STATIC );
             sqlite3_bind_int64( this->sql_statement_handler , 2 , flag.second );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
