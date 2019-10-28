@@ -1209,7 +1209,7 @@ namespace MagicTower
                 game_object->store_list = db.get_store_list();
                 game_object->monsters = db.get_monster_list();
                 game_object->items = db.get_item_list();
-                game_object->custom_events = db.get_custom_events();
+                game_object->script_flags = db.get_script_flags();
                 game_object->access_layer = db.get_access_layers();
                 game_object->layers_jump = db.get_jump_map();
                 game_object->game_status = GAME_STATUS::NORMAL;

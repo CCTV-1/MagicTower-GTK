@@ -49,7 +49,6 @@ namespace MagicTower
         GameEnvironment():
             game_message( {} ),
             tips_content( {} ),
-            custom_events( {} ),
             menu_items( {} ),
             focus_item_id( 0 ),
             music(),
@@ -65,14 +64,12 @@ namespace MagicTower
             this->store_list = db.get_store_list();
             this->monsters = db.get_monster_list();
             this->items = db.get_item_list();
-            this->custom_events = db.get_custom_events();
             this->access_layer = db.get_access_layers();
             this->layers_jump = db.get_jump_map();
         }
         GameEnvironment( std::vector<std::shared_ptr<const char> > music_list ):
             game_message( {} ),
             tips_content( {} ),
-            custom_events( {} ),
             menu_items( {} ),
             focus_item_id( 0 ),
             music( music_list ),
@@ -88,7 +85,6 @@ namespace MagicTower
             this->store_list = db.get_store_list();
             this->monsters = db.get_monster_list();
             this->items = db.get_item_list();
-            this->custom_events = db.get_custom_events();
             this->access_layer = db.get_access_layers();
             this->layers_jump = db.get_jump_map();
         }
