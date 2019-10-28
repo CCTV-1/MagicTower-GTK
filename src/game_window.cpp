@@ -1271,19 +1271,18 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
 
-                    //base64 flags_prefix_ -> ZmxhZ3NfcHJlZml4Xwo=
-                    std::string flags_name( std::string( "ZmxhZ3NfcHJlZml4Xwo=" ) + luaL_checkstring( L , 1 ) );
+                    std::string flags_name( luaL_checkstring( L , 1 ) );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
 
-                    lua_getglobal( L , flags_name.c_str() );
-                    if ( lua_isnil( L , 2 ) )
+                    if ( game_object->script_flags.find( flags_name ) == game_object->script_flags.end() )
                     {
                         lua_pushnil( L );
                         return 1;
                     }
-                    luaL_checktype( L , 2 , LUA_TNUMBER );
-                    std::int64_t value = lua_tointeger( L , 2 );
-
+                    std::int64_t value = game_object->script_flags[flags_name];
                     lua_pushnumber( L , value );
+
                     return 1;
                 }
             );
@@ -1301,13 +1300,12 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 2 );
 
-                    //base64 flags_prefix_ -> ZmxhZ3NfcHJlZml4Xwo=
-                    std::string flags_name( std::string( "ZmxhZ3NfcHJlZml4Xwo=" ) + luaL_checkstring( L , 1 ) );
+                    std::string flags_name( luaL_checkstring( L , 1 ) );
                     luaL_checktype( L , 2 , LUA_TNUMBER );
                     std::int64_t value = lua_tointeger( L , 2 );
-
-                    lua_pushnumber( L , value );
-                    lua_setglobal( L , flags_name.c_str() );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 3 );
+                    game_object->script_flags[flags_name] = value;
 
                     return 0;
                 }

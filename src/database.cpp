@@ -134,6 +134,13 @@ namespace MagicTower
                     x     INT (32),
                     y     INT (32)
                 );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS script_flags (
+                    flag_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                    flag_name   TEXT,
+                    flag_value  INT (32)
+                );
             )"
         };
         for ( size_t i = 0 ; i < sizeof( create_table_sqls )/sizeof( const char * ) ; i++ )
@@ -248,52 +255,6 @@ namespace MagicTower
         return tower;
     }
 
-    std::map<event_position_t , std::string > DataBase::get_custom_events()
-    {
-        std::map<event_position_t , std::string > events;
-        const char sql_statement[] = "SELECT event_position,event_content FROM events";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
-            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-
-        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
-        {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 2 )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
-            }
-
-            const char * temp_event_position = reinterpret_cast< const char * >( 
-                sqlite3_column_text( this->sql_statement_handler , 0 ) );
-            std::string event_json_string( reinterpret_cast< const char * >(
-                sqlite3_column_text( this->sql_statement_handler , 1 ) ) );
-            
-            std::uint32_t x , y , z;
-            sscanf( temp_event_position , "%" PRIu32 ",%" PRIu32 ",%" PRIu32 , &x , &y , &z );
-            event_position_t position = { x , y , z };
-
-            events[ position ] = event_json_string;
-        }
-        
-        if ( this->sqlite3_error_code != SQLITE_DONE )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-
-        return events;
-    }
-
     std::map<std::size_t , std::pair<std::size_t , std::size_t> > DataBase::get_jump_map()
     {
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > jump_map;
@@ -374,6 +335,45 @@ namespace MagicTower
         }
 
         return access_layers;
+    }
+
+    std::map<std::string , std::uint32_t> DataBase::get_script_flags()
+    {
+        std::map<std::uint32_t , bool> script_flags;
+        const char sql_statement[] = "SELECT flag_name , flag_value FROM script_flags";
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
+            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+        }
+
+        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
+        {
+            if ( sqlite3_column_count( this->sql_statement_handler ) != 2 )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_table_format_failure( std::string( sql_statement ) );
+            }
+
+            std::string flag_name( sqlite3_column_text( this->sql_statement_handler , 0 ) );
+            std::uint32_t flag_value = sqlite3_column_int( this->sql_statement_handler , 1 );
+            script_flags[name] = flag_value;
+        }
+        
+        if ( this->sqlite3_error_code != SQLITE_DONE )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+        }
+        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+        }
+
+        return script_flags;
     }
 
     std::vector<Item> DataBase::get_item_list()
@@ -869,67 +869,6 @@ sqlite document:
         }
     }
 
-    void DataBase::set_custom_events( std::map<event_position_t , std::string>& custom_events )
-    {
-        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
-
-        const char sql_statement[] = "INSERT OR REPLACE INTO events(id,event_position,event_content) VALUES( ? , ? , ? )";
-        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
-        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 3 )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
-        }
-
-        std::int64_t id = 1;
-        for( auto& custom_event : custom_events )
-        {
-            std::uint32_t x = std::get<0>( custom_event.first );
-            std::uint32_t y = std::get<1>( custom_event.first );
-            std::uint32_t z = std::get<2>( custom_event.first );
-            std::string position_str;
-            position_str += std::to_string( x ) + std::string( "," );
-            position_str += std::to_string( y ) + std::string( "," );
-            position_str += std::to_string( z );
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , id );
-            sqlite3_bind_text( this->sql_statement_handler , 2 , position_str.c_str() , position_str.size() , SQLITE_STATIC );
-            sqlite3_bind_text( this->sql_statement_handler , 3 , custom_event.second.c_str() , custom_event.second.size() , SQLITE_STATIC );
-
-            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
-            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_DONE )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_OK )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            sqlite3_clear_bindings( this->sql_statement_handler );
-
-            id++;
-        }
-        
-        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
-        
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-    }
-
     void DataBase::set_access_layers( std::map<std::uint32_t , bool>& maps )
     {
         sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
@@ -1006,6 +945,56 @@ sqlite document:
             sqlite3_bind_int64( this->sql_statement_handler , 1 , pos.first );
             sqlite3_bind_int64( this->sql_statement_handler , 2 , pos.second.first );
             sqlite3_bind_int64( this->sql_statement_handler , 3 , pos.second.second );
+
+            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
+            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_DONE )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            }
+            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_OK )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            }
+            sqlite3_clear_bindings( this->sql_statement_handler );
+        }
+        
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
+        
+        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+        }
+    }
+
+    void DataBase::set_script_flags( std::map<std::string , std::uint32_t>& flags )
+    {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
+
+        const char sql_statement[] = "INSERT OR REPLACE INTO script_flags(flag_name,flag_value) VALUES( ? , ? )";
+        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
+        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
+
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+        }
+        
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 1 )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw sqlite_bind_count_failure( std::string( sql_statement ) );
+        }
+
+        for( auto& flag : flags )
+        {
+            sqlite3_bind_int64( this->sql_statement_handler , 1 , flag.first );
+            sqlite3_bind_int64( this->sql_statement_handler , 2 , flag.second );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
             this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );

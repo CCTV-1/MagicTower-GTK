@@ -53,6 +53,7 @@ namespace MagicTower
             menu_items( {} ),
             focus_item_id( 0 ),
             music(),
+            script_flags(),
             path( {} ),
             game_status( GAME_STATUS::NORMAL ),
             draw_path( true )
@@ -75,6 +76,7 @@ namespace MagicTower
             menu_items( {} ),
             focus_item_id( 0 ),
             music( music_list ),
+            script_flags(),
             path( {} ),
             game_status( GAME_STATUS::NORMAL ),
             draw_path( true )
@@ -97,14 +99,6 @@ namespace MagicTower
         }
         std::deque<std::string> game_message;
         std::deque<std::string> tips_content;
-/* 
-CREATE TABLE events (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_position TEXT,
-    event_content  TEXT
-);
-*/
-        std::map<event_position_t , std::string> custom_events;
         Menu_t menu_items;
         std::size_t focus_item_id;
         Music music;
@@ -120,6 +114,7 @@ CREATE TABLE events (
     y     INT (32)
 ); */
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > layers_jump;
+        std::map<std::string , std::uint32_t> script_flags;
         std::vector<Stairs> stairs;
         std::vector<Monster> monsters;
         std::vector<Item> items;

@@ -316,9 +316,9 @@ namespace MagicTower
             db.set_store_list( game_object->store_list );
             db.set_monster_list( game_object->monsters );
             db.set_item_list( game_object->items );
-            db.set_custom_events( game_object->custom_events );
             db.set_access_layers( game_object->access_layer );
             db.set_jump_map( game_object->layers_jump );
+            db.set_script_flags( game_object->script_flags );
         }
         catch ( ... )
         {
@@ -349,9 +349,9 @@ namespace MagicTower
             game_object->store_list = db.get_store_list();
             game_object->monsters = db.get_monster_list();
             game_object->items = db.get_item_list();
-            game_object->custom_events = db.get_custom_events();
             game_object->access_layer = db.get_access_layers();
             game_object->layers_jump = db.get_jump_map();
+            game_object->script_flags = db.get_script_flags();
         }
         catch ( ... )
         {
