@@ -59,6 +59,9 @@ function open_dialog( string dialog_content , ... )
 function open_menu( table menu_detail )
 
 --no return
+function close_menu()
+
+--no return
 function get_item( number item_id )
 
 --no return
