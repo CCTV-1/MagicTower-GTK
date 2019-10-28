@@ -80,11 +80,8 @@ function game_win()
 function game_lose()
 ```
 
-### Game keeped name
-
-any prefix:ZmxhZ3NfcHJlZml4Xwo=
-
-name:Z2FtZV9vYmplY3QK
+### keeped name
+Z2FtZV9vYmplY3QK
 
 ## Todo
 - [ ] animation
