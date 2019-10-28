@@ -9,10 +9,7 @@ GCC_CPP_OPTION=-Wall -Wextra -Wpedantic -std=gnu++14 -O3
 GCC_CPP_PROFILE_OPTION=-Wall -Wextra -Wpedantic -std=gnu++14 -O0 -g3 -pg -m64
 
 MagicTower : ./src/game.cpp database.o music.o game_event.o game_window.o
-ifneq ($wildcard ./build/bin)
-	mkdir --parents ./build/bin
-endif
-	g++ ./src/game.cpp database.o music.o game_event.o game_window.o $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) $(LUA_FLAGS) -o ./build/binMagicTower
+	g++ ./src/game.cpp database.o music.o game_event.o game_window.o $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) $(LUA_FLAGS) -o ./build/bin/MagicTower
 database.o : ./src/database.cpp ./src/database.h
 	g++ ./src/database.cpp $(GCC_CPP_OPTION) $(SQLITE3_FLAGS) -c -o database.o
 music.o : ./src/music.cpp ./src/music.h
@@ -22,7 +19,7 @@ game_window.o : ./src/game_window.cpp ./src/game_window.h
 game_event.o : ./src/game_event.cpp ./src/game_event.h
 	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GIOMM_FLAGS) $(JANSSON_FLAGS) -c -o game_event.o
 ProfileTest : ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp
-	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp $(GCC_CPP_PROFILE_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) $(LUA_FLAGS) -o ./build/binMagicTower
+	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp $(GCC_CPP_PROFILE_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(JANSSON_FLAGS) $(LUA_FLAGS) -o ./build/bin/MagicTower
 	./build/bin/MagicTower &&\
 	gprof ./build/bin/MagicTower gmon.out > analysis.txt
 install :
