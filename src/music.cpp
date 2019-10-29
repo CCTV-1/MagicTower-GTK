@@ -81,15 +81,11 @@ namespace MagicTower
     static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
     static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
 
-    Music::Music():
-        imp_ptr( new MusicImp )
-    {
-        ;
-    }
-
     Music::Music( std::vector<std::shared_ptr<const char> > _music_uri_list ):
         imp_ptr( new MusicImp )
     {
+        if ( _music_uri_list.empty() )
+            return ;
         set_play_mode( this->imp_ptr->mode );
         add_music_uri_list( _music_uri_list );
         play( this->imp_ptr->play_id );
@@ -102,22 +98,28 @@ namespace MagicTower
 
     bool Music::play( std::size_t id )
     {
+        if ( this->imp_ptr->music_uri_list.empty() )
+        {
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "playlist has empty" );
+            return false;
+        }
+
         this->imp_ptr->play_id = id;
         g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , this->imp_ptr->music_uri_list[ id ].get() , nullptr );
         GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )
         {
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
-            return FALSE;
+            return false;
         }
-        return TRUE;
+        return true;
     }
 
     bool Music::play_next()
     {
         std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
         gst_bus_post( bus.get() , gst_message_new_eos( GST_OBJECT( bus.get() ) ) );
-        return TRUE;
+        return true;
     }
 
     void Music::play_stop()
