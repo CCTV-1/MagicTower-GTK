@@ -1,14 +1,14 @@
 # MagicTower-GTK
 
 ## Dependency Library:
-  -  ```GTKMM3 3.22```+ 
-  -  ```GStreamer 1.12```+
-  -  ```SQLITE3 3.21```+
-  -  ```jansson 2.11```+
-  -  ```lua 5.3```+
+-  ```GTKMM3 3.22```+ 
+-  ```GStreamer 1.12```+
+-  ```SQLITE3 3.21```+
+-  ```jansson 2.11```+
+-  ```lua 5.3```+
 
 ## Language: 
- - ```C++11```+
+- ```C++11```+
 
 ## Game Script
 
@@ -81,7 +81,50 @@ function game_lose()
 ```
 
 ### keeped name
-Z2FtZV9vYmplY3QK
+- Z2FtZV9vYmplY3QK
+- items
+- monsters
+- stores
+
+### script name rule
+
+- F_$(layer)\_$(x)\_$(y).lua  --> call for each move to new position(before the built-in events)
+
+- L_$(layer)\_$(x)\_$(y).lua  --> call for each move to new position(after the built-in event)
+
+- items.lua --> defines game items function,the contents as follows:
+
+```lua
+items =
+{
+    [item_id] =                 --item_id is a number
+    {
+        ["item_name"] = ""      --detail dialog display text
+        ["item_detail"] = "",   --detail dialog display text
+        ["item_func"] = ""      --get item,call luaL_dostring(items[item_id].item_func)
+    },
+    ...
+}
+```
+
+- hero.lua --> defines game hero initial property
+
+- monsters.lua --> defines game monsters property
+
+- stores.lua --> defines game stores function,the contents as follows:
+```lua
+stores=
+{
+    [store_name] = --store_name is a string,store menu disply text
+    {
+        -- commodity_detail is a string,store menu disply text
+        -- commodity_function is a string,when buy the commodity call luaL_dostring(stores[store_name].commodity_detail)
+        [commodity_detail] = commodity_function,
+        ...
+    },
+    ...
+}
+```
 
 ## Todo
 - [ ] animation
