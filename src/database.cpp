@@ -376,54 +376,6 @@ namespace MagicTower
         return script_flags;
     }
 
-    std::vector<Item> DataBase::get_item_list()
-    {
-        std::vector<Item> items;
-        const char sql_statement[] = "SELECT id,name,type,value FROM item";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
-            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-
-        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
-        {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 4 )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
-            }
-
-            std::size_t id = static_cast< std::size_t >( sqlite3_column_int( this->sql_statement_handler , 0 ) );
-            const char * temp_item_name = reinterpret_cast< const char * >( 
-                sqlite3_column_text( this->sql_statement_handler , 1 ) );
-            ITEM_TYPE temp_item_ability_type = static_cast< ITEM_TYPE >(
-                sqlite3_column_int( this->sql_statement_handler , 2 ) );
-            std::int32_t temp_item_ability_value = sqlite3_column_int( this->sql_statement_handler , 3 );
-
-            if ( temp_item_name == nullptr )
-                temp_item_name = "";
-
-            items.push_back({
-                id , temp_item_name , temp_item_ability_type , temp_item_ability_value
-            });
-        }
-        
-        if ( this->sqlite3_error_code != SQLITE_DONE )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-        return items;
-    }
-
     std::vector<Monster> DataBase::get_monster_list()
     {
         std::vector<Monster> monsters;
@@ -641,59 +593,6 @@ sqlite document:
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
-
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-    }
-
-    void DataBase::set_item_list( const std::vector<Item>& items )
-    {
-        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
-
-        const char sql_statement[] = "INSERT OR REPLACE INTO item(id,name"
-            ",type,value) VALUES( ? , ? , ? , ? )";
-        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
-        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 4 )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
-        }
-
-        for( auto& item : items )
-        {
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , item.item_id );
-            sqlite3_bind_text( this->sql_statement_handler , 2 , item.item_name.c_str() , item.item_name.size() , SQLITE_STATIC );
-            sqlite3_bind_int( this->sql_statement_handler , 3 , item.ability_type );
-            sqlite3_bind_int( this->sql_statement_handler , 4 , item.ability_value );
-
-            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
-            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_DONE )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_OK )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            sqlite3_clear_bindings( this->sql_statement_handler );
-        }
-
-        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
 
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )

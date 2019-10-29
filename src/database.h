@@ -134,13 +134,11 @@ namespace MagicTower
         std::map<std::string , std::uint32_t> get_script_flags();
         std::vector<Stairs> get_stairs_list();
         std::vector<Store> get_store_list();
-        std::vector<Item> get_item_list();
         std::vector<Monster> get_monster_list();
 
         void set_hero_info( const Hero& hero , std::size_t archive_id );
         void set_tower_info( const Tower& tower , std::size_t archive_id );
 
-        void set_item_list( const std::vector<Item>& items );
         void set_monster_list( const std::vector<Monster>& monsters );
         void set_stairs_list( const std::vector<Stairs>& stairs );
         void set_store_list( std::vector<Store>& stores );

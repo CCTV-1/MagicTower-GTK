@@ -6,11 +6,11 @@
 
 #include "tower.h"
 
-struct lua_State;
-
 namespace MagicTower
 {
     struct GameEnvironment;
+
+    void scriptengines_register_eventfunc( GameEnvironment * game_object );
 
     std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal );
 
@@ -34,7 +34,7 @@ namespace MagicTower
     bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
 
     //if can't move return false.
-    bool trigger_collision_event( GameEnvironment * game_object , lua_State * lua_state );
+    bool trigger_collision_event( GameEnvironment * game_object );
 
     bool shopping( GameEnvironment * game_object , const char * commodity_json );
 
