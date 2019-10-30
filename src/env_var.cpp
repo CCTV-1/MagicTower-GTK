@@ -40,11 +40,6 @@ namespace MagicTower
     {
         //items
         std::string item_script = CUSTOM_SCRIPTS_PATH"items.lua";
-        //Glib::RefPtr<Gio::File> item_file = Gio::File::create_for_path( item_script );
-        //if ( item_file->query_exists() == false )
-        //{
-        //    throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing items.lua resources" );
-        //}
         if ( Glib::file_test( item_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
         {
             throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing items.lua resources" );
@@ -78,8 +73,7 @@ namespace MagicTower
 
         //stores
         std::string store_script = CUSTOM_SCRIPTS_PATH"stores.lua";
-        //Glib::RefPtr<Gio::File> store_file = Gio::File::create_for_path( store_script );
-        if ( Glib::file_test( store_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )//store_file->query_exists() == false )
+        if ( Glib::file_test( store_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
         {
             throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing stores.lua resources" );
         }
