@@ -122,15 +122,26 @@ namespace MagicTower
         }
         lua_pop( this->script_engines.get() , 1 );
 
+        //hero
+        std::string hero_script = CUSTOM_SCRIPTS_PATH"hero.lua";
+        if ( Glib::file_test( hero_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        {
+            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing hero.lua resources" );
+        }
+        if ( luaL_dofile( this->script_engines.get() , hero_script.data() ) )
+        {
+            throw std::runtime_error( lua_tostring( this->script_engines.get() , -1 ) );
+        }
+        lua_getglobal( this->script_engines.get() , "hero_property" );
+        this->hero = lua_gethero( this->script_engines.get() , 1 );
+
         DataBase db( DATABSE_RESOURCES_PATH );
         this->towers = db.get_tower_info( 0 );
-        this->hero = db.get_hero_info( 0 );
         this->stairs = db.get_stairs_list();
         this->monsters = db.get_monster_list();
         this->access_layer = db.get_access_layers();
         this->layers_jump = db.get_jump_map();
         this->script_flags = db.get_script_flags();
-
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;
         this->path = {};
