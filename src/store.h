@@ -6,19 +6,12 @@
 
 namespace MagicTower
 {
-    /* 
-    CREATE TABLE stores (
-        id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        usability BOOLEAN DEFAULT (1),
-        name      TEXT,
-        content   TEXT
-    ); 
-    */
     struct Store
     {
         bool usability;
-        std::string name;
-        std::string content;
+        std::string store_name;
+        //commodity_detail , commodity_function
+        std::map<std::string,std::string> commodities;
     };
 }
 

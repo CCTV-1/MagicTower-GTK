@@ -37,8 +37,7 @@ namespace MagicTower
     static void set_start_menu( GameEnvironment * game_object );
     static void set_game_menu( GameEnvironment * game_object );
     static void set_store_menu( GameEnvironment * game_object );
-    static void set_sub_store_menu( GameEnvironment * game_object , const char * item_content );
-    static std::string deserialize_commodity_content( const char * content );
+    static void set_sub_store_menu( GameEnvironment * game_object , std::uint32_t store_id );
     static void remove_tips( GameEnvironment * game_object );
 
     // Helpers for TowerGridLocation
@@ -507,7 +506,9 @@ namespace MagicTower
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
                 game_object->store_list[ store_id ].usability = true;
-                std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ store_id ] ).name;
+                std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
+                game_object->script_flags[ flag_name ] = 1;
+                std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ store_id ] ).store_name;
                 set_tips( game_object , tips );
                 return 0;
             }
@@ -528,7 +529,9 @@ namespace MagicTower
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
                 game_object->store_list[ store_id ].usability = false;
-                std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ store_id ] ).name;
+                std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
+                game_object->script_flags.erase( flag_name );
+                std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ store_id ] ).store_name;
                 set_tips( game_object , tips );
                 return 0;
             }
@@ -706,7 +709,6 @@ namespace MagicTower
             db.set_tower_info( game_object->towers , 0 );
             db.set_hero_info( game_object->hero , 0 );
             db.set_stairs_list( game_object->stairs );
-            db.set_store_list( game_object->store_list );
             db.set_monster_list( game_object->monsters );
             db.set_access_layers( game_object->access_layer );
             db.set_jump_map( game_object->layers_jump );
@@ -738,11 +740,25 @@ namespace MagicTower
             game_object->towers = db.get_tower_info( 0 );
             game_object->hero = db.get_hero_info( 0 );
             game_object->stairs = db.get_stairs_list();
-            game_object->store_list = db.get_store_list();
             game_object->monsters = db.get_monster_list();
             game_object->access_layer = db.get_access_layers();
             game_object->layers_jump = db.get_jump_map();
             game_object->script_flags = db.get_script_flags();
+
+            //std::pair<store_id,Store>&
+            for ( auto& store : game_object->store_list )
+            {
+                std::string flag_name = std::string( "store_" ) + std::to_string( store.first );
+                if ( game_object->script_flags.find( flag_name ) != game_object->script_flags.end() )
+                {
+                    store.second.usability = true;
+                }
+                else
+                {
+                    store.second.usability = false;
+                }
+                
+            }
         }
         catch ( ... )
         {
@@ -1157,11 +1173,6 @@ namespace MagicTower
         return true;
     }
 
-    void do_shop( GameEnvironment * game_object , std::string shop_content )
-    {
-        luaL_dostring( game_object->script_engines.get() , shop_content.c_str() );
-    }
-
     void background_music_switch( GameEnvironment * game_object )
     {
         static bool play_music = true;
@@ -1529,17 +1540,7 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "重新游戏" ); },
             [ game_object ](){
-                MagicTower::DataBase db( DATABSE_RESOURCES_PATH );
-                game_object->towers = db.get_tower_info( 0 );
-                game_object->hero = db.get_hero_info( 0 );
-                game_object->stairs = db.get_stairs_list();
-                game_object->store_list = db.get_store_list();
-                game_object->monsters = db.get_monster_list();
-                //game_object->items = db.get_item_list();
-                game_object->script_flags = db.get_script_flags();
-                game_object->access_layer = db.get_access_layers();
-                game_object->layers_jump = db.get_jump_map();
-                game_object->game_status = GAME_STATUS::NORMAL;
+                game_object->initial_gamedata();
             }
         });
         game_object->menu_items.push_back({
@@ -1596,16 +1597,18 @@ namespace MagicTower
     static void set_store_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
-        for ( auto store : game_object->store_list )
+        for ( auto& store : game_object->store_list )
         {
-            if ( store.usability != true )
+            if ( store.second.usability != true )
             {
                 continue;
             }
 
+            std::string store_name = store.second.store_name;
+            std::uint32_t store_id = store.first;
             game_object->menu_items.push_back({
-                [ store ](){ return store.name; },
-                [ game_object , store ](){ set_sub_store_menu( game_object , store.content.c_str() ); }
+                [ store_name ](){ return store_name; },
+                [ game_object , store_id ](){ set_sub_store_menu( game_object , store_id ); }
             });
         }
         game_object->menu_items.push_back({
@@ -1614,181 +1617,31 @@ namespace MagicTower
         });
     }
 
-    static void set_sub_store_menu( GameEnvironment * game_object , const char * item_content )
+    static void set_sub_store_menu( GameEnvironment * game_object , std::uint32_t store_id )
     {
         game_object->focus_item_id = 0;
 
-        json_error_t json_error;
-        json_t * root = json_loads( item_content , 0 , &json_error );
-        if ( root == nullptr )
-        {
-            json_decref( root );
-            return ;
-        }
-
         //when call clear will free item_content content,so first call json_loads copy item_content content.
         game_object->menu_items.clear();
-        json_t * commodity_list = json_object_get( root , "commoditys" );
-        if ( !json_is_array( commodity_list ) )
-        {
-            json_decref( root );
-            return ;
-        }
-        size_t commodity_size = json_array_size( commodity_list );
         game_object->menu_items.push_back({
             [](){ return std::string( "返回上级菜单" ); },
             [ game_object ](){ set_store_menu( game_object ); }
         });
-        for( size_t i = 0 ; i < commodity_size ; i++ )
+        Store& store = game_object->store_list[store_id];
+        for ( auto& commoditie : store.commodities )
         {
-            json_t * commodity_node = json_array_get( commodity_list , i );
-            if ( !json_is_object( commodity_node ) )
-            {
-                json_decref( root );
-                return ;
-            }
-            std::unique_ptr< char , decltype( &free ) > commodity_json( json_dumps( commodity_node , JSON_INDENT( 4 ) ) , free );
-            std::string commodity_content( commodity_json.get() );
+            std::string commodity_detail = commoditie.first;
+            std::string commodity_function = commoditie.second;
             game_object->menu_items.push_back({
-                [ commodity_content ](){ return deserialize_commodity_content( commodity_content.c_str() ); },
-                [ game_object , commodity_content ](){ shopping( game_object , commodity_content.c_str() ); }
+                [ commodity_detail ](){ return commodity_detail; },
+                [ game_object , commodity_function ](){ luaL_dostring( game_object->script_engines.get() , commodity_function.c_str() ); }
             });
         }
+
         game_object->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
             [ game_object ](){ close_store_menu_v2( game_object ); }
         });
-    }
-
-    std::string deserialize_commodity_content( const char * content )
-    {
-        json_error_t json_error;
-        json_t * root = json_loads( content , 0 , &json_error );
-        if ( root == nullptr )
-        {
-            json_decref( root );
-            return std::string( "无效按钮" );
-        }
-
-        json_t * price_type_node = json_object_get( root , "price_type" );
-        if ( !json_is_string( price_type_node ) )
-        {
-            json_decref( root );
-            return std::string( "无效按钮" );
-        }
-        std::string price_type( json_string_value( price_type_node ) );
-        json_t * price_node = json_object_get( root , "price" );
-        if ( !json_is_integer( price_node ) )
-        {
-            json_decref( root );
-            return std::string( "无效按钮" );
-        }
-        json_int_t price_value = json_integer_value( price_node );
-        json_t * commodity_type_node = json_object_get( root , "commodity_type" );
-        if ( !json_is_string( commodity_type_node ) )
-        {
-            json_decref( root );
-            return std::string( "无效按钮" );
-        }
-        std::string commodity_type( json_string_value( commodity_type_node ) );
-        json_t * commodity_value_node = json_object_get( root , "commodity_value" );
-        if ( !json_is_integer( commodity_value_node ) )
-        {
-            json_decref( root );
-            return std::string( "无效按钮" );
-        }
-        json_int_t commodity_value = json_integer_value( commodity_value_node );
-
-        std::string deserialize_string( "支付 ");
-        if ( price_type == std::string( "LEVEL" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "级" );
-        }
-        else if ( price_type == std::string( "LIFE" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "生命" );
-        }
-        else if ( price_type == std::string( "ATTACK" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "攻击" );
-        }
-        else if ( price_type == std::string( "DEFENCE" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "防御" );
-        }
-        else if ( price_type == std::string( "GOLD" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "金币" );
-        }
-        else if ( price_type == std::string( "EXPERIENCE" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "经验" );
-        }
-        else if ( price_type == std::string( "YELLOW_KEY" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "黄钥匙" );
-        }
-        else if ( price_type == std::string( "BLUE_KEY" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "蓝钥匙" );
-        }
-        else if ( price_type == std::string( "RED_KEY" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "红钥匙" );
-        }
-        else if ( price_type == std::string( "ALL_KEY" ) )
-        {
-            deserialize_string += std::to_string( price_value ) + std::string( "各种钥匙" );
-        }
-        else
-        {
-            json_decref( root );
-            return std::string( "无效按钮" );
-        }
-
-        deserialize_string += "购买";
-        if ( commodity_type == std::string( "CHANGE_LEVEL" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "级" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_LIFE" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "生命" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_ATTACK" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "攻击" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_DEFENSE" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "防御" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_GOLD" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "金币" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_EXPERIENCE" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "经验" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_YELLOW_KEY" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "黄钥匙" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_BLUE_KEY" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "蓝钥匙" );
-        }
-        else if ( commodity_type == std::string( "CHANGE_RED_KEY" ) )
-        {
-            deserialize_string += std::to_string( commodity_value ) + std::string( "红钥匙" );
-        }
-        else
-        {
-            return std::string( "无效按钮" );
-        }
-
-        return deserialize_string;
     }
 
     static void remove_tips( GameEnvironment * game_object )

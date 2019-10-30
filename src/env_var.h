@@ -46,6 +46,8 @@ namespace MagicTower
         GameEnvironment( std::vector<std::shared_ptr<const char> > music_list = {} );
         ~GameEnvironment();
 
+        void initial_gamedata();
+
         std::unique_ptr< lua_State , decltype( &lua_close ) > script_engines;
         std::deque<std::string> game_message;
         std::deque<std::string> tips_content;
@@ -69,7 +71,8 @@ namespace MagicTower
         std::vector<Monster> monsters;
         std::map<std::uint32_t,Item> items;
         std::vector<TowerGridLocation> path;
-        std::vector<Store> store_list;
+        //store_id , store
+        std::map<std::uint32_t,Store> store_list;
         enum GAME_STATUS game_status;
         bool draw_path;
     };
