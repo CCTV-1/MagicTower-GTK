@@ -61,14 +61,6 @@ namespace MagicTower
                 );
             )",
             R"(
-                CREATE TABLE IF NOT EXISTS stores (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    usability BOOLEAN DEFAULT (0),
-                    name      TEXT,
-                    content   TEXT
-                );
-            )",
-            R"(
                 CREATE TABLE IF NOT EXISTS stairs (
                     id     INTEGER  PRIMARY KEY AUTOINCREMENT,
                     type   INT (32),
@@ -89,14 +81,6 @@ namespace MagicTower
                     defense    INT (32),
                     gold       INT (32),
                     experience INT (32) 
-                );
-            )",
-            R"(
-                CREATE TABLE IF NOT EXISTS item (
-                    id    INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    name  TEXT,
-                    type  INT (32),
-                    value INT (32) 
                 );
             )",
             R"(
