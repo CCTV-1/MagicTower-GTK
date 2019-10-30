@@ -79,6 +79,7 @@ namespace MagicTower
         return hero;
     }
 
+    //push a hero table to top
     inline void lua_pushhero( lua_State * L , const Hero& hero )
     {
         lua_newtable( L );
