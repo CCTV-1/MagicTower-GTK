@@ -4,7 +4,6 @@
 -  ```GTKMM3 3.22```+ 
 -  ```GStreamer 1.12```+
 -  ```SQLITE3 3.21```+
--  ```jansson 2.11```+
 -  ```lua 5.3```+
 
 ## Language: 
@@ -55,7 +54,7 @@ function set_flag( string flag_name , number flag_value )
 function open_dialog( string dialog_content , ... )
 
 --no return
---argument:table of key:string item_name , value:string item_detail_json
+--argument:table of key:string item_name , value:string item_func
 function open_menu( table menu_detail )
 
 --no return

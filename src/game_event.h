@@ -36,8 +36,6 @@ namespace MagicTower
     //if can't move return false.
     bool trigger_collision_event( GameEnvironment * game_object );
 
-    bool shopping( GameEnvironment * game_object , const char * commodity_json );
-
     void background_music_switch( GameEnvironment * game_object );
 
     void path_line_switch( GameEnvironment * game_object );
