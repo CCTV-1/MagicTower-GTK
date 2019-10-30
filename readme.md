@@ -85,6 +85,7 @@ function game_lose()
 - items
 - monsters
 - stores
+- store_ + any number to string
 
 ### script name rule
 
@@ -115,12 +116,17 @@ items =
 ```lua
 stores=
 {
-    [store_name] = --store_name is a string,store menu disply text
+    [store_id] = --sstore_id is a number.
     {
-        -- commodity_detail is a string,store menu disply text
-        -- commodity_function is a string,when buy the commodity call luaL_dostring(stores[store_name].commodity_detail)
-        [commodity_detail] = commodity_function,
-        ...
+        ["usability"] = , --value is a boolean.if define true,or call unlock_store,set flag:store_id to non nul value,else to nil value.
+        ["store_name"] = ,--value is a string,store menu display
+        ["commodities"] =
+        {
+            -- commodity_detail is a string,store menu display text
+            -- commodity_function is a string,when buy the commodity,pass stores[store_name].commodities.commodity_detail to call luaL_dostring
+            [commodity_detail] = commodity_function,
+            ...
+        }
     },
     ...
 }
