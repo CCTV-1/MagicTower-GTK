@@ -85,6 +85,7 @@ function game_lose()
 - monsters
 - stores
 - store_ + any number to string
+- hero_property
 
 ### script name rule
 
@@ -107,7 +108,24 @@ items =
 }
 ```
 
-- hero.lua --> defines game hero initial property
+- hero.lua --> defines game hero initial property,the contents as follows:
+```lua
+hero_property=
+{
+    ["layers"] = 0,
+    ["x"] = 5,
+    ["y"] = 9,
+    ["level"] = 1,
+    ["life"] = 1000,
+    ["attack"] = 10,
+    ["defense"] = 10,
+    ["gold"] = 0,
+    ["experience"] = 0,
+    ["yellow_key"] = 0,
+    ["blue_key"] = 1,
+    ["red_key"] = 1
+}
+```
 
 - monsters.lua --> defines game monsters property
 
