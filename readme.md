@@ -131,7 +131,7 @@ hero_property=
 ```lua
 monsters =
 {
-    [1] =
+    [monster_id] = --monster_id is a number.
     {
         ["attack_type"] = 1,
         ["type_value"] = 0,
@@ -151,7 +151,7 @@ monsters =
 ```lua
 stores=
 {
-    [store_id] = --sstore_id is a number.
+    [store_id] = --store_id is a number.
     {
         ["usability"] = false, --if is true,or call unlock_store,set flag:store_id to non nul value,else to nil value.
         ["store_name"] = "",--store menu display text
