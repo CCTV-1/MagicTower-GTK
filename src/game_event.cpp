@@ -661,7 +661,7 @@ namespace MagicTower
             db.set_tower_info( game_object->towers , 0 );
             db.set_hero_info( game_object->hero , 0 );
             db.set_stairs_list( game_object->stairs );
-            db.set_monster_list( game_object->monsters );
+            //db.set_monster_list( game_object->monsters );
             db.set_access_layers( game_object->access_layer );
             db.set_jump_map( game_object->layers_jump );
             db.set_script_flags( game_object->script_flags );
@@ -692,7 +692,6 @@ namespace MagicTower
             game_object->towers = db.get_tower_info( 0 );
             game_object->hero = db.get_hero_info( 0 );
             game_object->stairs = db.get_stairs_list();
-            game_object->monsters = db.get_monster_list();
             game_object->access_layer = db.get_access_layers();
             game_object->layers_jump = db.get_jump_map();
             game_object->script_flags = db.get_script_flags();
@@ -748,12 +747,12 @@ namespace MagicTower
 
     std::int64_t get_combat_damage( GameEnvironment * game_object , std::uint32_t monster_id )
     {
-        if ( monster_id - 1 >= game_object->monsters.size() )
+        if ( game_object->monsters.find( monster_id ) == game_object->monsters.end() )
         {
             return -1;
         }
         Hero& hero = game_object->hero;
-        Monster& monster = game_object->monsters[ monster_id - 1 ];
+        Monster& monster = game_object->monsters[ monster_id ];
         switch( static_cast< std::uint32_t >( monster.type ) )
         {
             case ATTACK_TYPE::FIRST_ATTACK:
@@ -791,10 +790,10 @@ namespace MagicTower
 
     bool battle( GameEnvironment * game_object , std::uint32_t monster_id )
     {
-        if ( monster_id - 1 >= game_object->monsters.size() )
+        if ( game_object->monsters.find( monster_id ) == game_object->monsters.end() )
             return false;
         Hero& hero = game_object->hero;
-        Monster& monster = game_object->monsters[ monster_id - 1 ];
+        Monster& monster = game_object->monsters[ monster_id ];
         std::int64_t damage = get_combat_damage( game_object , monster_id );
         if ( ( damage < 0 ) || ( damage >= hero.life ) )
             return false;

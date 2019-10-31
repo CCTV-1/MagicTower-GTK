@@ -70,20 +70,6 @@ namespace MagicTower
                 );
             )",
             R"(
-                CREATE TABLE IF NOT EXISTS monster (
-                    id         INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    type       INT (32),
-                    type_value INT (32),
-                    name       TEXT,
-                    level      INT (32),
-                    life       INT (32),
-                    attack     INT (32),
-                    defense    INT (32),
-                    gold       INT (32),
-                    experience INT (32) 
-                );
-            )",
-            R"(
                 CREATE TABLE IF NOT EXISTS hero (
                     id         INTEGER  PRIMARY KEY AUTOINCREMENT,
                     layers     INT (32),
@@ -98,13 +84,6 @@ namespace MagicTower
                     yellow_key INT (32),
                     blue_key   INT (32),
                     red_key    INT (32) 
-                );
-            )",
-            R"(
-                CREATE TABLE IF NOT EXISTS events (
-                    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_position TEXT,
-                    event_content  TEXT
                 );
             )",
             R"(
@@ -360,55 +339,6 @@ namespace MagicTower
         return script_flags;
     }
 
-    std::vector<Monster> DataBase::get_monster_list()
-    {
-        std::vector<Monster> monsters;
-        const char sql_statement[] = "SELECT id,type,type_value,name,level,life,attack,defense,gold,experience FROM monster";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
-            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-
-        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
-        {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 10 )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
-            }
-
-            std::size_t id = static_cast< std::size_t >( sqlite3_column_int( this->sql_statement_handler , 0 ) );
-            ATTACK_TYPE type = static_cast< ATTACK_TYPE >( sqlite3_column_int( this->sql_statement_handler , 1 ) );
-            std::uint32_t type_value = sqlite3_column_int( this->sql_statement_handler , 2 );
-            const char * name = reinterpret_cast< const char * >( 
-                sqlite3_column_text( this->sql_statement_handler , 3 ) );
-            std::uint32_t level = sqlite3_column_int( this->sql_statement_handler , 4 ); 
-            std::uint32_t life = sqlite3_column_int( this->sql_statement_handler , 5 );
-            std::uint32_t attack = sqlite3_column_int( this->sql_statement_handler , 6 );
-            std::uint32_t defense = sqlite3_column_int( this->sql_statement_handler , 7 );
-            std::uint32_t gold = sqlite3_column_int( this->sql_statement_handler , 8 );
-            std::uint32_t experience = sqlite3_column_int( this->sql_statement_handler , 9 );
-            monsters.push_back({
-                id , type , type_value , name , level , life , attack , defense , gold , experience
-            });
-        }
-        
-        if ( this->sqlite3_error_code != SQLITE_DONE )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-        return monsters;
-    }
-
     std::vector<Stairs> DataBase::get_stairs_list()
     {
         std::vector<Stairs> stairs;
@@ -538,65 +468,6 @@ sqlite document:
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
-
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-    }
-
-    void DataBase::set_monster_list( const std::vector<Monster>& monsters )
-    {
-        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
-
-        const char sql_statement[] = "INSERT OR REPLACE INTO monster(id,type,type_value,name"
-            ",level,life,attack,defense,gold,experience) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
-        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
-        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 10 )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
-        }
-
-        for( auto& monster : monsters )
-        {
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , monster.id );
-            sqlite3_bind_int( this->sql_statement_handler , 2 , monster.type );
-            sqlite3_bind_int( this->sql_statement_handler , 3 , monster.type_value );
-            sqlite3_bind_text( this->sql_statement_handler , 4 , monster.name.c_str() , monster.name.size() , SQLITE_STATIC );
-            sqlite3_bind_int( this->sql_statement_handler , 5 , monster.level );
-            sqlite3_bind_int( this->sql_statement_handler , 6 , monster.life );
-            sqlite3_bind_int( this->sql_statement_handler , 7 , monster.attack );
-            sqlite3_bind_int( this->sql_statement_handler , 8 , monster.defense );
-            sqlite3_bind_int( this->sql_statement_handler , 9 , monster.gold );
-            sqlite3_bind_int( this->sql_statement_handler , 10 , monster.experience );
-
-            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
-            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_DONE )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_OK )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            sqlite3_clear_bindings( this->sql_statement_handler );
-        }
-
-        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
 
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )

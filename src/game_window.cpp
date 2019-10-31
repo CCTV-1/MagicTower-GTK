@@ -415,8 +415,11 @@ namespace MagicTower
             auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
             if ( grid.type == GRID_TYPE::MONSTER )
             {
-                auto monster = game_object->monsters[ grid.id - 1 ];
-                detail_str = dump_monster_info( monster );
+                if ( game_object->monsters.find( grid.id ) != game_object->monsters.end() )
+                {
+                    auto monster = game_object->monsters[ grid.id ];
+                    detail_str = dump_monster_info( monster );
+                }
             }
             else if( grid.type == GRID_TYPE::ITEM )
             {

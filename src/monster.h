@@ -35,8 +35,6 @@ namespace MagicTower
      */
     struct Monster
     {
-        public:
-        std::size_t id;
         ATTACK_TYPE type;
         std::uint32_t type_value;
         std::string name;
