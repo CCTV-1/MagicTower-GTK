@@ -127,7 +127,25 @@ hero_property=
 }
 ```
 
-- monsters.lua --> defines game monsters property
+- monsters.lua --> defines game monsters property,the contents as follows:
+```lua
+monsters =
+{
+    [1] =
+    {
+        ["attack_type"] = 1,
+        ["type_value"] = 0,
+        ["name"] = "",
+        ["level"] = 1,
+        ["life"] = 50,
+        ["attack"] = 20,
+        ["defense"] = 1,
+        ["gold"] = 1,
+        ["experience"] = 1
+    },
+    ...
+}
+```
 
 - stores.lua --> defines game stores function,the contents as follows:
 ```lua
@@ -135,8 +153,8 @@ stores=
 {
     [store_id] = --sstore_id is a number.
     {
-        ["usability"] = , --value is a boolean.if define true,or call unlock_store,set flag:store_id to non nul value,else to nil value.
-        ["store_name"] = ,--value is a string,store menu display
+        ["usability"] = false, --if is true,or call unlock_store,set flag:store_id to non nul value,else to nil value.
+        ["store_name"] = "",--store menu display text
         ["commodities"] =
         {
             -- commodity_detail is a string,store menu display text
