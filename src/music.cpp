@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "music.h"
 
 #include <glib.h>
@@ -67,7 +69,7 @@ namespace MagicTower
         PLAY_MODE mode;
         std::size_t play_id;
         gulong handler_id;
-        std::vector<std::shared_ptr<const char> > music_uri_list;
+        std::vector<std::string> music_uri_list;
         GstElement * pipeline;
         GstElement * source;
         GstElement * conver;
@@ -76,12 +78,12 @@ namespace MagicTower
     };
 
     static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
-    static bool is_music( std::shared_ptr<const char>& file_uri );
+    static bool is_music( std::string& file_uri );
     static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline );
     static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
     static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
 
-    Music::Music( std::vector<std::shared_ptr<const char> > _music_uri_list ):
+    Music::Music( std::vector<std::string> _music_uri_list ):
         imp_ptr( new MusicImp )
     {
         if ( _music_uri_list.empty() )
@@ -105,7 +107,7 @@ namespace MagicTower
         }
 
         this->imp_ptr->play_id = id;
-        g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , this->imp_ptr->music_uri_list[ id ].get() , nullptr );
+        g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , this->imp_ptr->music_uri_list[ id ].c_str() , nullptr );
         GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )
         {
@@ -187,7 +189,7 @@ namespace MagicTower
         return volume;
     }
 
-    void Music::add_music_uri_list( std::vector<std::shared_ptr<const char> > uri_list )
+    void Music::add_music_uri_list( std::vector<std::string> uri_list )
     {
         for ( auto uri : uri_list )
         {
@@ -197,20 +199,20 @@ namespace MagicTower
             }
             else
             {
-                std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( uri.get() , nullptr , nullptr ) , g_free );
+                std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( uri.c_str() , nullptr , nullptr ) , g_free );
                 g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be music file,remove from play list." , filename.get() );
                 continue;
             }
         }
     }
     
-    void Music::set_music_uri_list( std::vector<std::shared_ptr<const char> > uri_list )
+    void Music::set_music_uri_list( std::vector<std::string> uri_list )
     {
         this->imp_ptr->music_uri_list.clear();
         add_music_uri_list( std::move( uri_list ) );
     }
 
-    std::vector<std::shared_ptr<const char> > Music::get_music_uri_list()
+    std::vector<std::string > Music::get_music_uri_list()
     {
         return this->imp_ptr->music_uri_list;
     }
@@ -248,10 +250,10 @@ namespace MagicTower
         }
     }
 
-    static bool is_music( std::shared_ptr<const char>& file_uri )
+    static bool is_music( std::string& file_uri )
     {
         GstCaps * caps = nullptr;
-        std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( file_uri.get() , nullptr , nullptr ) , g_free );
+        std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( file_uri.c_str() , nullptr , nullptr ) , g_free );
         std::unique_ptr< GstElement , decltype( &gst_object_unref ) > pipeline( gst_pipeline_new( "format_check" ) , gst_object_unref );
         GstElement * source = gst_element_factory_make( "filesrc" , "source" );
         GstElement * typefind = gst_element_factory_make( "typefind" , "typefind" );
@@ -372,7 +374,7 @@ namespace MagicTower
         else
             i = i + 1;
         imp_ptr->play_id = i;
-        g_object_set( source , "uri" , imp_ptr->music_uri_list[ i ].get() , nullptr );
+        g_object_set( source , "uri" , imp_ptr->music_uri_list[ i ].c_str() , nullptr );
         gst_element_link( imp_ptr->conver , imp_ptr->sink );
         GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )
@@ -392,7 +394,7 @@ namespace MagicTower
 
         std::size_t i = imp_ptr->get_random_id();
         imp_ptr->play_id = i;
-        g_object_set( source , "uri" , imp_ptr->music_uri_list[ i ].get() , nullptr );
+        g_object_set( source , "uri" , imp_ptr->music_uri_list[ i ].c_str() , nullptr );
         gst_element_link( imp_ptr->conver , imp_ptr->sink );
         GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )

@@ -8,7 +8,8 @@
 #include <cstdint>
 
 #include <vector>
-#include <memory>
+#include <exception>
+#include <string>
 
 namespace MagicTower
 {
@@ -37,7 +38,7 @@ namespace MagicTower
     class Music
     {
     public:
-        Music( std::vector<std::shared_ptr<const char> > _play_list = {} );
+        Music( std::vector<std::string> _play_list = {} );
         ~Music();
 
         bool play( std::size_t id );
@@ -49,13 +50,13 @@ namespace MagicTower
 
         enum PLAY_STATE get_state();
         double get_volume();
-        std::vector<std::shared_ptr<const char> > get_music_uri_list();
+        std::vector<std::string> get_music_uri_list();
 
         void set_volume( double volume );
-        void set_music_uri_list( std::vector<std::shared_ptr<const char> > uri_list );
+        void set_music_uri_list( std::vector<std::string> uri_list );
         void set_play_mode( PLAY_MODE mode );
 
-        void add_music_uri_list( std::vector<std::shared_ptr<const char> > uri_list );
+        void add_music_uri_list( std::vector<std::string> uri_list );
 
         Music( const Music& rhs )=delete;
         Music( Music&& rhs )=delete;
