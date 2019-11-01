@@ -40,7 +40,7 @@ namespace MagicTower
 
     void path_line_switch( GameEnvironment * game_object );
 
-    void open_start_menu(  GameEnvironment * game_object );
+    void open_start_menu( GameEnvironment * game_object );
 
     void open_game_menu_v2(  GameEnvironment * game_object );
 

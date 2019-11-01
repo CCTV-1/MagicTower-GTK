@@ -42,7 +42,7 @@ namespace MagicTower
         {
             scriptengines_register_eventfunc( game_object );
 
-            std::vector<std::shared_ptr<const char> > music_list = this->load_music( MUSIC_RESOURCES_PATH );
+            std::vector<std::string> music_list = this->load_music( MUSIC_RESOURCES_PATH );
             this->game_object->music.set_play_mode( PLAY_MODE::RANDOM_PLAYING );
             this->game_object->music.set_music_uri_list( music_list );
             this->game_object->music.play( 0 );
@@ -135,53 +135,48 @@ namespace MagicTower
             return info_frame;
         }
 
-        std::vector<std::shared_ptr<const char>> load_music( const char * music_path )
+        std::vector<std::string> load_music( std::string music_path )
         {
-            std::unique_ptr< GDir , decltype( &g_dir_close ) > dir_ptr( g_dir_open( music_path , 0 , nullptr ) , g_dir_close );
-
-            if ( g_file_test( music_path , G_FILE_TEST_EXISTS ) != TRUE )
-                return {};
-            if ( g_file_test( music_path , G_FILE_TEST_IS_DIR ) != TRUE )
-                return {};
-
-            std::vector<std::shared_ptr<const char>> uri_array;
-
-            //g_dir_read_name auto ignore "." ".."
-            const gchar * filename;
-            while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
+            if ( Glib::file_test( music_path , Glib::FileTest::FILE_TEST_EXISTS ) == false )
             {
-                std::unique_ptr< char , decltype( &g_free ) > music_file_name( g_strdup_printf( "%s/%s" , music_path , filename ) , g_free );
-                std::unique_ptr< GFile , decltype( &g_object_unref ) > gfile_obj( g_file_new_for_path( music_file_name.get() ) , g_object_unref );
-                std::shared_ptr<const char> file_uri( g_file_get_uri( gfile_obj.get() ) , g_free );
-                uri_array.push_back( file_uri );
+                return {};
             }
-
-            return uri_array;
+            if ( Glib::file_test( music_path , Glib::FileTest::FILE_TEST_IS_DIR ) == false )
+            {
+                return {};
+            }
+            Glib::Dir music_dir( music_path );
+            std::vector<std::string> uri_list;
+            std::string name;
+            while( ( name = music_dir.read_name() ) != std::string( "" ) )
+            {
+                Glib::RefPtr<Gio::File> music_file = Gio::File::create_for_path( music_path + name );
+                uri_list.push_back( music_file->get_uri() );
+            }
+            return uri_list;
         }
 
-        std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> load_image_resource( const char * image_path )
+        std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> load_image_resource( std::string image_path )
         {
-            std::unique_ptr< GDir , decltype( &g_dir_close ) > dir_ptr( g_dir_open( image_path , 0 , nullptr ) , g_dir_close );
-            std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> image_resource;
-
             //exists and type check
-            if ( g_file_test( image_path , G_FILE_TEST_EXISTS ) != TRUE )
+            if ( Glib::file_test( image_path , Glib::FileTest::FILE_TEST_EXISTS ) == false )
                 return {};
-            if ( g_file_test( image_path , G_FILE_TEST_IS_DIR ) != TRUE )
+            if ( Glib::file_test( image_path , Glib::FileTest::FILE_TEST_IS_DIR ) == false )
                 return {};
 
-            //g_dir_read_name auto ignore "." ".."
-            const gchar * filename;
-            while ( ( filename = g_dir_read_name( dir_ptr.get() ) ) != nullptr )
+            Glib::Dir image_dir( image_path );
+            std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> image_resource;
+            std::string name;
+            while( ( name = image_dir.read_name() ) != std::string( "" ) )
             {
-                std::string image_file_name = std::string( IMAGE_RESOURCES_PATH ) + std::string( filename );
-                Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_file( image_file_name , this->pixel_size , this->pixel_size );
-                if ( pixbuf.get()  == nullptr )
+                std::string image_name = image_path + name;
+                Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_file( image_name , this->pixel_size , this->pixel_size );
+                if ( pixbuf.get() == nullptr )
                 {
-                    g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_file_name.c_str() );
+                    g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_name.c_str() );
                     continue;
                 }
-                image_resource.insert({ image_file_name , pixbuf });
+                image_resource.insert({ image_name , pixbuf });
             }
             return image_resource;
         }
@@ -278,7 +273,7 @@ namespace MagicTower
                         case GRID_TYPE::STAIRS:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
-                            this->draw_grid_image( cairo_context , x , y , "stairs" , game_object->stairs[ grid.id - 1 ].type );
+                            this->draw_grid_image( cairo_context , x , y , "stairs" , game_object->stairs[ grid.id ].type );
                             break;
                         }
                         case GRID_TYPE::DOOR:

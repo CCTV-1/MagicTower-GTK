@@ -61,15 +61,6 @@ namespace MagicTower
                 );
             )",
             R"(
-                CREATE TABLE IF NOT EXISTS stairs (
-                    id     INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    type   INT (32),
-                    layers INT (32),
-                    x      INT (32),
-                    y      INT (32) 
-                );
-            )",
-            R"(
                 CREATE TABLE IF NOT EXISTS hero (
                     id         INTEGER  PRIMARY KEY AUTOINCREMENT,
                     layers     INT (32),
@@ -339,47 +330,6 @@ namespace MagicTower
         return script_flags;
     }
 
-    std::vector<Stairs> DataBase::get_stairs_list()
-    {
-        std::vector<Stairs> stairs;
-        const char sql_statement[] = "SELECT id,type,layers,x,y FROM stairs";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
-            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-
-        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
-        {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 5 )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
-            }
-
-            std::size_t id = static_cast< std::size_t >( sqlite3_column_int( this->sql_statement_handler , 0 ) );
-            std::int32_t type = sqlite3_column_int( this->sql_statement_handler , 1 );
-            std::uint32_t layers = sqlite3_column_int( this->sql_statement_handler , 2 );
-            std::uint32_t x = sqlite3_column_int( this->sql_statement_handler , 3 );
-            std::uint32_t y = sqlite3_column_int( this->sql_statement_handler , 4 );
-            stairs.push_back({ id , type , layers , x , y });
-        }
-        
-        if ( this->sqlite3_error_code != SQLITE_DONE )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-        return stairs;
-    }
-
 /*  
 sqlite document:
     The initial "INSERT" keyword can be replaced by "REPLACE" or "INSERT OR action" to specify an alternative constraint conflict
@@ -468,59 +418,6 @@ sqlite document:
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
-
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-    }
-
-    void DataBase::set_stairs_list( const std::vector<Stairs>& stairs )
-    {
-        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
-
-        const char sql_statement[] = "INSERT OR REPLACE INTO stairs(id,type,layers,x,y) VALUES( ? , ? , ? , ? , ? )";
-        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
-        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 5 )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
-        }
-
-        for( auto& stair : stairs )
-        {
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , stair.id );
-            sqlite3_bind_int( this->sql_statement_handler , 2 , stair.type );
-            sqlite3_bind_int( this->sql_statement_handler , 3 , stair.layers );
-            sqlite3_bind_int( this->sql_statement_handler , 4 , stair.x );
-            sqlite3_bind_int( this->sql_statement_handler , 5 , stair.y );
-
-            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
-            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_DONE )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_OK )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            sqlite3_clear_bindings( this->sql_statement_handler );
-        }
-
-        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
 
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )

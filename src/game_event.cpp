@@ -660,8 +660,6 @@ namespace MagicTower
             MagicTower::DataBase db( db_name );
             db.set_tower_info( game_object->towers , 0 );
             db.set_hero_info( game_object->hero , 0 );
-            db.set_stairs_list( game_object->stairs );
-            //db.set_monster_list( game_object->monsters );
             db.set_access_layers( game_object->access_layer );
             db.set_jump_map( game_object->layers_jump );
             db.set_script_flags( game_object->script_flags );
@@ -691,7 +689,6 @@ namespace MagicTower
             MagicTower::DataBase db( db_name );
             game_object->towers = db.get_tower_info( 0 );
             game_object->hero = db.get_hero_info( 0 );
-            game_object->stairs = db.get_stairs_list();
             game_object->access_layer = db.get_access_layers();
             game_object->layers_jump = db.get_jump_map();
             game_object->script_flags = db.get_script_flags();
@@ -806,13 +803,11 @@ namespace MagicTower
         return true;
     }
 
-    bool get_item( GameEnvironment * game_object , std::uint32_t commodity_id )
+    bool get_item( GameEnvironment * game_object , std::uint32_t item_id )
     {
-        if ( commodity_id - 1 >= game_object->items.size() )
+        if ( game_object->items.find( item_id ) == game_object->items.end() )
             return false;
-        if ( game_object->items.find( commodity_id ) == game_object->items.end() )
-            return false;
-        Item& item = game_object->items[ commodity_id ];
+        Item& item = game_object->items[ item_id ];
 
         luaL_dostring( game_object->script_engines.get() , item.item_func.data() );
         std::string tips = item.item_detail;
@@ -822,9 +817,9 @@ namespace MagicTower
 
     bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id )
     {
-        if ( stair_id - 1 >= game_object->stairs.size() )
+        if ( game_object->stairs.find( stair_id ) == game_object->stairs.end() )
             return false;
-        Stairs stair = game_object->stairs[ stair_id - 1 ];
+        Stairs stair = game_object->stairs[ stair_id ];
         Tower& tower = game_object->towers;
         if ( stair.layers >= tower.HEIGHT )
             return false;

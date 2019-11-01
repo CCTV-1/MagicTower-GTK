@@ -43,7 +43,7 @@ namespace MagicTower
 
     struct GameEnvironment
     {
-        GameEnvironment( std::vector<std::shared_ptr<const char> > music_list = {} );
+        GameEnvironment( std::vector<std::string> music_list = {} );
         ~GameEnvironment();
 
         void initial_gamedata();
@@ -67,7 +67,7 @@ namespace MagicTower
         ); */
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > layers_jump;
         std::map<std::string , std::uint32_t> script_flags;
-        std::vector<Stairs> stairs;
+        std::map<std::uint32_t,Stairs> stairs;
         std::map<std::uint32_t,Monster> monsters;
         std::map<std::uint32_t,Item> items;
         std::vector<TowerGridLocation> path;
