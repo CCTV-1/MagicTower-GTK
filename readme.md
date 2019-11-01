@@ -84,7 +84,7 @@ function game_lose()
 - items
 - monsters
 - stores
-- store_ + any number to string
+- stairs
 - hero_property
 
 ### script name rule
@@ -151,10 +151,10 @@ monsters =
 ```lua
 stores=
 {
-    [store_id] = --store_id is a number.
+    [store_id] =                    --store_id is a number.
     {
-        ["usability"] = false, --if is true,or call unlock_store,set flag:store_id to non nul value,else to nil value.
-        ["store_name"] = "",--store menu display text
+        ["usability"] = false,      --if is true,or call unlock_store,set flag:store_id to non nul value,else to nil value.
+        ["store_name"] = "",        --store menu display text
         ["commodities"] =
         {
             -- commodity_detail is a string,store menu display text
@@ -162,6 +162,21 @@ stores=
             [commodity_detail] = commodity_function,
             ...
         }
+    },
+    ...
+}
+```
+
+- stairs.lua --> defines game stairs property,the contents as follows:
+```lua
+stairs=
+{
+    [stair_id] =                --stair_id is a number.
+    {
+        ["image_type"] = 1,     --the number -> resources/images/stairs$(image_type).png
+        ["layer"] = 1,          --number
+        ["x"] = 1,              --number,enter the stair hero go to ( layer , x , y )
+        ["y"] = 1,              --number
     },
     ...
 }
