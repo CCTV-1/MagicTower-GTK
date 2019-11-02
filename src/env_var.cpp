@@ -203,7 +203,7 @@ namespace MagicTower
             luaL_checktype( L , top + 2 , LUA_TNUMBER );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "image_type" );
-            lua_getfield( L , top + 3 , "layer" );
+            lua_getfield( L , top + 3 , "floor" );
             lua_getfield( L , top + 3 , "x" );
             lua_getfield( L , top + 3 , "y" );
             luaL_checktype( L , top + 4 , LUA_TNUMBER );
@@ -212,17 +212,17 @@ namespace MagicTower
             luaL_checktype( L , top + 7 , LUA_TNUMBER );
             std::uint32_t stairs_id = lua_tointeger( L , top + 2 );
             std::uint32_t stairs_type = lua_tointeger( L , top + 4 );
-            std::uint32_t stairs_layer = lua_tointeger( L , top + 5 );
+            std::uint32_t stairs_floor = lua_tointeger( L , top + 5 );
             std::uint32_t stairs_x = lua_tointeger( L , top + 6 );
             std::uint32_t stairs_y = lua_tointeger( L , top + 7 );
-            stairs[stairs_id] = { stairs_type , stairs_layer , stairs_x , stairs_y };
+            stairs[stairs_id] = { stairs_type , stairs_floor , stairs_x , stairs_y };
             lua_pop( L , 5 );
         }
         lua_pop( L , 1 );
         return stairs;
     }
 
-    static std::map<std::size_t , std::pair<std::size_t , std::size_t> > initial_layerjump( lua_State * L )
+    static std::map<std::size_t , std::pair<std::size_t , std::size_t> > initial_floorjump( lua_State * L )
     {
         std::string jumper_script = CUSTOM_SCRIPTS_PATH"jumper.lua";
         if ( Glib::file_test( jumper_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
@@ -235,7 +235,7 @@ namespace MagicTower
         }
         std::uint32_t top = lua_gettop( L );
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > jumper;
-        lua_getglobal( L , "layerjump" );
+        lua_getglobal( L , "floorjump" );
         luaL_checktype( L , top + 1 , LUA_TTABLE );
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )
@@ -290,11 +290,11 @@ namespace MagicTower
         this->hero = initial_hero( this->script_engines.get() );
         this->monsters = initial_monsters( this->script_engines.get() );
         this->stairs = initial_stairs( this->script_engines.get() );
-        this->layers_jump = initial_layerjump( this->script_engines.get() );
+        this->floors_jump = initial_floorjump( this->script_engines.get() );
 
         DataBase db( DATABSE_RESOURCES_PATH );
         this->towers = db.get_tower_info( 0 );
-        this->access_layer = db.get_access_layers();
+        this->access_floor = db.get_access_floors();
         this->script_flags = db.get_script_flags();
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;

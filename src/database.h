@@ -125,13 +125,13 @@ namespace MagicTower
         Tower get_tower_info( std::size_t archive_id );
 
         std::map<event_position_t , std::string> get_custom_events();
-        std::map<std::uint32_t , bool> get_access_layers();
+        std::map<std::uint32_t , bool> get_access_floors();
         std::map<std::string , std::uint32_t> get_script_flags();
 
         void set_hero_info( const Hero& hero , std::size_t archive_id );
         void set_tower_info( const Tower& tower , std::size_t archive_id );
 
-        void set_access_layers( std::map<std::uint32_t , bool>& maps );
+        void set_access_floors( std::map<std::uint32_t , bool>& maps );
         void set_custom_events( std::map<event_position_t , std::string>& custom_events );
         void set_script_flags( std::map<std::string , std::uint32_t>& flags );
 

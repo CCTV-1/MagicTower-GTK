@@ -18,13 +18,13 @@
 function set_tips( string )
 
 --no return
-function set_grid_type( number layer , number x , number y , number grid_id )
+function set_grid_type( number floor , number x , number y , number grid_id )
 
 --return a number
-function get_grid_type( number layer , number x , number y )
+function get_grid_type( number floor , number x , number y )
 
 --hero table:
---key:layers , value:number;
+--key:floors , value:number;
 --key:x , value:number;
 --key:y , value:number;
 --key:level , value:number;
@@ -70,7 +70,7 @@ function unlock_store( number store_id )
 function lock_store( number store_id )
 
 --no return
-function move_hero( number layer , number x , number y )
+function move_hero( number floor , number x , number y )
 
 --no return
 function game_win()
@@ -86,16 +86,16 @@ function game_lose()
 - stores
 - stairs
 - hero_property
-- layerjump
+- floorjump
 
 ### keeped flag
 - stores_$(stores_id)
 
 ### script name rule
 
-- F_$(layer)\_$(x)\_$(y).lua  --> call for each move to new position(before the built-in events)
+- F_$(floor)\_$(x)\_$(y).lua  --> call for each move to new position(before the built-in events)
 
-- L_$(layer)\_$(x)\_$(y).lua  --> call for each move to new position(after the built-in event)
+- L_$(floor)\_$(x)\_$(y).lua  --> call for each move to new position(after the built-in event)
 
 - items.lua --> defines game items function,the contents as follows:
 
@@ -116,7 +116,7 @@ items =
 ```lua
 hero_property=
 {
-    ["layers"] = 0,
+    ["floors"] = 0,
     ["x"] = 5,
     ["y"] = 9,
     ["level"] = 1,
@@ -178,21 +178,21 @@ stairs=
     [stair_id] =                --stair_id is a number.
     {
         ["image_type"] = 1,     --the number -> resources/images/stairs$(image_type).png
-        ["layer"] = 1,          --number
-        ["x"] = 1,              --number,enter the stair hero go to ( layer , x , y )
+        ["floor"] = 1,          --number
+        ["x"] = 1,              --number,enter the stair hero go to ( floor , x , y )
         ["y"] = 1,              --number
     },
     ...
 }
 ```
 
-- jumper.lua --> defines game layer jump property,the contents as follows:
+- jumper.lua --> defines game floor jump property,the contents as follows:
 ```lua
-layerjump =
+floorjump =
 {
-    [0] =           --jump to 0 layer,postion:(x,y) = (5,10)
-    {               --when a layer does not exist in layerjump,in the layer layerjump permanently disabled
-        ["x"] = 5,  --when exist,hero enter stairs goto layer,enabled jump to the layer
+    [0] =           --jump to 0 floor,postion:(x,y) = (5,10)
+    {               --when a floor does not exist in floorjump,in the floor floorjump permanently disabled
+        ["x"] = 5,  --when exist,hero enter stairs goto floor,enabled jump to the floor
         ["y"] = 10
     },
     ...

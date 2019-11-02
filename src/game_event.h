@@ -52,9 +52,9 @@ namespace MagicTower
 
     void back_jump( GameEnvironment * game_object );
     
-    void open_layer_jump( GameEnvironment * game_object );
+    void open_floor_jump( GameEnvironment * game_object );
 
-    void close_layer_jump( GameEnvironment * game_object );
+    void close_floor_jump( GameEnvironment * game_object );
 
     void save_game( GameEnvironment * game_object , size_t save_id );
 

@@ -56,16 +56,16 @@ namespace MagicTower
         Music music;
         Hero hero;
         Tower towers;
-        /* CREATE TABLE access_layers (
-            layer INT (32) PRIMARY KEY AUTOINCREMENT,
+        /* CREATE TABLE access_floors (
+            floor INT (32) PRIMARY KEY AUTOINCREMENT,
         ); */
-        std::map<std::uint32_t , bool> access_layer;
+        std::map<std::uint32_t , bool> access_floor;
         /* CREATE TABLE jump_point (
-            layer INT (32) PRIMARY KEY AUTOINCREMENT,
+            floor INT (32) PRIMARY KEY AUTOINCREMENT,
             x     INT (32),
             y     INT (32)
         ); */
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> > layers_jump;
+        std::map<std::size_t , std::pair<std::size_t , std::size_t> > floors_jump;
         std::map<std::string , std::uint32_t> script_flags;
         std::map<std::uint32_t,Stairs> stairs;
         std::map<std::uint32_t,Monster> monsters;

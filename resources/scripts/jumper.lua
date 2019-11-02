@@ -1,4 +1,4 @@
-layerjump =
+floorjump =
 {
     [0] =
     {

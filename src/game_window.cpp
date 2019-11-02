@@ -257,7 +257,7 @@ namespace MagicTower
             {
                 for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
                 {
-                    auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
+                    auto grid = get_tower_grid( game_object->towers , game_object->hero.floors , x , y );
                     switch( grid.type )
                     {
                         case GRID_TYPE::FLOOR:
@@ -357,7 +357,7 @@ namespace MagicTower
             {
                 for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
                 {
-                    auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
+                    auto grid = get_tower_grid( game_object->towers , game_object->hero.floors , x , y );
                     if ( grid.type == GRID_TYPE::MONSTER )
                     {
                         //todo:cache damage list
@@ -407,7 +407,7 @@ namespace MagicTower
             std::string detail_str;
             x = this->click_x/this->pixel_size;
             y = this->click_y/this->pixel_size;
-            auto grid = get_tower_grid( game_object->towers , game_object->hero.layers , x , y );
+            auto grid = get_tower_grid( game_object->towers , game_object->hero.floors , x , y );
             if ( grid.type == GRID_TYPE::MONSTER )
             {
                 if ( game_object->monsters.find( grid.id ) != game_object->monsters.end() )
@@ -625,7 +625,7 @@ namespace MagicTower
             //draw text
             std::vector< std::pair<std::string , int >> arr =
             {
-                { std::string( "第  " ) + std::to_string( hero.layers + 1 ) + std::string( "  层" ) , 2 },
+                { std::string( "第  " ) + std::to_string( hero.floors + 1 ) + std::string( "  层" ) , 2 },
                 { std::string( "等   级:  " ) + std::to_string( hero.level ) , 0 },
                 { std::string( "生命值:  " ) + std::to_string( hero.life ) , 0 },
                 { std::string( "攻击力:  " ) + std::to_string( hero.attack ) , 0 },
@@ -792,7 +792,7 @@ namespace MagicTower
                         case GDK_KEY_j:
                         case GDK_KEY_J:
                         {
-                            open_layer_jump( game_object );
+                            open_floor_jump( game_object );
                             break;
                         }
                         case GDK_KEY_N:
@@ -943,7 +943,7 @@ namespace MagicTower
                         case GDK_KEY_J:
                         {
                             back_jump( game_object );
-                            close_layer_jump( game_object );
+                            close_floor_jump( game_object );
                             break;
                         }
                     }

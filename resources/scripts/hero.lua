@@ -1,6 +1,6 @@
 hero_property=
 {
-    ["layers"] = 0,
+    ["floors"] = 0,
     ["x"] = 5,
     ["y"] = 9,
     ["level"] = 1,

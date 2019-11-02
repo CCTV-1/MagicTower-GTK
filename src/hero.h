@@ -11,7 +11,7 @@ namespace MagicTower
     /* 
     CREATE TABLE hero (
         id         INTEGER  PRIMARY KEY AUTOINCREMENT,
-        layers     INT (32),
+        floors     INT (32),
         x          INT (32),
         y          INT (32),
         level      INT (32),
@@ -27,7 +27,7 @@ namespace MagicTower
      */
     struct Hero
     {
-        std::uint32_t layers;
+        std::uint32_t floors;
         std::uint32_t x;
         std::uint32_t y;
         std::uint32_t level;
@@ -49,7 +49,7 @@ namespace MagicTower
         std::uint32_t top = lua_gettop( L );
         luaL_checktype( L , index , LUA_TTABLE );
     
-        lua_getfield( L , index , "layers" );
+        lua_getfield( L , index , "floors" );
         lua_getfield( L , index , "x" );
         lua_getfield( L , index , "y" );
         lua_getfield( L , index , "level" );
@@ -62,7 +62,7 @@ namespace MagicTower
         lua_getfield( L , index , "blue_key" );
         lua_getfield( L , index , "red_key" );
 
-        hero.layers = luaL_checkinteger( L , top + 1 );
+        hero.floors = luaL_checkinteger( L , top + 1 );
         hero.x = luaL_checkinteger( L , top + 2 );
         hero.y = luaL_checkinteger( L ,top + 3 );
         hero.level = luaL_checkinteger( L , top + 4 );
@@ -84,8 +84,8 @@ namespace MagicTower
     {
         lua_newtable( L );
         std::uint32_t top = lua_gettop( L );
-        lua_pushnumber( L , hero.layers );
-        lua_setfield( L , top , "layers" );
+        lua_pushnumber( L , hero.floors );
+        lua_setfield( L , top , "floors" );
         lua_pushnumber( L , hero.x );
         lua_setfield( L , top , "x" );
         lua_pushnumber( L , hero.y );

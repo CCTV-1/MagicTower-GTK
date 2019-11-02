@@ -63,7 +63,7 @@ namespace MagicTower
             R"(
                 CREATE TABLE IF NOT EXISTS hero (
                     id         INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    layers     INT (32),
+                    floors     INT (32),
                     x          INT (32),
                     y          INT (32),
                     level      INT (32),
@@ -78,8 +78,8 @@ namespace MagicTower
                 );
             )",
             R"(
-                CREATE TABLE IF NOT EXISTS access_layers (
-                    layer INTEGER PRIMARY KEY AUTOINCREMENT
+                CREATE TABLE IF NOT EXISTS access_floors (
+                    floor INTEGER PRIMARY KEY AUTOINCREMENT
                 );
             )",
             R"(
@@ -97,7 +97,7 @@ namespace MagicTower
     Hero DataBase::get_hero_info( std::size_t archive_id )
     {
         Hero hero;
-        const char sql_statement[] = "SELECT layers,x,y,level,life,attack,defense,gold,experience,yellow_key,"
+        const char sql_statement[] = "SELECT floors,x,y,level,life,attack,defense,gold,experience,yellow_key,"
         "blue_key,red_key FROM hero WHERE id = ?";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
@@ -121,7 +121,7 @@ namespace MagicTower
                 sqlite3_finalize( this->sql_statement_handler );
                 throw sqlite_table_format_failure( std::string( sql_statement ) );
             }
-            hero.layers = sqlite3_column_int( this->sql_statement_handler , 0 );
+            hero.floors = sqlite3_column_int( this->sql_statement_handler , 0 );
             hero.x = sqlite3_column_int( this->sql_statement_handler , 1 );
             hero.y = sqlite3_column_int( this->sql_statement_handler , 2 );
             hero.level = sqlite3_column_int( this->sql_statement_handler , 3 );
@@ -202,11 +202,11 @@ namespace MagicTower
         return tower;
     }
 
-    std::map<std::uint32_t , bool> DataBase::get_access_layers()
+    std::map<std::uint32_t , bool> DataBase::get_access_floors()
     {
-        std::map<std::uint32_t , bool> access_layers;
-        std::uint32_t layer = 0;
-        const char sql_statement[] = "SELECT layer FROM access_layers";
+        std::map<std::uint32_t , bool> access_floors;
+        std::uint32_t floor = 0;
+        const char sql_statement[] = "SELECT floor FROM access_floors";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
@@ -223,8 +223,8 @@ namespace MagicTower
                 throw sqlite_table_format_failure( std::string( sql_statement ) );
             }
 
-            layer = sqlite3_column_int( this->sql_statement_handler , 0 );
-            access_layers[ layer ] = true;
+            floor = sqlite3_column_int( this->sql_statement_handler , 0 );
+            access_floors[ floor ] = true;
         }
         
         if ( this->sqlite3_error_code != SQLITE_DONE )
@@ -238,7 +238,7 @@ namespace MagicTower
             throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
         }
 
-        return access_layers;
+        return access_floors;
     }
 
     std::map<std::string , std::uint32_t> DataBase::get_script_flags()
@@ -289,7 +289,7 @@ sqlite document:
 
     void DataBase::set_hero_info( const Hero& hero , std::size_t archive_id )
     {
-        const char sql_statement[] = "INSERT OR REPLACE INTO hero(id,layers,x,y,level,life,attack,defense,"
+        const char sql_statement[] = "INSERT OR REPLACE INTO hero(id,floors,x,y,level,life,attack,defense,"
             "gold,experience,yellow_key,blue_key,red_key) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
@@ -307,7 +307,7 @@ sqlite document:
         }
 
         sqlite3_bind_int( this->sql_statement_handler , 1 , archive_id );
-        sqlite3_bind_int( this->sql_statement_handler , 2 , hero.layers );
+        sqlite3_bind_int( this->sql_statement_handler , 2 , hero.floors );
         sqlite3_bind_int( this->sql_statement_handler , 3 , hero.x );
         sqlite3_bind_int( this->sql_statement_handler , 4 , hero.y );
         sqlite3_bind_int( this->sql_statement_handler , 5 , hero.level );
@@ -376,11 +376,11 @@ sqlite document:
         }
     }
 
-    void DataBase::set_access_layers( std::map<std::uint32_t , bool>& maps )
+    void DataBase::set_access_floors( std::map<std::uint32_t , bool>& maps )
     {
         sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
 
-        const char sql_statement[] = "INSERT OR REPLACE INTO access_layers(layer) VALUES( ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO access_floors(floor) VALUES( ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
 
@@ -396,11 +396,11 @@ sqlite document:
             throw sqlite_bind_count_failure( std::string( sql_statement ) );
         }
 
-        for( auto& layer : maps )
+        for( auto& floor : maps )
         {
-            if ( layer.second == false )
+            if ( floor.second == false )
                 continue;
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , layer.first );
+            sqlite3_bind_int64( this->sql_statement_handler , 1 , floor.first );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
             this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );

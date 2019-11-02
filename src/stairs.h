@@ -9,7 +9,7 @@ namespace MagicTower
         //1 up,2 down
         std::uint32_t type;
         //[0,tower.HEIGHT)
-        std::uint32_t layers;
+        std::uint32_t floors;
         //[0,tower.LENGTH]
         std::uint32_t x;
         //[0,tower.WIDTH]

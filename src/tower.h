@@ -31,7 +31,7 @@ namespace MagicTower
         std::uint32_t id;
     };
 
-    //x,y,layer --> 1,5,10
+    //x,y,floor --> 1,5,10
     typedef std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> event_position_t;
 
     struct TowerGridLocation
