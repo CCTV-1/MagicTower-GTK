@@ -78,13 +78,7 @@ namespace MagicTower
                 );
             )",
             R"(
-                CREATE TABLE IF NOT EXISTS access_floors (
-                    floor INTEGER PRIMARY KEY AUTOINCREMENT
-                );
-            )",
-            R"(
                 CREATE TABLE IF NOT EXISTS script_flags (
-                    flag_id     INTEGER PRIMARY KEY AUTOINCREMENT,
                     flag_name   TEXT,
                     flag_value  INT (32)
                 );
@@ -200,45 +194,6 @@ namespace MagicTower
         }
         Tower tower = { HEIGHT , LENGTH , WIDTH , maps };
         return tower;
-    }
-
-    std::map<std::uint32_t , bool> DataBase::get_access_floors()
-    {
-        std::map<std::uint32_t , bool> access_floors;
-        std::uint32_t floor = 0;
-        const char sql_statement[] = "SELECT floor FROM access_floors";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
-            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-
-        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
-        {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 1 )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
-            }
-
-            floor = sqlite3_column_int( this->sql_statement_handler , 0 );
-            access_floors[ floor ] = true;
-        }
-        
-        if ( this->sqlite3_error_code != SQLITE_DONE )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-
-        return access_floors;
     }
 
     std::map<std::string , std::uint32_t> DataBase::get_script_flags()
@@ -369,57 +324,6 @@ sqlite document:
             throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
 
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-    }
-
-    void DataBase::set_access_floors( std::map<std::uint32_t , bool>& maps )
-    {
-        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
-
-        const char sql_statement[] = "INSERT OR REPLACE INTO access_floors(floor) VALUES( ? )";
-        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
-        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 1 )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
-        }
-
-        for( auto& floor : maps )
-        {
-            if ( floor.second == false )
-                continue;
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , floor.first );
-
-            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
-            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_DONE )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_OK )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            sqlite3_clear_bindings( this->sql_statement_handler );
-        }
-        
-        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
-        
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {

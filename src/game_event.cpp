@@ -660,7 +660,6 @@ namespace MagicTower
             MagicTower::DataBase db( db_name );
             db.set_tower_info( game_object->towers , 0 );
             db.set_hero_info( game_object->hero , 0 );
-            db.set_access_floors( game_object->access_floor );
             db.set_script_flags( game_object->script_flags );
         }
         catch ( ... )
@@ -688,10 +687,9 @@ namespace MagicTower
             MagicTower::DataBase db( db_name );
             game_object->towers = db.get_tower_info( 0 );
             game_object->hero = db.get_hero_info( 0 );
-            game_object->access_floor = db.get_access_floors();
             game_object->script_flags = db.get_script_flags();
 
-            //std::pair<store_id,Store>&
+            //store unlock flag
             for ( auto& store : game_object->stores )
             {
                 std::string flag_name = std::string( "store_" ) + std::to_string( store.first );
@@ -704,6 +702,20 @@ namespace MagicTower
                     store.second.usability = false;
                 }
                 
+            }
+
+            //floor jump unlock flag
+            for ( std::uint32_t i = 0 ; i < game_object->towers.HEIGHT ; i++ )
+            {
+                std::string floor_flag = std::string( "floors_" ) + std::to_string( i );
+                if ( game_object->script_flags.find( floor_flag ) != game_object->script_flags.end() )
+                {
+                    game_object->access_floor[i] = true;
+                }
+                else
+                {
+                    game_object->access_floor[i] = false;
+                }
             }
         }
         catch ( ... )
@@ -831,6 +843,8 @@ namespace MagicTower
         game_object->hero.y = stair.y;
 
         game_object->access_floor[ stair.floors ] = true;
+        std::string floor_flag = std::string( "floors_" ) + std::to_string( stair.floors );
+        game_object->script_flags[floor_flag] = 1;
 
         return true;
     }

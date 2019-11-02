@@ -294,8 +294,6 @@ namespace MagicTower
 
         DataBase db( DATABSE_RESOURCES_PATH );
         this->towers = db.get_tower_info( 0 );
-        this->access_floor = db.get_access_floors();
-        this->script_flags = db.get_script_flags();
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;
         this->path = {};
