@@ -950,6 +950,12 @@ namespace MagicTower
                 break;
         }
 
+        if ( game_object->layers_jump.find( game_object->hero.layers ) == game_object->layers_jump.end() )
+        {
+            set_tips( game_object , "这层楼禁止使用楼层跳跃器！" );
+            return ;
+        }
+
         game_object->game_status = GAME_STATUS::JUMP_MENU;
         game_object->focus_item_id = 0;
         temp_pos= { game_object->hero.layers , game_object->hero.x , game_object->hero.y };

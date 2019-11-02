@@ -191,8 +191,8 @@ stairs=
 layerjump =
 {
     [0] =           --jump to 0 layer,postion:(x,y) = (5,10)
-    {
-        ["x"] = 5,
+    {               --when a layer does not exist in layerjump,in the layer layerjump permanently disabled
+        ["x"] = 5,  --when exist,hero enter stairs goto layer,enabled jump to the layer
         ["y"] = 10
     },
     ...
