@@ -222,6 +222,41 @@ namespace MagicTower
         return stairs;
     }
 
+    static std::map<std::size_t , std::pair<std::size_t , std::size_t> > initial_layerjump( lua_State * L )
+    {
+        std::string jumper_script = CUSTOM_SCRIPTS_PATH"jumper.lua";
+        if ( Glib::file_test( jumper_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        {
+            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing jumper.lua resources" );
+        }
+        if ( luaL_dofile( L , jumper_script.data() ) )
+        {
+            throw std::runtime_error( lua_tostring( L , -1 ) );
+        }
+        std::uint32_t top = lua_gettop( L );
+        std::map<std::size_t , std::pair<std::size_t , std::size_t> > jumper;
+        lua_getglobal( L , "layerjump" );
+        luaL_checktype( L , top + 1 , LUA_TTABLE );
+        lua_pushnil( L );
+        while( lua_next( L , top + 1 ) )
+        {
+            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            luaL_checktype( L , top + 3 , LUA_TTABLE );
+            lua_getfield( L , top + 3 , "x" );
+            lua_getfield( L , top + 3 , "y" );
+            luaL_checktype( L , top + 4 , LUA_TNUMBER );
+            luaL_checktype( L , top + 5 , LUA_TNUMBER );
+
+            std::uint32_t jump_id = lua_tointeger( L , top + 2 );
+            std::uint32_t jump_x = lua_tointeger( L , top + 4 );
+            std::uint32_t jump_y = lua_tointeger( L , top + 5 );
+            jumper[jump_id] = { jump_x , jump_y };
+            lua_pop( L , 3 );
+        }
+        lua_pop( L , 1 );
+        return jumper;
+    }
+
     GameEnvironment::GameEnvironment( std::vector<std::string> music_list ):
         script_engines( luaL_newstate() , lua_close ),
         game_message( {} ),
@@ -251,15 +286,15 @@ namespace MagicTower
     void GameEnvironment::initial_gamedata()
     {
         this->items = initial_items( this->script_engines.get() );
-        this->store_list = initial_stores( this->script_engines.get() , this->script_flags );
+        this->stores = initial_stores( this->script_engines.get() , this->script_flags );
         this->hero = initial_hero( this->script_engines.get() );
         this->monsters = initial_monsters( this->script_engines.get() );
         this->stairs = initial_stairs( this->script_engines.get() );
+        this->layers_jump = initial_layerjump( this->script_engines.get() );
 
         DataBase db( DATABSE_RESOURCES_PATH );
         this->towers = db.get_tower_info( 0 );
         this->access_layer = db.get_access_layers();
-        this->layers_jump = db.get_jump_map();
         this->script_flags = db.get_script_flags();
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;

@@ -457,10 +457,10 @@ namespace MagicTower
                 std::uint32_t store_id = luaL_checkinteger( L , 1 );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->store_list[ store_id ].usability = true;
+                game_object->stores[ store_id ].usability = true;
                 std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
                 game_object->script_flags[ flag_name ] = 1;
-                std::string tips = std::string( "解锁商店:" ) + ( game_object->store_list[ store_id ] ).store_name;
+                std::string tips = std::string( "解锁商店:" ) + ( game_object->stores[ store_id ] ).store_name;
                 set_tips( game_object , tips );
                 return 0;
             }
@@ -480,10 +480,10 @@ namespace MagicTower
                 std::uint32_t store_id = luaL_checkinteger( L , 1 );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->store_list[ store_id ].usability = false;
+                game_object->stores[ store_id ].usability = false;
                 std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
                 game_object->script_flags.erase( flag_name );
-                std::string tips = std::string( "锁定商店:" ) + ( game_object->store_list[ store_id ] ).store_name;
+                std::string tips = std::string( "锁定商店:" ) + ( game_object->stores[ store_id ] ).store_name;
                 set_tips( game_object , tips );
                 return 0;
             }
@@ -661,7 +661,6 @@ namespace MagicTower
             db.set_tower_info( game_object->towers , 0 );
             db.set_hero_info( game_object->hero , 0 );
             db.set_access_layers( game_object->access_layer );
-            db.set_jump_map( game_object->layers_jump );
             db.set_script_flags( game_object->script_flags );
         }
         catch ( ... )
@@ -690,11 +689,10 @@ namespace MagicTower
             game_object->towers = db.get_tower_info( 0 );
             game_object->hero = db.get_hero_info( 0 );
             game_object->access_layer = db.get_access_layers();
-            game_object->layers_jump = db.get_jump_map();
             game_object->script_flags = db.get_script_flags();
 
             //std::pair<store_id,Store>&
-            for ( auto& store : game_object->store_list )
+            for ( auto& store : game_object->stores )
             {
                 std::string flag_name = std::string( "store_" ) + std::to_string( store.first );
                 if ( game_object->script_flags.find( flag_name ) != game_object->script_flags.end() )
@@ -1346,7 +1344,7 @@ namespace MagicTower
     static void set_store_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
-        for ( auto& store : game_object->store_list )
+        for ( auto& store : game_object->stores )
         {
             if ( store.second.usability != true )
             {
@@ -1375,7 +1373,7 @@ namespace MagicTower
             [](){ return std::string( "返回上级菜单" ); },
             [ game_object ](){ set_store_menu( game_object ); }
         });
-        Store& store = game_object->store_list[store_id];
+        Store& store = game_object->stores[store_id];
         for ( auto& commoditie : store.commodities )
         {
             std::string commodity_detail = commoditie.first;

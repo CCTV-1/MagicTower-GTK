@@ -83,13 +83,6 @@ namespace MagicTower
                 );
             )",
             R"(
-                CREATE TABLE IF NOT EXISTS jump_point (
-                    layer INTEGER PRIMARY KEY AUTOINCREMENT,
-                    x     INT (32),
-                    y     INT (32)
-                );
-            )",
-            R"(
                 CREATE TABLE IF NOT EXISTS script_flags (
                     flag_id     INTEGER PRIMARY KEY AUTOINCREMENT,
                     flag_name   TEXT,
@@ -207,49 +200,6 @@ namespace MagicTower
         }
         Tower tower = { HEIGHT , LENGTH , WIDTH , maps };
         return tower;
-    }
-
-    std::map<std::size_t , std::pair<std::size_t , std::size_t> > DataBase::get_jump_map()
-    {
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> > jump_map;
-        std::uint32_t layer = 0;
-        std::uint32_t x = 0;
-        std::uint32_t y = 0;
-        const char sql_statement[] = "SELECT layer,x,y FROM jump_point";
-        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
-            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-
-        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
-        {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 3 )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
-            }
-
-            layer = sqlite3_column_int( this->sql_statement_handler , 0 );
-            x = sqlite3_column_int( this->sql_statement_handler , 1 );
-            y = sqlite3_column_int( this->sql_statement_handler , 2 );
-            jump_map[ layer ] = { x , y };
-        }
-        
-        if ( this->sqlite3_error_code != SQLITE_DONE )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-
-        return jump_map;
     }
 
     std::map<std::uint32_t , bool> DataBase::get_access_layers()
@@ -451,57 +401,6 @@ sqlite document:
             if ( layer.second == false )
                 continue;
             sqlite3_bind_int64( this->sql_statement_handler , 1 , layer.first );
-
-            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
-            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_DONE )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
-            if ( this->sqlite3_error_code != SQLITE_OK )
-            {
-                sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-            }
-            sqlite3_clear_bindings( this->sql_statement_handler );
-        }
-        
-        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
-        
-        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
-        }
-    }
-
-    void DataBase::set_jump_map( std::map<std::size_t , std::pair<std::size_t , std::size_t> >& maps )
-    {
-        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
-
-        const char sql_statement[] = "INSERT OR REPLACE INTO jump_point( layer , x , y ) VALUES( ? , ? , ? )";
-        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
-        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
-
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
-        }
-        
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 3 )
-        {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
-        }
-
-        for( auto& pos : maps )
-        {
-            sqlite3_bind_int64( this->sql_statement_handler , 1 , pos.first );
-            sqlite3_bind_int64( this->sql_statement_handler , 2 , pos.second.first );
-            sqlite3_bind_int64( this->sql_statement_handler , 3 , pos.second.second );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
             this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );

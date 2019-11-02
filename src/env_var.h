@@ -70,9 +70,8 @@ namespace MagicTower
         std::map<std::uint32_t,Stairs> stairs;
         std::map<std::uint32_t,Monster> monsters;
         std::map<std::uint32_t,Item> items;
+        std::map<std::uint32_t,Store> stores;
         std::vector<TowerGridLocation> path;
-        //store_id , store
-        std::map<std::uint32_t,Store> store_list;
         enum GAME_STATUS game_status;
         bool draw_path;
     };
