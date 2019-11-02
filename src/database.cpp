@@ -335,6 +335,9 @@ sqlite document:
     {
         sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
 
+        //clear old flag,make sure flag_name all value unique
+        sqlite3_exec( this->db_handler , "DELETE FROM script_flags" , nullptr , nullptr , nullptr );
+
         const char sql_statement[] = "INSERT OR REPLACE INTO script_flags(flag_name,flag_value) VALUES( ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
