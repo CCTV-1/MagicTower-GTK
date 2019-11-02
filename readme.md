@@ -86,6 +86,10 @@ function game_lose()
 - stores
 - stairs
 - hero_property
+- layerjump
+
+### keeped flag
+- stores_$(stores_id)
 
 ### script name rule
 
@@ -177,6 +181,19 @@ stairs=
         ["layer"] = 1,          --number
         ["x"] = 1,              --number,enter the stair hero go to ( layer , x , y )
         ["y"] = 1,              --number
+    },
+    ...
+}
+```
+
+- jumper.lua --> defines game layer jump property,the contents as follows:
+```lua
+layerjump =
+{
+    [0] =           --jump to 0 layer,postion:(x,y) = (5,10)
+    {
+        ["x"] = 5,
+        ["y"] = 10
     },
     ...
 }
