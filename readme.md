@@ -90,6 +90,7 @@ function game_lose()
 
 ### keeped flag
 - stores_$(stores_id)
+- floor_$(floor_id)
 
 ### script name rule
 
@@ -192,7 +193,7 @@ floorjump =
 {
     [0] =           --jump to 0 floor,postion:(x,y) = (5,10)
     {               --when a floor does not exist in floorjump,in the floor floorjump permanently disabled
-        ["x"] = 5,  --when exist,hero enter stairs goto floor,enabled jump to the floor
+        ["x"] = 5,  --when exist,hero enter stairs goto floor,enabled jump to the floor,call set_flag("floor_$(floor_id)")
         ["y"] = 10
     },
     ...
@@ -202,6 +203,8 @@ floorjump =
 ## Todo
 - [ ] animation
 - [ ] game editor
+- [ ] operator undo/redo
+- [ ] multiple game archives
 
 ## License
 ----
