@@ -9,6 +9,8 @@
 namespace MagicTower
 {
     struct GameEnvironment;
+    //x,y,floor --> 1,5,10
+    typedef std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> event_position_t;
 
     void scriptengines_register_eventfunc( GameEnvironment * game_object );
 
