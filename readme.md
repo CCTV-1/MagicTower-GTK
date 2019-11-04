@@ -87,6 +87,9 @@ function game_lose()
 - stairs
 - hero_property
 - floorjump
+- towermap
+- towerwidth
+- towerlength
 
 ### keeped flag
 - stores_$(stores_id)
@@ -195,6 +198,21 @@ floorjump =
     {               --when a floor does not exist in floorjump,in the floor floorjump permanently disabled
         ["x"] = 5,  --when exist,hero enter stairs goto floor,enabled jump to the floor,call set_flag("floor_$(floor_id)")
         ["y"] = 10
+    },
+    ...
+}
+```
+
+- tower.lua -> defines game map,the contents as follows:
+```lua
+towerwidth = 2                      -- each floor vertical there are towerwidth grids
+towerlength = 2                     -- each floor horizontal there are towerlength grids
+towermap =
+{
+    [0] =                           -- floor id(number)
+    {
+        {  3 ,  2 } , {  1 ,  1 },  -- each floor,towerwidth*towerlength grid
+        {  2 ,  1 } , {  2 ,  1 }   -- each grid,grid_type(number) grid_id(number)
     },
     ...
 }
