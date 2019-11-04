@@ -257,6 +257,62 @@ namespace MagicTower
         return jumper;
     }
 
+    static Tower initial_towermap( lua_State * L )
+    {
+        std::string tower_script = CUSTOM_SCRIPTS_PATH"tower.lua";
+        if ( Glib::file_test( tower_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        {
+            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing tower.lua resources" );
+        }
+        if ( luaL_dofile( L , tower_script.data() ) )
+        {
+            throw std::runtime_error( lua_tostring( L , -1 ) );
+        }
+        std::uint32_t top = lua_gettop( L );
+        lua_getglobal( L , "towerwidth" );
+        luaL_checktype( L , top + 1 , LUA_TNUMBER );
+        std::uint32_t width = lua_tointeger( L , top + 1 );
+        lua_pop( L , 1 );
+        lua_getglobal( L , "towerlength" );
+        luaL_checktype( L , top + 1 , LUA_TNUMBER );
+        std::uint32_t length = lua_tointeger( L , top + 1 );
+        Tower tower;
+        tower.WIDTH = width;
+        tower.LENGTH = length;
+
+        lua_pop( L , 1 );
+        lua_getglobal( L , "towermap" );
+        luaL_checktype( L , top + 1 , LUA_TTABLE );
+        lua_pushnil( L );
+        while( lua_next( L , top + 1 ) )  //map table
+        {
+            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            luaL_checktype( L , top + 3 , LUA_TTABLE );
+            //std::uint32_t floor_id = lua_tointeger( L , top + 2 );
+
+            lua_pushnil( L );
+            while( lua_next( L , top + 3 ) )  //floor table
+            {
+                luaL_checktype( L , top + 4 , LUA_TNUMBER );
+                luaL_checktype( L , top + 5 , LUA_TTABLE );   //grid table
+                lua_rawgeti( L , top + 5 , 1 );
+                lua_rawgeti( L , top + 5 , 2 );
+                luaL_checktype( L , top + 6 , LUA_TNUMBER );
+                luaL_checktype( L , top + 7 , LUA_TNUMBER );
+                std::uint32_t grid_type = lua_tointeger( L , top + 6 );
+                std::uint32_t grid_id = lua_tointeger( L , top + 7 );
+                tower.maps.push_back({ grid_type , grid_id });
+                lua_pop( L , 3 );
+            }
+
+            lua_pop( L , 1 );
+        }
+        lua_pop( L , 1 );
+        tower.HEIGHT = tower.maps.size()/tower.WIDTH/tower.LENGTH;
+
+        return tower;
+    }
+
     GameEnvironment::GameEnvironment( std::vector<std::string> music_list ):
         script_engines( luaL_newstate() , lua_close ),
         game_message( {} ),
@@ -291,9 +347,8 @@ namespace MagicTower
         this->monsters = initial_monsters( this->script_engines.get() );
         this->stairs = initial_stairs( this->script_engines.get() );
         this->floors_jump = initial_floorjump( this->script_engines.get() );
+        this->towers = initial_towermap( this->script_engines.get() );
 
-        DataBase db( DATABSE_RESOURCES_PATH );
-        this->towers = db.get_tower_info( 0 );
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;
         this->path = {};
