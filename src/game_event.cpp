@@ -641,8 +641,7 @@ namespace MagicTower
 
     void save_game( GameEnvironment * game_object , size_t save_id )
     {
-        constexpr const char * save_path = "./save/";
-        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( save_path );
+        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( DATABSE_RESOURCES_PATH );
         try
         {
             save_dir->make_directory_with_parents();
@@ -653,7 +652,7 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_WARNING , "%s" , e.what().c_str() );
         }
 
-        std::string db_name = std::string( save_path ) + std::to_string( save_id ) + std::string( ".db" );
+        std::string db_name = std::string( DATABSE_RESOURCES_PATH ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
         {
@@ -673,7 +672,7 @@ namespace MagicTower
 
     void load_game( GameEnvironment * game_object , size_t save_id )
     {
-        std::string db_name = std::string( "./save/" ) + std::to_string( save_id ) + std::string( ".db" );
+        std::string db_name = std::string( DATABSE_RESOURCES_PATH ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( db_name );
         if ( db_file->query_exists() == false )
