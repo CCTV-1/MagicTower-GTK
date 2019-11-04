@@ -31,9 +31,6 @@ namespace MagicTower
         std::uint32_t id;
     };
 
-    //x,y,floor --> 1,5,10
-    typedef std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> event_position_t;
-
     struct TowerGridLocation
     {
         //path search algorith call std::abs( x1 - x2 ).
@@ -69,28 +66,6 @@ namespace MagicTower
         if ( ( tower.maps.size() < pos + 1 ) && ( pos < tower.maps.max_size() ) )
             tower.maps.resize( pos + 1 );
         tower.maps[ pos ] = grid;
-    }
-
-    inline std::string dump_tower_map( struct Tower& tower )
-    {
-        std::string map_str;
-        map_str += "{";
-        for ( std::uint32_t z = 0 ; z < tower.HEIGHT ; z++ )
-        {
-            map_str += "\n";
-            for( std::uint32_t y = 0 ; y < tower.LENGTH ; y++ )
-            {
-                for ( std::uint32_t x = 0 ; x < tower.WIDTH ; x++ )
-                {
-                    auto grid = get_tower_grid( tower , z , x , y );
-                    map_str += " { " + std::to_string( grid.type ) + " , " + std::to_string( grid.id ) + " } ,";
-                }
-                map_str += "\n";
-            }
-            map_str += "\n";
-        }
-        map_str += "}";
-        return map_str;
     }
 }
 
