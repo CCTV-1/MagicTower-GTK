@@ -9,7 +9,7 @@ GCC_CPP_PROFILE_OPTION=-Wall -Wextra -Wpedantic -std=gnu++14 -O0 -g3 -pg -m64
 
 MagicTower : ./src/game.cpp database.o music.o game_event.o game_window.o env_var.o
 	g++ ./src/game.cpp database.o music.o game_event.o game_window.o env_var.o $(GCC_CPP_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(LUA_FLAGS) -o ./build/bin/MagicTower
-env_var.o : ./src/env_var.cpp ./src/env_var.h
+env_var.o : ./src/env_var.cpp ./src/env_var.h ./src/tower.h ./src/hero.h
 	g++ ./src/env_var.cpp $(GLIBMM_FLAGS) $(GIOMM_FLAGS) -c -o env_var.o
 database.o : ./src/database.cpp ./src/database.h
 	g++ ./src/database.cpp $(GCC_CPP_OPTION) $(SQLITE3_FLAGS) -c -o database.o
