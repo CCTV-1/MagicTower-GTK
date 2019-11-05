@@ -87,9 +87,7 @@ function game_lose()
 - stairs
 - hero_property
 - floorjump
-- towermap
-- towerwidth
-- towerlength
+- gamemap
 
 ### keeped flag
 - stores_$(stores_id)
@@ -203,19 +201,23 @@ floorjump =
 }
 ```
 
-- tower.lua -> defines game map,the contents as follows:
+- gamemap.lua -> defines game map,the contents as follows:
 ```lua
-towerwidth = 2                      -- each floor vertical there are towerwidth grids
-towerlength = 2                     -- each floor horizontal there are towerlength grids
-towermap =
+gamemap =
 {
-    [0] =                           -- floor id(number)
+    [0] =                               -- floor id
     {
-        {  3 ,  2 } , {  1 ,  1 },  -- each floor,towerwidth*towerlength grid
-        {  2 ,  1 } , {  2 ,  1 }   -- each grid,grid_type(number) grid_id(number)
+        ["name"] = "第一层",            -- floor display name
+        ["length"] = 2,
+        ["width"] = 2,
+        ["default_floorid"] = 1,        -- the floor background floor image id
+        ["content"] =
+        {
+            {  3 ,  2 } , {  1 ,  1 }   -- there are $(length) grid
+            {  2 ,  1 } , {  2 ,  1 }
+            --there are $(width) grid
+        }
     },
-    ...
-}
 ```
 
 ## Todo
