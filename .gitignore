@@ -53,6 +53,7 @@ dkms.conf
 
 # config files
 *.conf
+.vscode/
 
 # log files
 *.log
