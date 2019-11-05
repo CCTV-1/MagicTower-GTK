@@ -22,7 +22,7 @@
 
 namespace MagicTower
 {
-    enum GAME_STATUS:std::uint32_t
+    enum class GAME_STATUS:std::uint32_t
     {
         NORMAL = 0,
         FIND_PATH,
@@ -56,6 +56,7 @@ namespace MagicTower
         Music music;
         Hero hero;
         Tower towers;
+        TowerMap game_map;
         std::map<std::uint32_t , bool> access_floor;
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > floors_jump;
         std::map<std::string , std::uint32_t> script_flags;
@@ -64,7 +65,7 @@ namespace MagicTower
         std::map<std::uint32_t,Item> items;
         std::map<std::uint32_t,Store> stores;
         std::vector<TowerGridLocation> path;
-        enum GAME_STATUS game_status;
+        GAME_STATUS game_status;
         bool draw_path;
     };
 }

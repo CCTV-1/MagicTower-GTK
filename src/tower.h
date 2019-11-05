@@ -7,11 +7,12 @@
 #include <string>
 
 #include <vector>
+#include <map>
 #include <memory>
 
 namespace MagicTower
 {
-    enum GRID_TYPE:std::uint32_t
+    enum class GRID_TYPE:std::uint32_t
     {
         BOUNDARY = 0,
         FLOOR,
@@ -20,13 +21,14 @@ namespace MagicTower
         DOOR,
         NPC,
         MONSTER,
-        ITEM
+        ITEM,
+        UNKNOWN
     };
 
     struct TowerGrid
     {
         //see enum GridType
-        std::uint32_t type;
+        GRID_TYPE type;
         //see database table:monster,item,door... id column
         std::uint32_t id;
     };
@@ -35,6 +37,48 @@ namespace MagicTower
     {
         //path search algorith call std::abs( x1 - x2 ).
         std::int64_t x, y;
+    };
+
+    struct TowerFloor
+    {
+        std::uint32_t length;
+        std::uint32_t width;
+        //when grid type is GRID_TYPE::UNKNOWN display { GRID_TYPE::FLOOR , default_floorid },or some transparent grid(item,monster...),background image display { GRID_TYPE::FLOOR , default_floorid }
+        std::uint32_t default_floorid;
+        std::string name;
+        std::vector<TowerGrid> content;
+    };
+
+    struct TowerMap
+    {
+        std::map<std::uint32_t,TowerFloor> map;
+
+        TowerGrid get_grid( std::uint32_t floor_id , std::uint32_t x , std::uint32_t y )
+        {
+            if ( this->map.find( floor_id ) == this->map.end() )
+            {
+                return { GRID_TYPE::UNKNOWN , 0 };
+            }
+            TowerFloor& floor = this->map[floor_id];
+            if ( ( x > floor.length ) || ( y > floor.width ) )
+            {
+                return { GRID_TYPE::UNKNOWN , 0 };
+            }
+            return floor.content[y*floor.length+x];
+        }
+        void set_grid( std::uint32_t floor_id , std::uint32_t x , std::uint32_t y , const TowerGrid& grid )
+        {
+            if ( this->map.find( floor_id ) == this->map.end() )
+            {
+                return ;
+            }
+            TowerFloor& floor = this->map[floor_id];
+            if ( ( x > floor.length ) || ( y > floor.width ) )
+            {
+                return ;
+            }
+            floor.content[y*floor.length+x] = grid;
+        }
     };
 
     /* CREATE TABLE tower (

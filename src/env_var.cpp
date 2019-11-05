@@ -301,7 +301,7 @@ namespace MagicTower
                 luaL_checktype( L , top + 7 , LUA_TNUMBER );
                 std::uint32_t grid_type = lua_tointeger( L , top + 6 );
                 std::uint32_t grid_id = lua_tointeger( L , top + 7 );
-                tower.maps.push_back({ grid_type , grid_id });
+                tower.maps.push_back({ static_cast<GRID_TYPE>( grid_type ) , grid_id });
                 lua_pop( L , 3 );
             }
 
@@ -311,6 +311,69 @@ namespace MagicTower
         tower.HEIGHT = tower.maps.size()/tower.WIDTH/tower.LENGTH;
 
         return tower;
+    }
+
+    static TowerMap initial_gamemap( lua_State * L )
+    {
+        std::string gamemap_script = CUSTOM_SCRIPTS_PATH"gamemap.lua";
+        if ( Glib::file_test( gamemap_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        {
+            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing gamemap.lua resources" );
+        }
+        if ( luaL_dofile( L , gamemap_script.data() ) )
+        {
+            throw std::runtime_error( lua_tostring( L , -1 ) );
+        }
+        TowerMap towers;
+
+        std::uint32_t top = lua_gettop( L );
+        lua_getglobal( L , "gamemap" );
+        luaL_checktype( L , top + 1 , LUA_TTABLE ); //map table
+        lua_pushnil( L );
+        while( lua_next( L , top + 1 ) )  //floor info table
+        {
+            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            luaL_checktype( L , top + 3 , LUA_TTABLE );
+            lua_getfield( L , top + 3 , "name" );
+            lua_getfield( L , top + 3 , "length" );
+            lua_getfield( L , top + 3 , "width" );
+            lua_getfield( L , top + 3 , "default_floorid" );
+            lua_getfield( L , top + 3 , "content" );
+            luaL_checktype( L , top + 4 , LUA_TSTRING );
+            luaL_checktype( L , top + 5 , LUA_TNUMBER );
+            luaL_checktype( L , top + 6 , LUA_TNUMBER );
+            luaL_checktype( L , top + 7 , LUA_TNUMBER );
+            luaL_checktype( L , top + 8 , LUA_TTABLE );
+            std::uint32_t floor_id = lua_tointeger( L , top + 2 );
+            std::string floor_name = lua_tostring( L , top + 4 );
+            std::uint32_t floor_length = lua_tointeger( L , top + 5 );
+            std::uint32_t floor_width = lua_tointeger( L , top + 6 );
+            std::uint32_t default_floorid = lua_tointeger( L , top + 7 );
+            towers.map[floor_id].name = floor_name;
+            towers.map[floor_id].length = floor_length;
+            towers.map[floor_id].width = floor_width;
+            towers.map[floor_id].default_floorid = default_floorid;
+
+            lua_pushnil( L );
+            while( lua_next( L , top + 8 ) )  //floor content table
+            {
+                luaL_checktype( L , top + 9 , LUA_TNUMBER );
+                luaL_checktype( L , top + 10 , LUA_TTABLE );   //grid table
+                lua_rawgeti( L , top + 10 , 1 );
+                lua_rawgeti( L , top + 10 , 2 );
+                luaL_checktype( L , top + 11 , LUA_TNUMBER );
+                luaL_checktype( L , top + 12 , LUA_TNUMBER );
+                std::uint32_t grid_type = lua_tointeger( L , top + 11 );
+                std::uint32_t grid_id = lua_tointeger( L , top + 12 );
+                towers.map[floor_id].content.push_back({ static_cast<GRID_TYPE>( grid_type ) , grid_id });
+                lua_pop( L , 3 );
+            }
+
+            lua_pop( L , 6 );
+        }
+        lua_pop( L , 1 );
+
+        return towers;
     }
 
     GameEnvironment::GameEnvironment( std::vector<std::string> music_list ):
@@ -348,6 +411,7 @@ namespace MagicTower
         this->stairs = initial_stairs( this->script_engines.get() );
         this->floors_jump = initial_floorjump( this->script_engines.get() );
         this->towers = initial_towermap( this->script_engines.get() );
+        this->game_map = initial_gamemap( this->script_engines.get() );
 
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;
