@@ -122,11 +122,11 @@ namespace MagicTower
         ~DataBase();
 
         Hero get_hero_info( std::size_t archive_id );
-        Tower get_tower_info( std::size_t archive_id );
+        TowerMap get_tower_info( void );
         std::map<std::string , std::uint32_t> get_script_flags();
 
         void set_hero_info( const Hero& hero , std::size_t archive_id );
-        void set_tower_info( const Tower& tower , std::size_t archive_id );
+        void set_tower_info( const TowerMap& tower );
         void set_script_flags( std::map<std::string , std::uint32_t>& flags );
 
     protected:

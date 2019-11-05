@@ -52,17 +52,17 @@ namespace MagicTower
             Glib::RefPtr<const Gdk::Monitor> monitor = default_display->get_monitor( 0 );
             Gdk::Rectangle rectangle;
             monitor->get_workarea( rectangle );
-            int grid_width = rectangle.get_width()/this->game_object->towers.LENGTH/3*2;
-            int grid_height = rectangle.get_height()/this->game_object->towers.WIDTH;
+            int grid_width = rectangle.get_width()/this->game_object->game_map.MAX_LENGTH/3*2;
+            int grid_height = rectangle.get_height()/this->game_object->game_map.MAX_WIDTH;
             if ( grid_width > grid_height )
                 grid_width = grid_height;
             this->pixel_size = grid_width/32*32;
 
             this->builder_refptr = Gtk::Builder::create_from_file( UI_DEFINE_RESOURCES_PATH );
 
-            int tower_width = ( this->game_object->towers.LENGTH )*this->pixel_size;
-            int info_width = ( this->game_object->towers.LENGTH/2 )*this->pixel_size;
-            int window_height = ( this->game_object->towers.LENGTH )*this->pixel_size;
+            int tower_width = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
+            int info_width = ( this->game_object->game_map.MAX_LENGTH/2 )*this->pixel_size;
+            int window_height = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
 
             this->builder_refptr->get_widget( "info_area" , this->info_area );
             this->info_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_info ) );
@@ -96,7 +96,7 @@ namespace MagicTower
             Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::draw_loop ) , 100 );
             Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::automatic_movement ) , 100 );
 
-            this->info_frame = info_background_image_factory( this->game_object->towers.WIDTH/2 , this->game_object->towers.HEIGHT );
+            this->info_frame = info_background_image_factory( this->game_object->game_map.MAX_WIDTH/2 , this->game_object->game_map.MAX_LENGTH );
             this->image_resource = load_image_resource( IMAGE_RESOURCES_PATH );
         }
 
@@ -253,13 +253,19 @@ namespace MagicTower
         bool draw_maps( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
             GameEnvironment * game_object = this->game_object;
-            for( size_t y = 0 ; y < game_object->towers.LENGTH ; y++ )
+            std::uint32_t default_id = this->game_object->game_map.map[ this->game_object->hero.floors ].default_floorid;
+            for( size_t y = 0 ; y < game_object->game_map.MAX_LENGTH ; y++ )
             {
-                for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
+                for ( size_t x = 0 ; x < game_object->game_map.MAX_WIDTH ; x++ )
                 {
-                    auto grid = get_tower_grid( game_object->towers , game_object->hero.floors , x , y );
+                    auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
                     switch( grid.type )
                     {
+                        case GRID_TYPE::BOUNDARY:
+                        {
+                            this->draw_grid_image( cairo_context , x , y , "boundary" , grid.id );
+                            break;
+                        }
                         case GRID_TYPE::FLOOR:
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , grid.id );
@@ -272,37 +278,37 @@ namespace MagicTower
                         }
                         case GRID_TYPE::STAIRS:
                         {
-                            this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "stairs" , game_object->stairs[ grid.id ].type );
                             break;
                         }
                         case GRID_TYPE::DOOR:
                         {
-                            this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "door" , grid.id );
                             break;
                         }
                         case GRID_TYPE::NPC:
                         {
-                            this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "npc" , grid.id );
                             break;
                         }
                         case GRID_TYPE::MONSTER:
                         {
-                            this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "monster" , grid.id );
                             break;
                         }
                         case GRID_TYPE::ITEM:
                         {
-                            this->draw_grid_image( cairo_context , x , y , "floor" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "item" , grid.id );
                             break;
                         }
                         default :
                         {
-                            this->draw_grid_image( cairo_context , x , y , "boundary" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             break;
                         }
                     }
@@ -353,11 +359,11 @@ namespace MagicTower
         bool draw_damage( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
             GameEnvironment * game_object = this->game_object;
-            for( size_t y = 0 ; y < game_object->towers.LENGTH ; y++ )
+            for( size_t y = 0 ; y < game_object->game_map.MAX_LENGTH ; y++ )
             {
-                for ( size_t x = 0 ; x < game_object->towers.WIDTH ; x++ )
+                for ( size_t x = 0 ; x < game_object->game_map.MAX_WIDTH ; x++ )
                 {
-                    auto grid = get_tower_grid( game_object->towers , game_object->hero.floors , x , y );
+                    auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
                     if ( grid.type == GRID_TYPE::MONSTER )
                     {
                         //todo:cache damage list
@@ -407,7 +413,7 @@ namespace MagicTower
             std::string detail_str;
             x = this->click_x/this->pixel_size;
             y = this->click_y/this->pixel_size;
-            auto grid = get_tower_grid( game_object->towers , game_object->hero.floors , x , y );
+            auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
             if ( grid.type == GRID_TYPE::MONSTER )
             {
                 if ( game_object->monsters.find( grid.id ) != game_object->monsters.end() )
@@ -592,9 +598,9 @@ namespace MagicTower
             layout_width += this->pixel_size/2;
             layout_height += this->pixel_size/2;
 
-            if ( static_cast<std::uint32_t>( x + layout_width ) > ( game_object->towers.LENGTH )*this->pixel_size )
+            if ( static_cast<std::uint32_t>( x + layout_width ) > ( game_object->game_map.MAX_LENGTH )*this->pixel_size )
                 x -= layout_width;
-            if ( static_cast<std::uint32_t>( y + layout_height ) > ( game_object->towers.WIDTH )*this->pixel_size)
+            if ( static_cast<std::uint32_t>( y + layout_height ) > ( game_object->game_map.MAX_WIDTH )*this->pixel_size)
                 y -= layout_height;
 
             cairo_context->save();
@@ -625,7 +631,7 @@ namespace MagicTower
             //draw text
             std::vector< std::pair<std::string , int >> arr =
             {
-                { std::string( "第  " ) + std::to_string( hero.floors + 1 ) + std::string( "  层" ) , 2 },
+                { this->game_object->game_map.map[hero.floors].name , 2 },
                 { std::string( "等   级:  " ) + std::to_string( hero.level ) , 0 },
                 { std::string( "生命值:  " ) + std::to_string( hero.life ) , 0 },
                 { std::string( "攻击力:  " ) + std::to_string( hero.attack ) , 0 },

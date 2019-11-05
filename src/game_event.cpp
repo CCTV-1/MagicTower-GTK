@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cinttypes>
 
+#include <iterator>
 #include <map>
 #include <memory>
 #include <set>
@@ -261,7 +262,7 @@ namespace MagicTower
                 std::uint32_t y = luaL_checkinteger( L , 3 );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 4 );
-                TowerGrid& grid = get_tower_grid( game_object->towers , x , y , floor );
+                TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
                 lua_pushnumber( L , static_cast<std::uint32_t>( grid.type ) );
                 return 1;
             }
@@ -542,36 +543,38 @@ namespace MagicTower
     std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal )
     {
         Hero& hero = game_object->hero;
-        Tower& tower = game_object->towers;
+        TowerMap& tower = game_object->game_map;
         TowerGridLocation start = { hero.x , hero.y };
         if ( start == goal )
             return {};
-        auto goal_grid = get_tower_grid( tower , hero.floors , goal.x , goal.y );
-        if ( goal_grid.type == MagicTower::GRID_TYPE::BOUNDARY )
+        auto goal_grid = tower.get_grid( hero.floors , goal.x , goal.y );
+        if ( goal_grid.type == GRID_TYPE::BOUNDARY )
         {
             return {};
         }
-        if ( goal_grid.type == MagicTower::GRID_TYPE::WALL )
+        if ( goal_grid.type == GRID_TYPE::WALL )
         {
             return {};
         }
-        
-        GridWithWeights game_map( tower.LENGTH , tower.WIDTH );
 
-        for( size_t y = 0 ; y < tower.LENGTH ; y++ )
+        std::uint32_t length = tower.map[hero.floors].length;
+        std::uint32_t width = tower.map[hero.floors].width;
+        GridWithWeights game_map( length , width );
+
+        for( std::uint32_t y = 0 ; y < length ; y++ )
         {
-            for ( size_t x = 0 ; x < tower.WIDTH ; x++ )
+            for ( std::uint32_t x = 0 ; x < width ; x++ )
             {
-                auto grid = get_tower_grid( tower , hero.floors , x , y );
+                auto grid = tower.get_grid( hero.floors , x , y );
                 switch ( grid.type )
                 {
-                    case MagicTower::GRID_TYPE::BOUNDARY:
-                    case MagicTower::GRID_TYPE::WALL:
-                    //case MagicTower::GRID_TYPE::NPC:
+                    case GRID_TYPE::BOUNDARY:
+                    case GRID_TYPE::WALL:
+                    //case GRID_TYPE::NPC:
                         game_map.walls.insert( { std::int64_t( x ) , std::int64_t( y ) } );
                         break;
-                    case MagicTower::GRID_TYPE::FLOOR:
-                    case MagicTower::GRID_TYPE::ITEM:
+                    case GRID_TYPE::FLOOR:
+                    case GRID_TYPE::ITEM:
                         break;
                     default :
                         game_map.forests.insert( { std::int64_t( x ) , std::int64_t( y ) } );
@@ -589,8 +592,8 @@ namespace MagicTower
     bool open_door( GameEnvironment * game_object , event_position_t position )
     {
         Hero& hero = game_object->hero;
-        Tower& tower = game_object->towers;
-        auto grid = get_tower_grid( tower , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
+        TowerMap& tower = game_object->game_map;
+        auto grid = tower.get_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
         if ( grid.type != GRID_TYPE::DOOR )
             return false;
 
@@ -634,7 +637,7 @@ namespace MagicTower
 
     bool check_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
     {
-        auto grid = get_tower_grid( game_object->towers , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
+        auto grid = game_object->game_map.get_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
         return ( grid.type == type_id );
     }
 
@@ -655,8 +658,8 @@ namespace MagicTower
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
         {
-            MagicTower::DataBase db( db_name );
-            db.set_tower_info( game_object->towers , 0 );
+            DataBase db( db_name );
+            db.set_tower_info( game_object->game_map );
             db.set_hero_info( game_object->hero , 0 );
             db.set_script_flags( game_object->script_flags );
         }
@@ -680,10 +683,10 @@ namespace MagicTower
             set_tips( game_object , fail_tips );
             return ;
         }
-        try
-        {
-            MagicTower::DataBase db( db_name );
-            game_object->towers = db.get_tower_info( 0 );
+        //try
+        //{
+            DataBase db( db_name );
+            game_object->game_map = db.get_tower_info();
             game_object->hero = db.get_hero_info( 0 );
             game_object->script_flags = db.get_script_flags();
 
@@ -703,7 +706,7 @@ namespace MagicTower
             }
 
             //floor jump unlock flag
-            for ( std::uint32_t i = 0 ; i < game_object->towers.HEIGHT ; i++ )
+            for ( std::uint32_t i = 0 ; i < game_object->game_map.map.size() ; i++ )
             {
                 std::string floor_flag = std::string( "floors_" ) + std::to_string( i );
                 if ( game_object->script_flags.find( floor_flag ) != game_object->script_flags.end() )
@@ -715,12 +718,12 @@ namespace MagicTower
                     game_object->access_floor[i] = false;
                 }
             }
-        }
-        catch ( ... )
-        {
-            set_tips( game_object , fail_tips );
-            return ;
-        }
+        //}
+        //catch ( ... )
+        //{
+        //    set_tips( game_object , fail_tips );
+        //    return ;
+        //}
         std::string tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "成功" );
         set_tips( game_object , tips );
     }
@@ -734,7 +737,7 @@ namespace MagicTower
     void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
     {
         TowerGrid target_grid = { type_id , static_cast<std::uint32_t>( 1 ) };
-        set_tower_grid( game_object->towers , target_grid , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
+        game_object->game_map.set_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) , target_grid );
     }
 
     bool move_hero( GameEnvironment * game_object , event_position_t position )
@@ -828,12 +831,13 @@ namespace MagicTower
         if ( game_object->stairs.find( stair_id ) == game_object->stairs.end() )
             return false;
         Stairs stair = game_object->stairs[ stair_id ];
-        Tower& tower = game_object->towers;
-        if ( stair.floors >= tower.HEIGHT )
+        TowerMap& tower = game_object->game_map;
+
+        if ( tower.map.find( stair.floors ) == tower.map.end() )
             return false;
-        if ( stair.x >= tower.LENGTH )
+        if ( stair.x >= tower.map[stair.floors].length )
             return false;
-        if ( stair.y >= tower.WIDTH )
+        if ( stair.y >= tower.map[stair.floors].width )
             return false;
 
         game_object->hero.floors = stair.floors;
@@ -851,13 +855,13 @@ namespace MagicTower
     {
         bool state = false;
         Hero& hero = game_object->hero;
-        Tower& tower = game_object->towers;
+        TowerMap& tower = game_object->game_map;
 
-        if ( hero.x >= tower.LENGTH )
+        if ( tower.map.find( hero.floors ) == tower.map.end() )
             return false;
-        if ( hero.y >= tower.WIDTH )
+        if ( hero.x >= tower.map[hero.floors].length )
             return false;
-        if ( hero.floors >= tower.HEIGHT )
+        if ( hero.y >= tower.map[hero.floors].width )
             return false;
 
         std::string script_name = CUSTOM_SCRIPTS_PATH"F" + std::to_string( ( game_object->hero ).floors ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
@@ -869,7 +873,7 @@ namespace MagicTower
             }
         }
 
-        auto grid = get_tower_grid( tower , hero.floors , hero.x , hero.y );
+        auto grid = tower.get_grid( hero.floors , hero.x , hero.y );
         switch( grid.type )
         {
             case GRID_TYPE::FLOOR:
@@ -978,7 +982,7 @@ namespace MagicTower
     {
         if ( game_object->game_status != GAME_STATUS::JUMP_MENU )
             return ;
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+        game_object->game_status = GAME_STATUS::NORMAL;
     }
 
     void open_store_menu_v2( GameEnvironment * game_object )
@@ -995,7 +999,7 @@ namespace MagicTower
                 break;
         }
 
-        game_object->game_status = MagicTower::GAME_STATUS::STORE_MENU;
+        game_object->game_status = GAME_STATUS::STORE_MENU;
         game_object->focus_item_id = 0;
         set_store_menu( game_object );
     }
@@ -1004,7 +1008,7 @@ namespace MagicTower
     {
         if ( game_object->game_status != GAME_STATUS::STORE_MENU )
             return ;
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+        game_object->game_status = GAME_STATUS::NORMAL;
     }
 
     void open_start_menu( GameEnvironment * game_object )
@@ -1044,9 +1048,9 @@ namespace MagicTower
 
     void close_game_menu_v2( GameEnvironment * game_object )
     {
-        if ( game_object->game_status != MagicTower::GAME_STATUS::GAME_MENU )
+        if ( game_object->game_status != GAME_STATUS::GAME_MENU )
             return ;
-        game_object->game_status = MagicTower::GAME_STATUS::NORMAL;
+        game_object->game_status = GAME_STATUS::NORMAL;
     }
 
     void game_win( GameEnvironment * game_object )
@@ -1222,16 +1226,18 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "最上层" ); },
             [ game_object ](){
-                game_object->hero.floors = game_object->towers.HEIGHT - 1;
+                auto end_iter = game_object->game_map.map.end();
+                game_object->hero.floors = ( std::prev( end_iter ) )->first;
                 try_jump( game_object );
             }
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "上一层" ); },
             [ game_object ](){
-                if ( game_object->hero.floors < game_object->towers.HEIGHT - 1 )
+                auto current_iter = game_object->game_map.map.find( game_object->hero.floors );
+                if ( ( current_iter = std::next( current_iter ) ) != game_object->game_map.map.end() )
                 {
-                    game_object->hero.floors += 1;
+                    game_object->hero.floors = current_iter->first;
                     try_jump( game_object );
                 }
                 else
@@ -1244,9 +1250,11 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "下一层" ); },
             [ game_object ](){
-                if ( game_object->hero.floors > 0 )
+                auto current_iter = game_object->game_map.map.find( game_object->hero.floors );
+                if ( current_iter != game_object->game_map.map.begin() )
                 {
-                    game_object->hero.floors -= 1;
+                    current_iter = std::prev( current_iter );
+                    game_object->hero.floors = current_iter->first;
                     try_jump( game_object );
                 }
                 else
@@ -1259,7 +1267,8 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "最下层" ); },
             [ game_object ](){
-                game_object->hero.floors = 0;
+                auto begin_iter = game_object->game_map.map.begin();
+                game_object->hero.floors = begin_iter->first;
                 try_jump( game_object );
             }
         });

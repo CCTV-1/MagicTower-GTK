@@ -52,12 +52,13 @@ namespace MagicTower
         const char * create_table_sqls[] = 
         {
             R"(
-                CREATE TABLE IF NOT EXISTS tower (
-                    id      INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    length  INT (32),
-                    width   INT (32),
-                    height  INT (32),
-                    content BLOB
+                CREATE TABLE towerfloor (
+                    id                  INT (32),
+                    length              INT (32),
+                    width               INT (32),
+                    default_floorid     INT (32),
+                    name                TEXT,
+                    content             BLOB
                 );
             )",
             R"(
@@ -142,14 +143,9 @@ namespace MagicTower
         return hero;
     }
 
-    Tower DataBase::get_tower_info( std::size_t archive_id )
+    TowerMap DataBase::get_tower_info()
     {
-        std::uint32_t HEIGHT = 0;
-        std::uint32_t LENGTH = 0;
-        std::uint32_t WIDTH = 0;
-        std::vector<struct TowerGrid> maps;
-
-        const char sql_statement[] = "SELECT length,width,height,content FROM tower WHERE id = ?";
+        const char sql_statement[] = "SELECT id,length,width,default_floorid,name,content FROM towerfloor";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
@@ -157,29 +153,38 @@ namespace MagicTower
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
-        this->sqlite3_error_code = sqlite3_bind_int( this->sql_statement_handler , 1 , archive_id );
-        if ( this->sqlite3_error_code != SQLITE_OK )
-        {
-            this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_int_failure( 1 , archive_id , this->sqlite3_error_code , std::string( sql_statement ) );
-        }
 
+        TowerMap towers = { 0 , 0 , {} };
         //id should be unique,so hero will not be repeat setting
         while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
         {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 4 )
+            if ( sqlite3_column_count( this->sql_statement_handler ) != 6 )
             {
                 sqlite3_finalize( this->sql_statement_handler );
                 throw sqlite_table_format_failure( std::string( sql_statement ) );
             }
-            LENGTH = sqlite3_column_int( this->sql_statement_handler , 0 );
-            WIDTH = sqlite3_column_int( this->sql_statement_handler , 1 );
-            HEIGHT = sqlite3_column_int( this->sql_statement_handler , 2 );
+            std::uint32_t floor_id = sqlite3_column_int( this->sql_statement_handler , 0 );
+            std::uint32_t floor_length = sqlite3_column_int( this->sql_statement_handler , 1 );
+            std::uint32_t floor_width = sqlite3_column_int( this->sql_statement_handler , 2 );
+            std::uint32_t default_floorid = sqlite3_column_int( this->sql_statement_handler , 3 );
+            std::string floor_name( reinterpret_cast< const char * >( sqlite3_column_text( this->sql_statement_handler , 4 ) ) );
             //default vector size is 0,resize to >= maps size
             //data size is agreed in advance,so don't call sqlite3_column_bytes.
-            struct TowerGrid * data = reinterpret_cast<struct TowerGrid *>( const_cast<void *>( sqlite3_column_blob( this->sql_statement_handler , 3 ) ) );
-            std::vector<struct TowerGrid> temp( data + 0 , data + HEIGHT*LENGTH*WIDTH );
-            maps.swap( temp );
+            struct TowerGrid * data = reinterpret_cast<struct TowerGrid *>( const_cast<void *>( sqlite3_column_blob( this->sql_statement_handler , 5 ) ) );
+            decltype( TowerFloor::content ) temp( data + 0 , data + floor_length*floor_width );
+            if ( towers.MAX_LENGTH < floor_length )
+            {
+                towers.MAX_LENGTH = floor_length;
+            }
+            if ( towers.MAX_WIDTH < floor_width )
+            {
+                towers.MAX_WIDTH = floor_width;
+            }
+            towers.map[floor_id].length = floor_length;
+            towers.map[floor_id].width = floor_width;
+            towers.map[floor_id].default_floorid = default_floorid;
+            towers.map[floor_id].name = floor_name;
+            towers.map[floor_id].content = temp;
         }
         if ( this->sqlite3_error_code != SQLITE_DONE )
         {
@@ -192,8 +197,7 @@ namespace MagicTower
         {
             throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
         }
-        Tower tower = { HEIGHT , LENGTH , WIDTH , maps };
-        return tower;
+        return towers;
     }
 
     std::map<std::string , std::uint32_t> DataBase::get_script_flags()
@@ -290,9 +294,9 @@ sqlite document:
         }
     }
 
-    void DataBase::set_tower_info( const Tower& tower , std::size_t archive_id )
+    void DataBase::set_tower_info( const TowerMap& tower )
     {
-        const char sql_statement[] = "INSERT OR REPLACE INTO tower(id,length,width,height,content) VALUES( ? , ? , ? , ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO towerfloor(id,length,width,default_floorid,name,content) VALUES( ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
 
@@ -302,26 +306,36 @@ sqlite document:
             throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 5 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 6 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw sqlite_bind_count_failure( std::string( sql_statement ) );
         }
 
-        sqlite3_bind_int( this->sql_statement_handler , 1 , archive_id );
-        sqlite3_bind_int( this->sql_statement_handler , 2 , tower.LENGTH );
-        sqlite3_bind_int( this->sql_statement_handler , 3 , tower.WIDTH );
-        sqlite3_bind_int( this->sql_statement_handler , 4 , tower.HEIGHT );
-        sqlite3_bind_blob( this->sql_statement_handler , 5 , tower.maps.data() ,
-            sizeof( MagicTower::TowerGrid )*tower.LENGTH*tower.WIDTH*tower.HEIGHT , SQLITE_STATIC );
-
-
-        //UPDATE not return data so sqlite3_step not return SQLITE_ROW
-        this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
-        if ( this->sqlite3_error_code != SQLITE_DONE )
+        for ( auto& floor : tower.map )
         {
-            sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            sqlite3_bind_int( this->sql_statement_handler , 1 , floor.first );
+            sqlite3_bind_int( this->sql_statement_handler , 2 , floor.second.length );
+            sqlite3_bind_int( this->sql_statement_handler , 3 , floor.second.width );
+            sqlite3_bind_int( this->sql_statement_handler , 4 , floor.second.default_floorid );
+            sqlite3_bind_text( this->sql_statement_handler , 5 , floor.second.name.c_str() , floor.second.name.size() , SQLITE_STATIC );
+            sqlite3_bind_blob( this->sql_statement_handler , 6 , floor.second.content.data() ,
+                sizeof( MagicTower::TowerGrid )*floor.second.length*floor.second.width , SQLITE_STATIC );
+
+            //UPDATE not return data so sqlite3_step not return SQLITE_ROW
+            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_DONE )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            }
+            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_OK )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            }
+            sqlite3_clear_bindings( this->sql_statement_handler );
         }
 
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );

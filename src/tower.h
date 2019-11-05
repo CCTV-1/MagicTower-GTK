@@ -39,6 +39,15 @@ namespace MagicTower
         std::int64_t x, y;
     };
 
+    /* CREATE TABLE towerfloor (
+        id                  INTEGER  PRIMARY KEY AUTOINCREMENT,
+        length              INT (32),
+        width               INT (32),
+        default_floorid     INT (32),
+        name                TEXT,
+        content             BLOB
+    );
+     */
     struct TowerFloor
     {
         std::uint32_t length;
@@ -51,6 +60,8 @@ namespace MagicTower
 
     struct TowerMap
     {
+        std::uint32_t MAX_LENGTH;
+        std::uint32_t MAX_WIDTH;
         std::map<std::uint32_t,TowerFloor> map;
 
         TowerGrid get_grid( std::uint32_t floor_id , std::uint32_t x , std::uint32_t y )
@@ -80,37 +91,6 @@ namespace MagicTower
             floor.content[y*floor.length+x] = grid;
         }
     };
-
-    /* CREATE TABLE tower (
-        id      INTEGER  PRIMARY KEY AUTOINCREMENT,
-        length  INT (32),
-        width   INT (32),
-        height  INT (32),
-        content BLOB
-    );
-     */
-    struct Tower
-    {
-        std::uint32_t HEIGHT = 1;
-        std::uint32_t LENGTH = 11;
-        std::uint32_t WIDTH = 11;
-        //struct TowerGrid [HEIGHT][LENGTH][WIDTH]
-        std::vector<struct TowerGrid> maps;
-    };
-
-    inline struct TowerGrid& get_tower_grid( struct Tower& tower , std::uint32_t height = 0 , std::uint32_t length = 0 , std::uint32_t width = 0 )
-    {
-        //map[z][x][y]
-        return tower.maps[ height*tower.LENGTH*tower.WIDTH + width*tower.WIDTH + length ];
-    }
-
-    inline void set_tower_grid( struct Tower& tower , struct TowerGrid& grid , std::uint32_t height = 0 , std::uint32_t length = 0 , std::uint32_t width = 0 )
-    {
-        std::uint32_t pos = height*tower.LENGTH*tower.WIDTH + width*tower.WIDTH + length;
-        if ( ( tower.maps.size() < pos + 1 ) && ( pos < tower.maps.max_size() ) )
-            tower.maps.resize( pos + 1 );
-        tower.maps[ pos ] = grid;
-    }
 }
 
 #endif

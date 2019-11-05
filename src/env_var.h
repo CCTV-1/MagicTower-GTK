@@ -55,7 +55,6 @@ namespace MagicTower
         std::size_t focus_item_id;
         Music music;
         Hero hero;
-        Tower towers;
         TowerMap game_map;
         std::map<std::uint32_t , bool> access_floor;
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > floors_jump;
