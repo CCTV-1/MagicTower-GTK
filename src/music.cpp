@@ -237,7 +237,7 @@ namespace MagicTower
                 this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( list_cycle ) , this->imp_ptr );
                 break;
             }
-            case RANDOM_PLAYING:
+            case PLAY_MODE::RANDOM_PLAYING:
             {
                 this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( random_playing ) , this->imp_ptr );
                 break;

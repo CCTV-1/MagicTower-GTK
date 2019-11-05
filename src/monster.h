@@ -8,7 +8,7 @@
 
 namespace MagicTower
 {
-    enum ATTACK_TYPE:std::uint32_t
+    enum class ATTACK_TYPE:std::uint32_t
     {
         //if is normal,when the hero level is higher than the monster level,hero first attack
         FIRST_ATTACK = 0,

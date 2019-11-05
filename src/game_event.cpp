@@ -17,7 +17,6 @@
 #include <giomm.h>
 
 #include <lua.hpp>
-#include <jansson.h>
 
 #include "game_event.h"
 #include "env_var.h"
@@ -263,7 +262,7 @@ namespace MagicTower
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 4 );
                 TowerGrid& grid = get_tower_grid( game_object->towers , x , y , floor );
-                lua_pushnumber( L , grid.type );
+                lua_pushnumber( L , static_cast<std::uint32_t>( grid.type ) );
                 return 1;
             }
         );
@@ -636,7 +635,7 @@ namespace MagicTower
     bool check_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
     {
         auto grid = get_tower_grid( game_object->towers , std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
-        return ( grid.id == type_id );
+        return ( grid.type == type_id );
     }
 
     void save_game( GameEnvironment * game_object , size_t save_id )
@@ -761,15 +760,15 @@ namespace MagicTower
         Monster& monster = game_object->monsters[ monster_id ];
         switch( static_cast< std::uint32_t >( monster.type ) )
         {
-            case ATTACK_TYPE::FIRST_ATTACK:
+            case static_cast<std::uint32_t>( ATTACK_TYPE::FIRST_ATTACK ):
                 return get_combat_damage_of_first( hero , monster );
-            case ATTACK_TYPE::NORMAL_ATTACK:
+            case static_cast<std::uint32_t>( ATTACK_TYPE::NORMAL_ATTACK ):
                 return get_combat_damage_of_normal( hero , monster );
-            case ATTACK_TYPE::LAST_ATTACK:
+            case static_cast<std::uint32_t>( ATTACK_TYPE::LAST_ATTACK ):
                 return get_combat_damage_of_last( hero , monster );
-            case ATTACK_TYPE::DOUBLE_ATTACK:
+            case static_cast<std::uint32_t>( ATTACK_TYPE::DOUBLE_ATTACK ):
                 return get_combat_damage_of_double( hero , monster );
-            case ATTACK_TYPE::EXTRA_QUOTA_DAMAGE:
+            case static_cast<std::uint32_t>( ATTACK_TYPE::EXTRA_QUOTA_DAMAGE ):
             {
                 auto damage = get_combat_damage_of_normal( hero , monster );
                 if ( damage < 0 )
@@ -777,7 +776,7 @@ namespace MagicTower
                 else
                     return damage + monster.type_value;
             }
-            case ATTACK_TYPE::EXTRA_PERCENT_DAMAG:
+            case static_cast<std::uint32_t>( ATTACK_TYPE::EXTRA_PERCENT_DAMAG ):
             {
                 auto damage = get_combat_damage_of_normal( hero , monster );
                 //avoid var/0

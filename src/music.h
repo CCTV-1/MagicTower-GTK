@@ -19,14 +19,14 @@ namespace MagicTower
         explicit music_init_failure( const std::string &s ) : std::runtime_error(s) {}
     };
 
-    enum PLAY_STATE:std::uint32_t
+    enum class PLAY_STATE:std::uint32_t
     {
         PLAYING = 0,
         PAUSE,
         STOP,
     };
 
-    enum PLAY_MODE:std::uint32_t
+    enum class PLAY_MODE:std::uint32_t
     {
         SIGLE_CYCLE = 0,
         LIST_CYCLE,
@@ -48,7 +48,7 @@ namespace MagicTower
         void play_restart();
         void play_resume();
 
-        enum PLAY_STATE get_state();
+        PLAY_STATE get_state();
         double get_volume();
         std::vector<std::string> get_music_uri_list();
 
