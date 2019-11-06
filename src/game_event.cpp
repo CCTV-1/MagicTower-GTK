@@ -32,7 +32,6 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_first ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster );
-    static bool try_jump( GameEnvironment * game_object );
     static void set_jump_menu( GameEnvironment * game_object );
     static void set_start_menu( GameEnvironment * game_object );
     static void set_game_menu( GameEnvironment * game_object );
@@ -683,8 +682,8 @@ namespace MagicTower
             set_tips( game_object , fail_tips );
             return ;
         }
-        //try
-        //{
+        try
+        {
             DataBase db( db_name );
             game_object->game_map = db.get_tower_info();
             game_object->hero = db.get_hero_info( 0 );
@@ -718,12 +717,12 @@ namespace MagicTower
                     game_object->access_floor[i] = false;
                 }
             }
-        //}
-        //catch ( ... )
-        //{
-        //    set_tips( game_object , fail_tips );
-        //    return ;
-        //}
+        }
+        catch ( ... )
+        {
+            set_tips( game_object , fail_tips );
+            return ;
+        }
         std::string tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "成功" );
         set_tips( game_object , tips );
     }
@@ -974,7 +973,11 @@ namespace MagicTower
 
         game_object->game_status = GAME_STATUS::JUMP_MENU;
         game_object->focus_item_id = 0;
+        //save initial position
         temp_pos= { game_object->hero.floors , game_object->hero.x , game_object->hero.y };
+        //hidden hero
+        game_object->hero.x = game_object->game_map.map[ game_object->hero.floors ].length;
+        game_object->hero.y = game_object->game_map.map[ game_object->hero.floors ].width;
         set_jump_menu( game_object );
     }
 
@@ -982,6 +985,9 @@ namespace MagicTower
     {
         if ( game_object->game_status != GAME_STATUS::JUMP_MENU )
             return ;
+        game_object->hero.floors = std::get<0>( temp_pos );
+        game_object->hero.x = std::get<1>( temp_pos );
+        game_object->hero.y = std::get<2>( temp_pos );
         game_object->game_status = GAME_STATUS::NORMAL;
     }
 
@@ -1195,31 +1201,6 @@ namespace MagicTower
         return -1;
     }
 
-    void back_jump( GameEnvironment * game_object )
-    {
-        game_object->hero.floors = std::get<0>( temp_pos );
-        game_object->hero.x = std::get<1>( temp_pos );
-        game_object->hero.y = std::get<2>( temp_pos );
-    }
-
-    static bool try_jump( GameEnvironment * game_object )
-    {
-        try
-        {
-            std::uint32_t x = game_object->floors_jump.at( game_object->hero.floors ).first;
-            std::uint32_t y = game_object->floors_jump.at( game_object->hero.floors ).second;
-            game_object->hero.x = x;
-            game_object->hero.y = y;
-            return true;
-        }
-        catch(const std::out_of_range& e)
-        {
-            std::string tips = std::string( "该层禁止跃入" );
-            set_tips( game_object , tips );
-            return false;
-        }
-    }
-
     static void set_jump_menu( GameEnvironment * game_object )
     {
         game_object->menu_items.clear();
@@ -1228,7 +1209,6 @@ namespace MagicTower
             [ game_object ](){
                 auto end_iter = game_object->game_map.map.end();
                 game_object->hero.floors = ( std::prev( end_iter ) )->first;
-                try_jump( game_object );
             }
         });
         game_object->menu_items.push_back({
@@ -1238,12 +1218,10 @@ namespace MagicTower
                 if ( ( current_iter = std::next( current_iter ) ) != game_object->game_map.map.end() )
                 {
                     game_object->hero.floors = current_iter->first;
-                    try_jump( game_object );
                 }
                 else
                 {
                     std::string tips = std::string( "已是最上层" );
-                    set_tips( game_object , tips );
                 }
             }
         });
@@ -1255,7 +1233,6 @@ namespace MagicTower
                 {
                     current_iter = std::prev( current_iter );
                     game_object->hero.floors = current_iter->first;
-                    try_jump( game_object );
                 }
                 else
                 {
@@ -1269,40 +1246,32 @@ namespace MagicTower
             [ game_object ](){
                 auto begin_iter = game_object->game_map.map.begin();
                 game_object->hero.floors = begin_iter->first;
-                try_jump( game_object );
             }
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "确定跳跃" ); },
             [ game_object ](){
-                try
-                {
-                    game_object->floors_jump.at( std::get<0>( temp_pos ) );
-                }
-                catch(const std::out_of_range& e)
-                {
-                    std::string tips = std::string( "所在层禁止跳跃楼层" );
-                    set_tips( game_object , tips );
-                    back_jump( game_object );
-                    return ;
-                }
+                //open_floor_jump have done the check
+                //don't need check game_object->floors_jump.find( std::get<0>( temp_pos ) ) != game_object->floors_jump.end();
                 if ( game_object->access_floor[ game_object->hero.floors ] == false )
                 {
                     std::string tips = std::string( "所选择的楼层当前禁止跃入" );
                     set_tips( game_object , tips );
-                    back_jump( game_object );
                     return ;
                 }
-                bool state = try_jump( game_object );
-                if ( state == false )
-                    back_jump( game_object );
+                std::uint32_t floor = game_object->hero.floors;
+                std::uint32_t x = game_object->floors_jump.at( game_object->hero.floors ).first;
+                std::uint32_t y = game_object->floors_jump.at( game_object->hero.floors ).second;
+                //close_floor_jump rollback hero postion
                 close_floor_jump( game_object );
+                game_object->hero.floors = floor;
+                game_object->hero.x = x;
+                game_object->hero.y = y;
             }
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "取消跳跃" ); },
             [ game_object ](){
-                back_jump( game_object );
                 close_floor_jump( game_object );
             }
         });

@@ -350,6 +350,16 @@ namespace MagicTower
         //always return false to do other draw signal handler
         bool draw_hero( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
+            GameEnvironment * game_object = this->game_object;
+            //when outside map, hide hero(floor jump or other uses)
+            if ( game_object->hero.x >= game_object->game_map.map[ game_object->hero.floors ].length )
+            {
+                return false;
+            }
+            if ( game_object->hero.y >= game_object->game_map.map[ game_object->hero.floors ].width )
+            {
+                return false;
+            }
             draw_grid_image( cairo_context , ( game_object->hero ).x , ( game_object->hero ).y , "hero" , 1 );
 
             return false;
@@ -948,7 +958,6 @@ namespace MagicTower
                         case GDK_KEY_j:
                         case GDK_KEY_J:
                         {
-                            back_jump( game_object );
                             close_floor_jump( game_object );
                             break;
                         }

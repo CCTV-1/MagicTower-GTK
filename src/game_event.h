@@ -51,8 +51,6 @@ namespace MagicTower
     void open_store_menu_v2( GameEnvironment * game_object );
     
     void close_store_menu_v2( GameEnvironment * game_object );
-
-    void back_jump( GameEnvironment * game_object );
     
     void open_floor_jump( GameEnvironment * game_object );
 
