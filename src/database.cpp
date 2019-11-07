@@ -1,9 +1,7 @@
 #include <cstddef>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
 #include <cinttypes>
 
+#include <stdexcept>
 #include <string>
 
 #include <sqlite3.h>
@@ -21,8 +19,8 @@ namespace MagicTower
     {
         this->sqlite3_error_code = sqlite3_open_v2( this->db_filename.c_str() , &( this->db_handler ) 
             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE , nullptr );
-        if ( sqlite3_error_code != SQLITE_OK )
-            throw sqlite_open_failure( sqlite3_error_code , std::string( this->db_filename.c_str() ) );
+        if (  this->sqlite3_error_code != SQLITE_OK )
+            throw std::runtime_error( std::string( "open file:" ) + filename + std::string( " failure,slite3 error code:" ) + std::to_string(  this->sqlite3_error_code ) );
         create_tables();
     }
 
@@ -99,13 +97,13 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         this->sqlite3_error_code = sqlite3_bind_int( this->sql_statement_handler , 1 , archive_id );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_int_failure( 1 , archive_id , this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "bind statement:\"" ) + std::string( sql_statement ) + std::string( "\" failure,sqlite error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
         //id should be unique,so hero will not be repeat setting
@@ -114,7 +112,7 @@ namespace MagicTower
             if ( sqlite3_column_count( this->sql_statement_handler ) != 12 )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
+                throw std::runtime_error( std::string( sql_statement ) );
             }
             hero.floors = sqlite3_column_int( this->sql_statement_handler , 0 );
             hero.x = sqlite3_column_int( this->sql_statement_handler , 1 );
@@ -133,12 +131,12 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_DONE )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         return hero;
     }
@@ -151,7 +149,7 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
         TowerMap towers = { 0 , 0 , {} };
@@ -161,7 +159,7 @@ namespace MagicTower
             if ( sqlite3_column_count( this->sql_statement_handler ) != 6 )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
+                throw std::runtime_error( std::string( sql_statement ) );
             }
             std::uint32_t floor_id = sqlite3_column_int( this->sql_statement_handler , 0 );
             std::uint32_t floor_length = sqlite3_column_int( this->sql_statement_handler , 1 );
@@ -189,13 +187,13 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_DONE )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         return towers;
     }
@@ -209,7 +207,7 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
         while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
@@ -217,7 +215,7 @@ namespace MagicTower
             if ( sqlite3_column_count( this->sql_statement_handler ) != 2 )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_table_format_failure( std::string( sql_statement ) );
+                throw std::runtime_error( std::string( sql_statement ) );
             }
 
             std::string flag_name( reinterpret_cast< const char * >( sqlite3_column_text( this->sql_statement_handler , 0 ) ) );
@@ -228,12 +226,12 @@ namespace MagicTower
         if ( this->sqlite3_error_code != SQLITE_DONE )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
         return script_flags;
@@ -256,13 +254,13 @@ sqlite document:
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         
         if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 13 )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "sql statement:\"" ) + std::string( sql_statement ) + std::string( "\" bind argument count out of expectation" ) );
         }
 
         sqlite3_bind_int( this->sql_statement_handler , 1 , archive_id );
@@ -284,13 +282,13 @@ sqlite document:
         if ( this->sqlite3_error_code != SQLITE_DONE )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
     }
 
@@ -303,13 +301,13 @@ sqlite document:
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         
         if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 6 )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "sql statement:\"" ) + std::string( sql_statement ) + std::string( "\" bind argument count out of expectation" ) );
         }
 
         for ( auto& floor : tower.map )
@@ -327,13 +325,13 @@ sqlite document:
             if ( this->sqlite3_error_code != SQLITE_DONE )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+                throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
             }
             this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
             if ( this->sqlite3_error_code != SQLITE_OK )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+                throw std::runtime_error( std::string( "reset statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
             }
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
@@ -341,7 +339,7 @@ sqlite document:
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
     }
 
@@ -359,13 +357,13 @@ sqlite document:
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_prepare_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         
         if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 2 )
         {
             sqlite3_finalize( this->sql_statement_handler );
-            throw sqlite_bind_count_failure( std::string( sql_statement ) );
+            throw std::runtime_error( std::string( "sql statement:\"" ) + std::string( sql_statement ) + std::string( "\" bind argument count out of expectation" ) );
         }
 
         for( auto& flag : flags )
@@ -378,13 +376,13 @@ sqlite document:
             if ( this->sqlite3_error_code != SQLITE_DONE )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_evaluate_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+                throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
             }
             this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
             if ( this->sqlite3_error_code != SQLITE_OK )
             {
                 sqlite3_finalize( this->sql_statement_handler );
-                throw sqlite_reset_statement_failure( this->sqlite3_error_code , std::string( sql_statement ) );
+                throw std::runtime_error( std::string( "reset statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
             }
             sqlite3_clear_bindings( this->sql_statement_handler );
         }
@@ -394,7 +392,7 @@ sqlite document:
         this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
         if ( this->sqlite3_error_code != SQLITE_OK )
         {
-            throw sqlite_finalize_statement_failure( this->sqlite3_error_code , sql_statement );
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
     }
 }

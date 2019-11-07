@@ -662,9 +662,10 @@ namespace MagicTower
             db.set_hero_info( game_object->hero , 0 );
             db.set_script_flags( game_object->script_flags );
         }
-        catch ( ... )
+        catch ( const std::runtime_error& e )
         {
             set_tips( game_object , fail_tips );
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s" , e.what() );
             return ;
         }
         std::string tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "成功" );
@@ -718,9 +719,10 @@ namespace MagicTower
                 }
             }
         }
-        catch ( ... )
+        catch ( const std::runtime_error& e )
         {
             set_tips( game_object , fail_tips );
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s" , e.what() );
             return ;
         }
         std::string tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "成功" );
