@@ -220,49 +220,119 @@ namespace MagicTower
                 return 0;
             }
         );
-        //void set_grid_type( number floor , number x , number y , number grid_id )
+        //void set_grid_type( table position , number grid_id )
         lua_register( script_engines , "set_grid_type" ,
             []( lua_State * L ) -> int
             {
                 int argument_count = lua_gettop( L );
-                if ( argument_count < 4 )
+                if ( argument_count < 2 )
                 {
-                    g_log( "lua_set_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 4 arguments" );
+                    g_log( "lua_set_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 2 arguments" );
                     return 0;
                 }
                 //discard any extra arguments passed
-                lua_settop( L , 4 );
-                std::uint32_t floor = luaL_checkinteger( L , 1 );
-                std::uint32_t x = luaL_checkinteger( L , 2 );
-                std::uint32_t y = luaL_checkinteger( L , 3 );
-                std::uint32_t grid_id = luaL_checkinteger( L , 4 );
-                GRID_TYPE grid_type = static_cast<GRID_TYPE>( grid_id );
+                lua_settop( L , 2 );
+                luaL_checktype( L , 1 , LUA_TTABLE );
+                lua_getfield( L , 1 , "floor" );
+                lua_getfield( L , 1 , "x" );
+                lua_getfield( L , 1 , "y" );
+                std::uint32_t type_value = luaL_checkinteger( L , 2 );
+                std::uint32_t floor = luaL_checkinteger( L , 3 );
+                std::uint32_t x = luaL_checkinteger( L , 4 );
+                std::uint32_t y = luaL_checkinteger( L , 5 );
+                GRID_TYPE grid_type = static_cast<GRID_TYPE>( type_value );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
-                
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 6 );
+
                 set_grid_type( game_object , { x , y , floor } , grid_type );
                 return 0;
             }
         );
-        //number get_grid_type( number floor , number x , number y )
+        //number get_grid_type( table position )
         lua_register( script_engines , "get_grid_type" ,
             []( lua_State * L ) -> int
             {
                 int argument_count = lua_gettop( L );
-                if ( argument_count < 3 )
+                if ( argument_count < 1 )
                 {
-                    g_log( "lua_get_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 3 arguments" );
+                    g_log( "lua_get_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
                     return 0;
                 }
                 //discard any extra arguments passed
-                lua_settop( L , 3 );
-                std::uint32_t floor = luaL_checkinteger( L , 1 );
-                std::uint32_t x = luaL_checkinteger( L , 2 );
-                std::uint32_t y = luaL_checkinteger( L , 3 );
+                lua_settop( L , 1 );
+                luaL_checktype( L , 1 , LUA_TTABLE );
+                lua_getfield( L , 1 , "floor" );
+                lua_getfield( L , 1 , "x" );
+                lua_getfield( L , 1 , "y" );
+                std::uint32_t floor = luaL_checkinteger( L , 2 );
+                std::uint32_t x = luaL_checkinteger( L , 3 );
+                std::uint32_t y = luaL_checkinteger( L , 4 );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 4 );
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
                 TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
                 lua_pushnumber( L , static_cast<std::uint32_t>( grid.type ) );
+                return 1;
+            }
+        );
+        //void set_grid( table position , table grid )
+        lua_register( script_engines , "set_grid" ,
+            []( lua_State * L ) -> int
+            {
+                int argument_count = lua_gettop( L );
+                if ( argument_count < 2 )
+                {
+                    g_log( "lua_set_grid" , G_LOG_LEVEL_WARNING , "expecting exactly 2 arguments" );
+                    return 0;
+                }
+                //discard any extra arguments passed
+                lua_settop( L , 2 );
+                luaL_checktype( L , 1 , LUA_TTABLE );
+                luaL_checktype( L , 2 , LUA_TTABLE );
+                lua_getfield( L , 1 , "floor" );
+                lua_getfield( L , 1 , "x" );
+                lua_getfield( L , 1 , "y" );
+                lua_getfield( L , 2 , "type" );
+                lua_getfield( L , 2 , "id" );
+
+
+                std::uint32_t floor = luaL_checkinteger( L , 3 );
+                std::uint32_t x = luaL_checkinteger( L , 4 );
+                std::uint32_t y = luaL_checkinteger( L , 5 );
+                GRID_TYPE grid_type = static_cast<GRID_TYPE>( luaL_checkinteger( L , 6 ) );
+                std::uint32_t grid_id = luaL_checkinteger( L , 7 );
+                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 8 );
+                game_object->game_map.set_grid( floor , x , y , { grid_type , grid_id } );
+                return 0;
+            }
+        );
+        //table get_grid( table position )
+        lua_register( script_engines , "get_grid" ,
+            []( lua_State * L ) -> int
+            {
+                int argument_count = lua_gettop( L );
+                if ( argument_count < 1 )
+                {
+                    g_log( "lua_get_grid" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                    return 0;
+                }
+                //discard any extra arguments passed
+                lua_settop( L , 1 );
+                luaL_checktype( L , 1 , LUA_TTABLE );
+                lua_getfield( L , 1 , "floor" );
+                lua_getfield( L , 1 , "x" );
+                lua_getfield( L , 1 , "y" );
+                std::uint32_t floor = luaL_checkinteger( L , 2 );
+                std::uint32_t x = luaL_checkinteger( L , 3 );
+                std::uint32_t y = luaL_checkinteger( L , 4 );
+                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
+                lua_newtable( L );
+                lua_pushnumber( L , static_cast<std::uint32_t>( grid.type ) );
+                lua_setfield( L , 6 , "type" );
+                lua_pushnumber( L , grid.id );
+                lua_setfield( L , 6 , "id" );
                 return 1;
             }
         );
@@ -280,7 +350,7 @@ namespace MagicTower
                 return 1;
             }
         );
-        //void set_hero_property( table )
+        //void set_hero_property( table hero )
         lua_register( script_engines , "set_hero_property" ,
             []( lua_State * L ) -> int
             {
@@ -487,23 +557,27 @@ namespace MagicTower
                 return 0;
             }
         );
-        //void move_hero( number floor , number x , number y )
+        //void move_hero( table position )
         lua_register( script_engines , "move_hero" ,
             []( lua_State * L ) -> int
             {
                 int argument_count = lua_gettop( L );
-                if ( argument_count < 3 )
+                if ( argument_count < 1 )
                 {
-                    g_log( "lua_move_hero" , G_LOG_LEVEL_WARNING , "expecting exactly 3 arguments" );
+                    g_log( "lua_move_hero" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
                     return 0;
                 }
                 //discard any extra arguments passed
-                lua_settop( L , 3 );
-                std::uint32_t floor = luaL_checkinteger( L , 1 );
-                std::uint32_t x = luaL_checkinteger( L , 2 );
-                std::uint32_t y = luaL_checkinteger( L , 3 );
+                lua_settop( L , 1 );
+                luaL_checktype( L , 1 , LUA_TTABLE );
+                lua_getfield( L , 1 , "floor" );
+                lua_getfield( L , 1 , "x" );
+                lua_getfield( L , 1 , "y" );
+                std::uint32_t floor = luaL_checkinteger( L , 2 );
+                std::uint32_t x = luaL_checkinteger( L , 3 );
+                std::uint32_t y = luaL_checkinteger( L , 4 );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 4 );
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
                 
                 move_hero( game_object , { x , y , floor } );
                 return 0;
@@ -737,8 +811,14 @@ namespace MagicTower
 
     void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
     {
-        TowerGrid target_grid = { type_id , static_cast<std::uint32_t>( 1 ) };
-        game_object->game_map.set_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) , target_grid );
+        if ( game_object->game_map.map.find( std::get<2>( position ) ) == game_object->game_map.map.end() )
+        {
+            //do nothing
+            return ;
+        }
+        //TowerMap::set_grid check x , y overflow,no need to check here
+        std::uint32_t defaultid = game_object->game_map.map[ std::get<2>( position ) ].default_floorid;
+        game_object->game_map.set_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) , { type_id , defaultid } );
     }
 
     bool move_hero( GameEnvironment * game_object , event_position_t position )
@@ -1264,7 +1344,7 @@ namespace MagicTower
                 std::uint32_t floor = game_object->hero.floors;
                 std::uint32_t x = game_object->floors_jump.at( game_object->hero.floors ).first;
                 std::uint32_t y = game_object->floors_jump.at( game_object->hero.floors ).second;
-                //close_floor_jump rollback hero postion
+                //close_floor_jump rollback hero position
                 close_floor_jump( game_object );
                 game_object->hero.floors = floor;
                 game_object->hero.x = x;
