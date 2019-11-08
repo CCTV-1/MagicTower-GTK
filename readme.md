@@ -11,37 +11,70 @@
 
 ## Game Script
 
+### Table Format
+```lua
+hero =                  --see hero.h
+{
+    ["floors"] = 1,
+    ["x"] = 1,
+    ["y"] = 1,
+    ["level"] = 1,
+    ["life"] = 1,
+    ["attack"] = 1,
+    ["defense"] = 1,
+    ["gold"] = 1,
+    ["experience"] = 1,
+    ["yellow_key"] = 1,
+    ["blue_key"] = 1,
+    ["red_key"] = 1
+}
+
+menu_detail =
+{
+    -- menu display text = lua can call string(like js eval)
+    ["level up"] = "local hero_propertys=get_hero_property();hero_propertys[\"level\"] = hero_propertys[\"level\"] + 1;hero_propertys[\"life\"] = hero_propertys[\"life\"] + 1000;hero_propertys[\"attack\"] = hero_propertys[\"attack\"] + 7;hero_propertys[\"defense\"] = hero_propertys[\"defense\"] + 7;set_hero_property(hero_propertys);"
+    ...
+}
+
+position =
+{
+    ["floor"] = 1,
+    ["x"] = 1,
+    ["y"] = 1
+}
+
+grid = 
+{
+    ["type"] = 1,   --see tower.h GRID_TYPE
+    ["id"] = 1,     --$(type),$(id) determine which image to game use
+}
+```
+
 ### Export functions
 
 ```lua
 --no return
-function set_tips( string )
+function set_tips( string tips_content )
 
 --no return
-function set_grid_type( number floor , number x , number y , number grid_id )
+--id set to the floor default floorid
+function set_grid_type( table position , number type_id )
 
 --return a number
-function get_grid_type( number floor , number x , number y )
+--if don't care grid id,use this
+function get_grid_type( table position )
 
---hero table:
---key:floors , value:number;
---key:x , value:number;
---key:y , value:number;
---key:level , value:number;
---key:life , value:number;
---key:attack , value:number;
---key:defense , value:number;
---key:gold , value:number;
---key:experience , value:number;
---key:yellow_key , value:number;
---key:blue_key , value:number;
---key:red_key , value:number;
+--no return
+function set_grid( table position , table grid )
+
+--return a grid table
+function get_grid( table position )
 
 --return a table:
 function get_hero_property( void )
 
 --no return
-function set_hero_property( table )
+function set_hero_property( table hero )
 
 --if flag not exist,reutn nil.if exist,return a number
 function get_flag( string flag_name )
@@ -54,7 +87,6 @@ function set_flag( string flag_name , number flag_value )
 function open_dialog( string dialog_content , ... )
 
 --no return
---argument:table of key:string item_name , value:string item_func
 function open_menu( table menu_detail )
 
 --no return
@@ -70,7 +102,7 @@ function unlock_store( number store_id )
 function lock_store( number store_id )
 
 --no return
-function move_hero( number floor , number x , number y )
+function move_hero( table position )
 
 --no return
 function game_win()
@@ -192,7 +224,7 @@ stairs=
 ```lua
 floorjump =
 {
-    [0] =           --jump to 0 floor,postion:(x,y) = (5,10)
+    [0] =           --jump to 0 floor,position:(x,y) = (5,10)
     {               --when a floor does not exist in floorjump,in the floor floorjump permanently disabled
         ["x"] = 5,  --when exist,hero enter stairs goto floor,enabled jump to the floor,call set_flag("floor_$(floor_id)")
         ["y"] = 10
