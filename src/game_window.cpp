@@ -796,13 +796,13 @@ namespace MagicTower
                         }
                         case GDK_KEY_Escape:
                         {
-                            open_game_menu_v2( game_object );
+                            open_game_menu( game_object );
                             break;
                         }
                         case GDK_KEY_s:
                         case GDK_KEY_S:
                         {
-                            open_store_menu_v2( game_object );
+                            open_store_menu( game_object );
                             break;
                         }
                         case GDK_KEY_j:
@@ -888,7 +888,7 @@ namespace MagicTower
                         }
                         case GDK_KEY_Escape:
                         {
-                            close_game_menu_v2( game_object );
+                            close_game_menu( game_object );
                             break;
                         }
                         default :
@@ -924,7 +924,7 @@ namespace MagicTower
                         case GDK_KEY_s:
                         case GDK_KEY_S:
                         {
-                            close_store_menu_v2( game_object );
+                            close_store_menu( game_object );
                             break;
                         }
                     }

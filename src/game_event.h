@@ -44,13 +44,13 @@ namespace MagicTower
 
     void open_start_menu( GameEnvironment * game_object );
 
-    void open_game_menu_v2(  GameEnvironment * game_object );
+    void open_game_menu(  GameEnvironment * game_object );
 
-    void close_game_menu_v2( GameEnvironment * game_object );
+    void close_game_menu( GameEnvironment * game_object );
 
-    void open_store_menu_v2( GameEnvironment * game_object );
+    void open_store_menu( GameEnvironment * game_object );
     
-    void close_store_menu_v2( GameEnvironment * game_object );
+    void close_store_menu( GameEnvironment * game_object );
     
     void open_floor_jump( GameEnvironment * game_object );
 

@@ -1073,7 +1073,7 @@ namespace MagicTower
         game_object->game_status = GAME_STATUS::NORMAL;
     }
 
-    void open_store_menu_v2( GameEnvironment * game_object )
+    void open_store_menu( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1092,7 +1092,7 @@ namespace MagicTower
         set_store_menu( game_object );
     }
 
-    void close_store_menu_v2( GameEnvironment * game_object )
+    void close_store_menu( GameEnvironment * game_object )
     {
         if ( game_object->game_status != GAME_STATUS::STORE_MENU )
             return ;
@@ -1115,7 +1115,7 @@ namespace MagicTower
         set_start_menu( game_object );
     }
 
-    void open_game_menu_v2( GameEnvironment * game_object )
+    void open_game_menu( GameEnvironment * game_object )
     {
         switch ( game_object->game_status )
         {
@@ -1134,7 +1134,7 @@ namespace MagicTower
         set_game_menu( game_object );
     }
 
-    void close_game_menu_v2( GameEnvironment * game_object )
+    void close_game_menu( GameEnvironment * game_object )
     {
         if ( game_object->game_status != GAME_STATUS::GAME_MENU )
             return ;
@@ -1415,7 +1415,7 @@ namespace MagicTower
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_game_menu_v2( game_object ); }
+            [ game_object ](){ close_game_menu( game_object ); }
         });
     }
 
@@ -1438,7 +1438,7 @@ namespace MagicTower
         }
         game_object->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_store_menu_v2( game_object ); }
+            [ game_object ](){ close_store_menu( game_object ); }
         });
     }
 
@@ -1464,7 +1464,7 @@ namespace MagicTower
 
         game_object->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_store_menu_v2( game_object ); }
+            [ game_object ](){ close_store_menu( game_object ); }
         });
     }
 
