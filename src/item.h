@@ -12,7 +12,6 @@ namespace MagicTower
     {
         std::string item_name;
         std::string item_detail;
-        std::string item_func;
     };
 }
 

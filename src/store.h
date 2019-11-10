@@ -10,8 +10,9 @@ namespace MagicTower
     {
         bool usability;
         std::string store_name;
-        //commodity_detail , commodity_function
-        std::map<std::string,std::string> commodities;
+        //commodity_detail vector --> GameEnvironment::regmap[commodity_detail] -> lua_ref return value
+        //lua_rawgeti( L , LUA_REGISTRYINDEX , refvalue ) -> get lua func -> lua_call
+        std::vector<std::string> commodities;
     };
 }
 

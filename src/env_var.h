@@ -48,24 +48,25 @@ namespace MagicTower
 
         void initial_gamedata();
 
-        std::unique_ptr< lua_State , decltype( &lua_close ) > script_engines;
+        bool draw_path;
+        std::size_t focus_item_id;
         std::deque<std::string> game_message;
         std::deque<std::string> tips_content;
-        Menu_t menu_items;
-        std::size_t focus_item_id;
-        Music music;
-        Hero hero;
-        TowerMap game_map;
-        std::map<std::uint32_t , bool> access_floor;
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> > floors_jump;
-        std::map<std::string , std::uint32_t> script_flags;
+        std::map<std::uint32_t,bool> access_floor;
         std::map<std::uint32_t,Stairs> stairs;
         std::map<std::uint32_t,Monster> monsters;
         std::map<std::uint32_t,Item> items;
         std::map<std::uint32_t,Store> stores;
+        std::map<std::size_t , std::pair<std::size_t , std::size_t> > floors_jump;
+        std::map<std::string,std::uint32_t> script_flags;
+        std::map<std::string,std::uint32_t> refmap;
+        std::unique_ptr< lua_State , decltype( &lua_close ) > script_engines;
         std::vector<TowerGridLocation> path;
+        Menu_t menu_items;
+        Music music;
+        Hero hero;
+        TowerMap game_map;
         GAME_STATUS game_status;
-        bool draw_path;
     };
 }
 

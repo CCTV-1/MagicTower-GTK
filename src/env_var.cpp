@@ -1,5 +1,3 @@
-#include <lua.hpp>
-
 #include <glibmm.h>
 #include <giomm.h>
 
@@ -10,7 +8,7 @@
 
 namespace MagicTower
 {
-    static std::map<std::uint32_t,Item> initial_items( lua_State * L )
+    static std::map<std::uint32_t,Item> initial_items( lua_State * L , std::map<std::string,std::uint32_t>& func_regmap )
     {
         std::string item_script = CUSTOM_SCRIPTS_PATH"items.lua";
         if ( Glib::file_test( item_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
@@ -35,21 +33,31 @@ namespace MagicTower
             lua_getfield( L , top + 3 , "item_func" );
             luaL_checktype( L , top + 4 , LUA_TSTRING );
             luaL_checktype( L , top + 5 , LUA_TSTRING );
-            luaL_checktype( L , top + 6 , LUA_TSTRING );
+            luaL_checktype( L , top + 6 , LUA_TFUNCTION );
             std::uint32_t item_id = lua_tointeger( L , top + 2 );
             std::string item_name = lua_tostring( L , top + 4 );
             std::string item_detail = lua_tostring( L , top + 5 );
-            std::string item_func = lua_tostring( L , top + 6 );
-            items[item_id] = { item_name , item_detail , item_func };
+            items[item_id] = { item_name , item_detail };
 
-            lua_pop( L , 4 );
+            if ( func_regmap.find( item_detail ) == func_regmap.end() )
+            {
+                //top + 3 -> stack top
+                std::uint32_t refkey = luaL_ref( L , LUA_REGISTRYINDEX );
+                func_regmap[item_detail] = refkey;
+            }
+            else
+            {
+                //luaL_ref pop top,
+                lua_pop( L , 1 );
+            }
+            lua_pop( L , 3 );
         }
         lua_pop( L , 1 );
 
         return items;
     }
 
-    static std::map<std::uint32_t,Store> initial_stores( lua_State * L , std::map<std::string , std::uint32_t>& script_flags )
+    static std::map<std::uint32_t,Store> initial_stores( lua_State * L , std::map<std::string , std::uint32_t>& script_flags , std::map<std::string,std::uint32_t>& func_regmap )
     {
         std::string store_script = CUSTOM_SCRIPTS_PATH"stores.lua";
         if ( Glib::file_test( store_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
@@ -85,16 +93,25 @@ namespace MagicTower
                 script_flags[flag_name] = 1;
             }
 
-            std::map<std::string,std::string> commodities;
+            std::vector<std::string> commodities;
             lua_pushnil( L );
             while ( lua_next( L , top + 6 ) )
             {
                 luaL_checktype( L , top + 7 , LUA_TSTRING );
-                luaL_checktype( L , top + 8 , LUA_TSTRING );
+                luaL_checktype( L , top + 8 , LUA_TFUNCTION );
                 std::string commodity_name = lua_tostring( L , top + 7 );
-                std::string commodity_func = lua_tostring( L , top + 8 );
-                commodities[commodity_name] = commodity_func;
-                lua_pop( L , 1 );
+                if ( func_regmap.find( commodity_name ) == func_regmap.end() )
+                {
+                    commodities.push_back( commodity_name );
+                    //top + 3 -> stack top
+                    std::uint32_t refkey = luaL_ref( L , LUA_REGISTRYINDEX );
+                    func_regmap[commodity_name] = refkey;
+                }
+                else
+                {
+                    //luaL_ref pop top + 3,if call don't need pop
+                    lua_pop( L , 1 );
+                }
             }
             stores[ store_id ] = {
                 usability , store_name , commodities
@@ -333,16 +350,16 @@ namespace MagicTower
     }
 
     GameEnvironment::GameEnvironment( std::vector<std::string> music_list ):
-        script_engines( luaL_newstate() , lua_close ),
+        draw_path( true ),
+        focus_item_id(),
         game_message( {} ),
         tips_content( {} ),
-        menu_items( {} ),
-        focus_item_id(),
-        music( music_list ),
+        script_engines( luaL_newstate() , lua_close ),
         script_flags(),
         path( {} ),
-        game_status(),
-        draw_path( true )
+        menu_items( {} ),
+        music( music_list ),
+        game_status()
     {
         luaL_openlibs( this->script_engines.get() );
         //game environment to lua vm
@@ -355,13 +372,16 @@ namespace MagicTower
 
     GameEnvironment::~GameEnvironment()
     {
-        ;
+        for ( auto& func : this->refmap )
+        {
+            luaL_unref( this->script_engines.get() , LUA_REGISTRYINDEX , func.second );
+        }
     }
 
     void GameEnvironment::initial_gamedata()
     {
-        this->items = initial_items( this->script_engines.get() );
-        this->stores = initial_stores( this->script_engines.get() , this->script_flags );
+        this->items = initial_items( this->script_engines.get() , this->refmap );
+        this->stores = initial_stores( this->script_engines.get() , this->script_flags , this->refmap );
         this->hero = initial_hero( this->script_engines.get() );
         this->monsters = initial_monsters( this->script_engines.get() );
         this->stairs = initial_stairs( this->script_engines.get() );

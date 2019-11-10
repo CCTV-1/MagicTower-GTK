@@ -901,7 +901,17 @@ namespace MagicTower
             return false;
         Item& item = game_object->items[ item_id ];
 
-        luaL_dostring( game_object->script_engines.get() , item.item_func.data() );
+        if ( game_object->refmap.find( item.item_detail ) == game_object->refmap.end() )
+        {
+            return false;
+        }
+        std::uint32_t refvalue = game_object->refmap[item.item_detail];
+        if ( refvalue == 0 )
+        {
+            return false;
+        }
+        lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
+        lua_call( game_object->script_engines.get() , 0 , 0 );
         std::string tips = item.item_detail;
         set_tips( game_object , tips );
         return true;
@@ -1454,11 +1464,21 @@ namespace MagicTower
         Store& store = game_object->stores[store_id];
         for ( auto& commoditie : store.commodities )
         {
-            std::string commodity_detail = commoditie.first;
-            std::string commodity_function = commoditie.second;
             game_object->menu_items.push_back({
-                [ commodity_detail ](){ return commodity_detail; },
-                [ game_object , commodity_function ](){ luaL_dostring( game_object->script_engines.get() , commodity_function.c_str() ); }
+                [ commoditie ](){ return commoditie; },
+                [ game_object , commoditie ](){
+                    if ( game_object->refmap.find( commoditie ) == game_object->refmap.end() )
+                    {
+                        return ;
+                    }
+                    std::uint32_t refvalue = game_object->refmap[commoditie];
+                    if ( refvalue == 0 )
+                    {
+                        return ;
+                    }
+                    lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
+                    lua_call( game_object->script_engines.get() , 0 , 0 );
+                }
             });
         }
 
