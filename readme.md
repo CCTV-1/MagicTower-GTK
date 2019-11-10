@@ -139,8 +139,11 @@ items =
     [item_id] =                 --item_id is a number
     {
         ["item_name"] = ""      --detail dialog display text
-        ["item_detail"] = "",   --detail dialog display text
-        ["item_func"] = ""      --get item,call luaL_dostring(items[item_id].item_func)
+        ["item_detail"] = "",   --detail dialog display text,item func key -> game call map[item_detail] get func(by lua_ref lua_rewgeti lua_call).
+        -- if the string already exists in the map,simple skip save func ref,don't replace old function ref.
+        ["item_func"] = function()
+            ;                   --get item trigger call this function,0 argument,0 return value.
+        end
     },
     ...
 }
@@ -196,8 +199,11 @@ stores=
         ["commodities"] =
         {
             -- commodity_detail is a string,store menu display text
-            -- commodity_function is a string,when buy the commodity,pass stores[store_name].commodities.commodity_detail to call luaL_dostring
-            [commodity_detail] = commodity_function,
+            --item commodity key -> game call map[commodity_detail] get func(by lua_ref lua_rewgeti lua_call).
+            -- if the string already exists in the map,simple skip save func ref,don't replace old function ref.
+            [commodity_detail] = function()
+                ;                   -- buy the commodity,trigger call this function.0 argument,0 return value.
+            end,
             ...
         }
     },
