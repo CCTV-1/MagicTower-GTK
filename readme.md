@@ -31,8 +31,18 @@ hero =                  --see hero.h
 
 menu_detail =
 {
-    -- menu display text = lua can call string(like js eval)
-    ["level up"] = "local hero_propertys=get_hero_property();hero_propertys[\"level\"] = hero_propertys[\"level\"] + 1;hero_propertys[\"life\"] = hero_propertys[\"life\"] + 1000;hero_propertys[\"attack\"] = hero_propertys[\"attack\"] + 7;hero_propertys[\"defense\"] = hero_propertys[\"defense\"] + 7;set_hero_property(hero_propertys);"
+    -- 'level up' is function reference map key -> game call map["level up"] get func(by lua_ref lua_rewgeti lua_call).
+    -- if the string already exists in the map,simple skip save function reference,don't replace old function reference.
+    -- the function,click menu item to trigger call.
+    ["level up"] = function()
+        local hero_propertys = get_hero_property()
+        hero_propertys["level"] = hero_propertys["level"] + 1
+        hero_propertys["life"] = hero_propertys["life"] + 1000
+        hero_propertys["attack"] = hero_propertys["attack"] + 7
+        hero_propertys["defense"] = hero_propertys["defense"] + 7
+        set_hero_property(hero_propertys)
+        close_menu()
+    end
     ...
 }
 
@@ -139,8 +149,8 @@ items =
     [item_id] =                 --item_id is a number
     {
         ["item_name"] = ""      --detail dialog display text
-        ["item_detail"] = "",   --detail dialog display text,item func key -> game call map[item_detail] get func(by lua_ref lua_rewgeti lua_call).
-        -- if the string already exists in the map,simple skip save func ref,don't replace old function ref.
+        ["item_detail"] = "",   --detail dialog display text,item_detail is function reference map key -> game call map[item_detail] get func(by lua_ref lua_rewgeti lua_call).
+        -- if the string already exists in the map,simple skip save function reference,don't replace old function reference.
         ["item_func"] = function()
             ;                   --get item trigger call this function,0 argument,0 return value.
         end
@@ -199,8 +209,8 @@ stores=
         ["commodities"] =
         {
             -- commodity_detail is a string,store menu display text
-            --item commodity key -> game call map[commodity_detail] get func(by lua_ref lua_rewgeti lua_call).
-            -- if the string already exists in the map,simple skip save func ref,don't replace old function ref.
+            -- commodity_detail is function reference map key -> game call map[item_detail] get func(by lua_ref lua_rewgeti lua_call).
+            -- if the string already exists in the map,simple skip save function reference,don't replace old function reference.
             [commodity_detail] = function()
                 ;                   -- buy the commodity,trigger call this function.0 argument,0 return value.
             end,
