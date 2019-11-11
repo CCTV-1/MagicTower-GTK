@@ -457,16 +457,33 @@ namespace MagicTower
                 lua_pushnil( L );
                 while( lua_next( L , 1 ) )
                 {
-                    if ( ( lua_type( L , -1 ) == LUA_TSTRING ) && ( lua_type( L , -2 ) == LUA_TSTRING ) )
+                    if ( ( lua_type( L , 3 ) == LUA_TFUNCTION ) && ( lua_type( L , 2 ) == LUA_TSTRING ) )
                     {
-                        std::string item_name( lua_tostring( L , -2 ) );
-                        std::string item_func( lua_tostring( L , -1 ) );
+                        std::string item_name( lua_tostring( L , 2 ) );
+                        std::uint32_t refvalue = 0;
+                        if ( game_object->refmap.find( item_name ) != game_object->refmap.end() )
+                        {
+                            refvalue = game_object->refmap[ item_name ];
+                            lua_pop( L , 1 );
+                        }
+                        else
+                        {
+                            refvalue = luaL_ref( L , LUA_REGISTRYINDEX );
+                            game_object->refmap[ item_name ] = refvalue;
+                        }
                         game_object->menu_items.push_back({
                             [ item_name ](){ return item_name; },
-                            [ L , item_func ](){ luaL_dostring( L , item_func.c_str() ); }
+                            [ L , refvalue ](){
+                                lua_rawgeti( L , LUA_REGISTRYINDEX , refvalue );
+                                lua_call( L , 0 , 0 );
+                            }
                         });
                     }
-                    lua_pop( L , 1 );
+                    else
+                    {
+                        //luaL_ref pop stack
+                        lua_pop( L , 1 );
+                    }
                 }
                 game_object->menu_items.push_back({
                     [](){ return std::string( "关闭菜单" ); },
