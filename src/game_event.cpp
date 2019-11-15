@@ -201,6 +201,38 @@ namespace MagicTower
     void scriptengines_register_eventfunc( GameEnvironment * game_object )
     {
         lua_State * script_engines = game_object->script_engines.get();
+        //void set_volume( number )
+        lua_register( script_engines , "set_volume" ,
+            []( lua_State * L ) -> int
+            {
+                int argument_count = lua_gettop( L );
+                if ( argument_count < 1 )
+                {
+                    g_log( "lua_set_volume" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                    return 0;
+                }
+                //discard any extra arguments passed
+                lua_settop( L , 1 );
+                double volume = luaL_checknumber( L , 1 );
+                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                game_object->music.set_volume( volume );
+                return 0;
+            }
+        );
+        //number get_volume( void )
+        lua_register( script_engines , "get_volume" ,
+            []( lua_State * L ) -> int
+            {
+                //discard any extra arguments passed
+                lua_settop( L , 0 );
+                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                double volume = game_object->music.get_volume();
+                lua_pushnumber( L , volume );
+                return 1;
+            }
+        );
         //void set_tips( string )
         lua_register( script_engines , "set_tips" ,
             []( lua_State * L ) -> int
@@ -270,7 +302,7 @@ namespace MagicTower
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
                 TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
-                lua_pushnumber( L , static_cast<std::uint32_t>( grid.type ) );
+                lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
                 return 1;
             }
         );
@@ -329,9 +361,9 @@ namespace MagicTower
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
                 TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
                 lua_newtable( L );
-                lua_pushnumber( L , static_cast<std::uint32_t>( grid.type ) );
+                lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
                 lua_setfield( L , 6 , "type" );
-                lua_pushnumber( L , grid.id );
+                lua_pushinteger( L , grid.id );
                 lua_setfield( L , 6 , "id" );
                 return 1;
             }
@@ -390,7 +422,7 @@ namespace MagicTower
                     return 1;
                 }
                 std::int64_t value = game_object->script_flags[flags_name];
-                lua_pushnumber( L , value );
+                lua_pushinteger( L , value );
                 return 1;
             }
         );
