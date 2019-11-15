@@ -50,7 +50,7 @@ namespace MagicTower
         const char * create_table_sqls[] = 
         {
             R"(
-                CREATE TABLE towerfloor (
+                CREATE TABLE IF NOT EXISTS towerfloor (
                     id                  INT (32),
                     length              INT (32),
                     width               INT (32),
@@ -237,12 +237,12 @@ namespace MagicTower
         return script_flags;
     }
 
-/*  
-sqlite document:
-    The initial "INSERT" keyword can be replaced by "REPLACE" or "INSERT OR action" to specify an alternative constraint conflict
-    resolution algorithm to use during that one INSERT command. For compatibility with MySQL,
-    the parser allows the use of the single keyword REPLACE as an alias for "INSERT OR REPLACE".
-*/
+    /*  
+    sqlite document:
+        The initial "INSERT" keyword can be replaced by "REPLACE" or "INSERT OR action" to specify an alternative constraint conflict
+        resolution algorithm to use during that one INSERT command. For compatibility with MySQL,
+        the parser allows the use of the single keyword REPLACE as an alias for "INSERT OR REPLACE".
+    */
 
     void DataBase::set_hero_info( const Hero& hero , std::size_t archive_id )
     {
