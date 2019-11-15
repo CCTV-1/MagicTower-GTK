@@ -66,6 +66,12 @@ grid =
 
 ```lua
 
+--return a number(is lua_Number in C API type) 
+function get_volume( void )
+
+--no return,the argument number is lua_Number in C API type
+function set_volume( number )
+
 --no return
 function set_tips( string tips_content )
 
