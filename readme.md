@@ -63,6 +63,9 @@ grid =
 ### Export functions
 
 ```lua
+
+--if no special statement,all 'number' in C API type is lua_Integer
+
 --no return
 function set_tips( string tips_content )
 
