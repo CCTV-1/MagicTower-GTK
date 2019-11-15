@@ -21,8 +21,6 @@ game_event.o : ./src/game_event.cpp ./src/game_event.h ./src/env_var.h ./src/tow
 	g++ ./src/game_event.cpp $(GCC_CPP_OPTION) $(GIOMM_FLAGS) -c -o game_event.o
 ProfileTest : ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp ./src/game_window.h ./src/env_var.h ./src/game_event.h ./src/resources.h ./src/hero.h ./src/tower.h
 	g++ ./src/game.cpp ./src/database.cpp ./src/music.cpp ./src/game_event.cpp ./src/game_window.cpp ./src/env_var.cpp $(GCC_CPP_PROFILE_OPTION) $(GTKMM_FLAGS) $(GST_FLAGS) $(SQLITE3_FLAGS) $(LUA_FLAGS) -o ./build/bin/MagicTower
-	./build/bin/MagicTower &&\
-	gprof ./build/bin/MagicTower gmon.out > analysis.txt
 install :
 	cp MagicTower /usr/opt/magictower/MagicTower
 uninstall :
