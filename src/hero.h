@@ -84,29 +84,29 @@ namespace MagicTower
     {
         lua_newtable( L );
         std::uint32_t top = lua_gettop( L );
-        lua_pushnumber( L , hero.floors );
+        lua_pushinteger( L , hero.floors );
         lua_setfield( L , top , "floors" );
-        lua_pushnumber( L , hero.x );
+        lua_pushinteger( L , hero.x );
         lua_setfield( L , top , "x" );
-        lua_pushnumber( L , hero.y );
+        lua_pushinteger( L , hero.y );
         lua_setfield( L , top , "y" );
-        lua_pushnumber( L , hero.level );
+        lua_pushinteger( L , hero.level );
         lua_setfield( L , top , "level" );
-        lua_pushnumber( L , hero.life );
+        lua_pushinteger( L , hero.life );
         lua_setfield( L , top , "life" );
-        lua_pushnumber( L , hero.attack );
+        lua_pushinteger( L , hero.attack );
         lua_setfield( L , top , "attack" );
-        lua_pushnumber( L , hero.defense );
+        lua_pushinteger( L , hero.defense );
         lua_setfield( L , top , "defense" );
-        lua_pushnumber( L , hero.gold );
+        lua_pushinteger( L , hero.gold );
         lua_setfield( L , top , "gold" );
-        lua_pushnumber( L , hero.experience );
+        lua_pushinteger( L , hero.experience );
         lua_setfield( L , top , "experience" );
-        lua_pushnumber( L , hero.yellow_key );
+        lua_pushinteger( L , hero.yellow_key );
         lua_setfield( L , top , "yellow_key" );
-        lua_pushnumber( L , hero.blue_key );
+        lua_pushinteger( L , hero.blue_key );
         lua_setfield( L , top , "blue_key" );
-        lua_pushnumber( L , hero.red_key );
+        lua_pushinteger( L , hero.red_key );
         lua_setfield( L , top , "red_key" );
     }
 }
