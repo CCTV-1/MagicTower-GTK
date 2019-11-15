@@ -220,7 +220,7 @@ namespace MagicTower
                 return 0;
             }
         );
-        //void set_grid_type( table position , number grid_id )
+        //void set_grid_type( table position , integer grid_id )
         lua_register( script_engines , "set_grid_type" ,
             []( lua_State * L ) -> int
             {
@@ -248,7 +248,7 @@ namespace MagicTower
                 return 0;
             }
         );
-        //number get_grid_type( table position )
+        //integer get_grid_type( table position )
         lua_register( script_engines , "get_grid_type" ,
             []( lua_State * L ) -> int
             {
@@ -368,7 +368,7 @@ namespace MagicTower
                 return 0;
             }
         );
-        //number get_flag( string flag_name )
+        //integer get_flag( string flag_name )
         //if flag not exist,reutn nil
         lua_register( script_engines , "get_flag" ,
             []( lua_State * L ) -> int
@@ -394,7 +394,7 @@ namespace MagicTower
                 return 1;
             }
         );
-        //void set_flag( string flag_name , number flag_value )
+        //void set_flag( string flag_name , integer flag_value )
         lua_register( script_engines , "set_flag" ,
             []( lua_State * L ) -> int
             {
@@ -407,7 +407,6 @@ namespace MagicTower
                 //discard any extra arguments passed
                 lua_settop( L , 2 );
                 std::string flags_name( luaL_checkstring( L , 1 ) );
-                luaL_checktype( L , 2 , LUA_TNUMBER );
                 std::int64_t value = lua_tointeger( L , 2 );
                 lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
                 GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 3 );
@@ -508,7 +507,7 @@ namespace MagicTower
                 return 0;
             }
         );
-        //void get_item( number item_id )
+        //void get_item( integer item_id )
         lua_register( script_engines , "get_item" ,
             []( lua_State * L ) -> int
             {
@@ -528,7 +527,7 @@ namespace MagicTower
                 return 0;
             }
         );
-        //void unlock_store( number store_id )
+        //void unlock_store( integer store_id )
         lua_register( script_engines , "unlock_store" ,
             []( lua_State * L ) -> int
             {
@@ -551,7 +550,7 @@ namespace MagicTower
                 return 0;
             }
         );
-        //void lock_store( number store_id )
+        //void lock_store( integer store_id )
         lua_register( script_engines , "lock_store" ,
             []( lua_State * L ) -> int
             {

@@ -26,17 +26,14 @@ namespace MagicTower
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )
         {
-            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            std::uint32_t item_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "item_name" );
             lua_getfield( L , top + 3 , "item_detail" );
             lua_getfield( L , top + 3 , "item_func" );
-            luaL_checktype( L , top + 4 , LUA_TSTRING );
-            luaL_checktype( L , top + 5 , LUA_TSTRING );
             luaL_checktype( L , top + 6 , LUA_TFUNCTION );
-            std::uint32_t item_id = lua_tointeger( L , top + 2 );
-            std::string item_name = lua_tostring( L , top + 4 );
-            std::string item_detail = lua_tostring( L , top + 5 );
+            std::string item_name = luaL_checkstring( L , top + 4 );
+            std::string item_detail = luaL_checkstring( L , top + 5 );
             items[item_id] = { item_name , item_detail };
 
             if ( func_regmap.find( item_detail ) == func_regmap.end() )
@@ -75,17 +72,15 @@ namespace MagicTower
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )
         {
-            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            std::uint32_t store_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "usability" );
             lua_getfield( L , top + 3 , "store_name" );
             lua_getfield( L , top + 3 , "commodities" );
             luaL_checktype( L , top + 4 , LUA_TBOOLEAN );
-            luaL_checktype( L , top + 5 , LUA_TSTRING );
-            luaL_checktype( L , top + 6 , LUA_TTABLE );
-            std::uint32_t store_id = lua_tointeger( L , top + 2 );
             bool usability = lua_toboolean( L , top + 4 );
-            std::string store_name = lua_tostring( L , top + 5 );
+            std::string store_name = luaL_checkstring( L , top + 5 );
+            luaL_checktype( L , top + 6 , LUA_TTABLE );
 
             if ( usability == true )
             {
@@ -97,9 +92,8 @@ namespace MagicTower
             lua_pushnil( L );
             while ( lua_next( L , top + 6 ) )
             {
-                luaL_checktype( L , top + 7 , LUA_TSTRING );
+                std::string commodity_name = luaL_checkstring( L , top + 7 );
                 luaL_checktype( L , top + 8 , LUA_TFUNCTION );
-                std::string commodity_name = lua_tostring( L , top + 7 );
                 if ( func_regmap.find( commodity_name ) == func_regmap.end() )
                 {
                     commodities.push_back( commodity_name );
@@ -159,7 +153,7 @@ namespace MagicTower
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )
         {
-            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            std::uint32_t monster_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "attack_type" );
             lua_getfield( L , top + 3 , "type_value" );
@@ -170,27 +164,17 @@ namespace MagicTower
             lua_getfield( L , top + 3 , "defense" );
             lua_getfield( L , top + 3 , "gold" );
             lua_getfield( L , top + 3 , "experience" );
-            luaL_checktype( L , top + 4  , LUA_TNUMBER );
-            luaL_checktype( L , top + 5  , LUA_TNUMBER );
-            luaL_checktype( L , top + 6  , LUA_TSTRING );
-            luaL_checktype( L , top + 7  , LUA_TNUMBER );
-            luaL_checktype( L , top + 8  , LUA_TNUMBER );
-            luaL_checktype( L , top + 9  , LUA_TNUMBER );
-            luaL_checktype( L , top + 10 , LUA_TNUMBER );
-            luaL_checktype( L , top + 11 , LUA_TNUMBER );
-            luaL_checktype( L , top + 12 , LUA_TNUMBER );
-            
+
             Monster monster;
-            std::uint32_t monster_id = lua_tointeger( L , top + 2 );
-            monster.type = static_cast<ATTACK_TYPE>( lua_tointeger( L , top + 4 ) );
-            monster.type_value = lua_tointeger( L , top + 5 );
-            monster.name = lua_tostring( L , top + 6 );
-            monster.level = lua_tointeger( L , top + 7 );
-            monster.life = lua_tointeger( L , top + 8 );
-            monster.attack = lua_tointeger( L , top + 9 );
-            monster.defense = lua_tointeger( L , top + 10 );
-            monster.gold = lua_tointeger( L , top + 11 );
-            monster.experience = lua_tointeger( L , top + 12 );
+            monster.type = static_cast<ATTACK_TYPE>( luaL_checkinteger( L , top + 4 ) );
+            monster.type_value = luaL_checkinteger( L , top + 5 );
+            monster.name = luaL_checkstring( L , top + 6 );
+            monster.level = luaL_checkinteger( L , top + 7 );
+            monster.life = luaL_checkinteger( L , top + 8 );
+            monster.attack = luaL_checkinteger( L , top + 9 );
+            monster.defense = luaL_checkinteger( L , top + 10 );
+            monster.gold = luaL_checkinteger( L , top + 11 );
+            monster.experience = luaL_checkinteger( L , top + 12 );
             monsters[monster_id] = monster;
             lua_pop( L , 10 );
         }
@@ -217,21 +201,16 @@ namespace MagicTower
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )
         {
-            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            std::uint32_t stairs_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "image_type" );
             lua_getfield( L , top + 3 , "floor" );
             lua_getfield( L , top + 3 , "x" );
             lua_getfield( L , top + 3 , "y" );
-            luaL_checktype( L , top + 4 , LUA_TNUMBER );
-            luaL_checktype( L , top + 5 , LUA_TNUMBER );
-            luaL_checktype( L , top + 6 , LUA_TNUMBER );
-            luaL_checktype( L , top + 7 , LUA_TNUMBER );
-            std::uint32_t stairs_id = lua_tointeger( L , top + 2 );
-            std::uint32_t stairs_type = lua_tointeger( L , top + 4 );
-            std::uint32_t stairs_floor = lua_tointeger( L , top + 5 );
-            std::uint32_t stairs_x = lua_tointeger( L , top + 6 );
-            std::uint32_t stairs_y = lua_tointeger( L , top + 7 );
+            std::uint32_t stairs_type = luaL_checkinteger( L , top + 4 );
+            std::uint32_t stairs_floor = luaL_checkinteger( L , top + 5 );
+            std::uint32_t stairs_x = luaL_checkinteger( L , top + 6 );
+            std::uint32_t stairs_y = luaL_checkinteger( L , top + 7 );
             stairs[stairs_id] = { stairs_type , stairs_floor , stairs_x , stairs_y };
             lua_pop( L , 5 );
         }
@@ -257,16 +236,13 @@ namespace MagicTower
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )
         {
-            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            std::uint32_t jump_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "x" );
             lua_getfield( L , top + 3 , "y" );
-            luaL_checktype( L , top + 4 , LUA_TNUMBER );
-            luaL_checktype( L , top + 5 , LUA_TNUMBER );
 
-            std::uint32_t jump_id = lua_tointeger( L , top + 2 );
-            std::uint32_t jump_x = lua_tointeger( L , top + 4 );
-            std::uint32_t jump_y = lua_tointeger( L , top + 5 );
+            std::uint32_t jump_x = luaL_checkinteger( L , top + 4 );
+            std::uint32_t jump_y = luaL_checkinteger( L , top + 5 );
             jumper[jump_id] = { jump_x , jump_y };
             lua_pop( L , 3 );
         }
@@ -295,36 +271,31 @@ namespace MagicTower
         lua_pushnil( L );
         while( lua_next( L , top + 1 ) )  //floor info table
         {
-            luaL_checktype( L , top + 2 , LUA_TNUMBER );
+            std::uint32_t floor_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "name" );
             lua_getfield( L , top + 3 , "length" );
             lua_getfield( L , top + 3 , "width" );
             lua_getfield( L , top + 3 , "default_floorid" );
             lua_getfield( L , top + 3 , "content" );
-            luaL_checktype( L , top + 4 , LUA_TSTRING );
-            luaL_checktype( L , top + 5 , LUA_TNUMBER );
-            luaL_checktype( L , top + 6 , LUA_TNUMBER );
-            luaL_checktype( L , top + 7 , LUA_TNUMBER );
-            luaL_checktype( L , top + 8 , LUA_TTABLE );
-            std::uint32_t floor_id = lua_tointeger( L , top + 2 );
-            std::string floor_name = lua_tostring( L , top + 4 );
-            std::uint32_t floor_length = lua_tointeger( L , top + 5 );
+            std::string floor_name = luaL_checkstring( L , top + 4 );
+            std::uint32_t floor_length = luaL_checkinteger( L , top + 5 );
             if ( floor_length > max_length )
             {
                 max_length = floor_length;
             }
-            std::uint32_t floor_width = lua_tointeger( L , top + 6 );
+            std::uint32_t floor_width = luaL_checkinteger( L , top + 6 );
             if ( floor_width > max_width )
             {
                 max_width = floor_width;
             }
-            std::uint32_t default_floorid = lua_tointeger( L , top + 7 );
+            std::uint32_t default_floorid = luaL_checkinteger( L , top + 7 );
             towers.map[floor_id].name = floor_name;
             towers.map[floor_id].length = floor_length;
             towers.map[floor_id].width = floor_width;
             towers.map[floor_id].default_floorid = default_floorid;
 
+            luaL_checktype( L , top + 8 , LUA_TTABLE );
             lua_pushnil( L );
             while( lua_next( L , top + 8 ) )  //floor content table
             {
@@ -332,10 +303,8 @@ namespace MagicTower
                 luaL_checktype( L , top + 10 , LUA_TTABLE );   //grid table
                 lua_rawgeti( L , top + 10 , 1 );
                 lua_rawgeti( L , top + 10 , 2 );
-                luaL_checktype( L , top + 11 , LUA_TNUMBER );
-                luaL_checktype( L , top + 12 , LUA_TNUMBER );
-                std::uint32_t grid_type = lua_tointeger( L , top + 11 );
-                std::uint32_t grid_id = lua_tointeger( L , top + 12 );
+                std::uint32_t grid_type = luaL_checkinteger( L , top + 11 );
+                std::uint32_t grid_id = luaL_checkinteger( L , top + 12 );
                 towers.map[floor_id].content.push_back({ static_cast<GRID_TYPE>( grid_type ) , grid_id });
                 lua_pop( L , 3 );
             }
@@ -354,8 +323,8 @@ namespace MagicTower
         focus_item_id(),
         game_message( {} ),
         tips_content( {} ),
-        script_engines( luaL_newstate() , lua_close ),
         script_flags(),
+        script_engines( luaL_newstate() , lua_close ),
         path( {} ),
         menu_items( {} ),
         music( music_list ),
