@@ -1,5 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
 #include <cstdint>
 #include <cinttypes>
 
@@ -32,12 +30,16 @@ namespace MagicTower
     static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_first ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster );
+    static void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id = GRID_TYPE::FLOOR );
+    static void set_tips( GameEnvironment * game_object , std::string tips_content );
+    static bool open_door( GameEnvironment * game_object , event_position_t position );
+    static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
+    static bool get_item( GameEnvironment * game_object , std::uint32_t item_id );
     static void set_jump_menu( GameEnvironment * game_object );
     static void set_start_menu( GameEnvironment * game_object );
     static void set_game_menu( GameEnvironment * game_object );
     static void set_store_menu( GameEnvironment * game_object );
     static void set_sub_store_menu( GameEnvironment * game_object , std::uint32_t store_id );
-    static void remove_tips( GameEnvironment * game_object );
 
     // Helpers for TowerGridLocation
     static bool operator==( TowerGridLocation a , TowerGridLocation b )
@@ -200,465 +202,549 @@ namespace MagicTower
 
     void scriptengines_register_eventfunc( GameEnvironment * game_object )
     {
-        lua_State * script_engines = game_object->script_engines.get();
-        //void set_volume( number )
-        lua_register( script_engines , "set_volume" ,
-            []( lua_State * L ) -> int
+        const luaL_Reg funcs[] =
+        {
             {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
+                //void set_volume( number )
+                "set_volume" , []( lua_State * L ) -> int
                 {
-                    g_log( "lua_set_volume" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_set_volume" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    double volume = luaL_checknumber( L , 1 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    game_object->music.set_volume( volume );
                     return 0;
                 }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                double volume = luaL_checknumber( L , 1 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->music.set_volume( volume );
-                return 0;
-            }
-        );
-        //number get_volume( void )
-        lua_register( script_engines , "get_volume" ,
-            []( lua_State * L ) -> int
+            },
             {
-                //discard any extra arguments passed
-                lua_settop( L , 0 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
-                double volume = game_object->music.get_volume();
-                lua_pushnumber( L , volume );
-                return 1;
-            }
-        );
-        //void set_tips( string )
-        lua_register( script_engines , "set_tips" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
+                //number get_volume( void )
+                "get_volume" , []( lua_State * L ) -> int
                 {
-                    g_log( "lua_set_tips" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                const char * tips = luaL_checkstring( L , 1 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                set_tips( game_object , tips );
-                return 0;
-            }
-        );
-        //void set_grid_type( table position , integer grid_id )
-        lua_register( script_engines , "set_grid_type" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 2 )
-                {
-                    g_log( "lua_set_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 2 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 2 );
-                luaL_checktype( L , 1 , LUA_TTABLE );
-                lua_getfield( L , 1 , "floor" );
-                lua_getfield( L , 1 , "x" );
-                lua_getfield( L , 1 , "y" );
-                std::uint32_t type_value = luaL_checkinteger( L , 2 );
-                std::uint32_t floor = luaL_checkinteger( L , 3 );
-                std::uint32_t x = luaL_checkinteger( L , 4 );
-                std::uint32_t y = luaL_checkinteger( L , 5 );
-                GRID_TYPE grid_type = static_cast<GRID_TYPE>( type_value );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 6 );
-
-                set_grid_type( game_object , { x , y , floor } , grid_type );
-                return 0;
-            }
-        );
-        //integer get_grid_type( table position )
-        lua_register( script_engines , "get_grid_type" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_get_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                luaL_checktype( L , 1 , LUA_TTABLE );
-                lua_getfield( L , 1 , "floor" );
-                lua_getfield( L , 1 , "x" );
-                lua_getfield( L , 1 , "y" );
-                std::uint32_t floor = luaL_checkinteger( L , 2 );
-                std::uint32_t x = luaL_checkinteger( L , 3 );
-                std::uint32_t y = luaL_checkinteger( L , 4 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
-                TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
-                lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
-                return 1;
-            }
-        );
-        //void set_grid( table position , table grid )
-        lua_register( script_engines , "set_grid" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 2 )
-                {
-                    g_log( "lua_set_grid" , G_LOG_LEVEL_WARNING , "expecting exactly 2 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 2 );
-                luaL_checktype( L , 1 , LUA_TTABLE );
-                luaL_checktype( L , 2 , LUA_TTABLE );
-                lua_getfield( L , 1 , "floor" );
-                lua_getfield( L , 1 , "x" );
-                lua_getfield( L , 1 , "y" );
-                lua_getfield( L , 2 , "type" );
-                lua_getfield( L , 2 , "id" );
-
-
-                std::uint32_t floor = luaL_checkinteger( L , 3 );
-                std::uint32_t x = luaL_checkinteger( L , 4 );
-                std::uint32_t y = luaL_checkinteger( L , 5 );
-                GRID_TYPE grid_type = static_cast<GRID_TYPE>( luaL_checkinteger( L , 6 ) );
-                std::uint32_t grid_id = luaL_checkinteger( L , 7 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 8 );
-                game_object->game_map.set_grid( floor , x , y , { grid_type , grid_id } );
-                return 0;
-            }
-        );
-        //table get_grid( table position )
-        lua_register( script_engines , "get_grid" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_get_grid" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                luaL_checktype( L , 1 , LUA_TTABLE );
-                lua_getfield( L , 1 , "floor" );
-                lua_getfield( L , 1 , "x" );
-                lua_getfield( L , 1 , "y" );
-                std::uint32_t floor = luaL_checkinteger( L , 2 );
-                std::uint32_t x = luaL_checkinteger( L , 3 );
-                std::uint32_t y = luaL_checkinteger( L , 4 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
-                TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
-                lua_newtable( L );
-                lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
-                lua_setfield( L , 6 , "type" );
-                lua_pushinteger( L , grid.id );
-                lua_setfield( L , 6 , "id" );
-                return 1;
-            }
-        );
-        //table get_hero_property( void )
-        lua_register( script_engines , "get_hero_property" ,
-            []( lua_State * L ) -> int
-            {
-                //arguments number impossible less than 0,don't need check
-                //discard any extra arguments passed
-                lua_settop( L , 0 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
-                Hero& hero = game_object->hero;
-                lua_pushhero( L , hero );
-                return 1;
-            }
-        );
-        //void set_hero_property( table hero )
-        lua_register( script_engines , "set_hero_property" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_set_hero_property" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->hero = lua_gethero( L , 1 );
-                return 0;
-            }
-        );
-        //integer get_flag( string flag_name )
-        //if flag not exist,reutn nil
-        lua_register( script_engines , "get_flag" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_get_flag" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                std::string flags_name( luaL_checkstring( L , 1 ) );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                if ( game_object->script_flags.find( flags_name ) == game_object->script_flags.end() )
-                {
-                    lua_pushnil( L );
+                    //discard any extra arguments passed
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    double volume = game_object->music.get_volume();
+                    lua_pushnumber( L , volume );
                     return 1;
                 }
-                std::int64_t value = game_object->script_flags[flags_name];
-                lua_pushinteger( L , value );
-                return 1;
-            }
-        );
-        //void set_flag( string flag_name , integer flag_value )
-        lua_register( script_engines , "set_flag" ,
-            []( lua_State * L ) -> int
+            },
             {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 2 )
+                //void set_playmode( integer )
+                "set_playmode" , []( lua_State * L ) -> int
                 {
-                    g_log( "lua_set_flag" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 2 );
-                std::string flags_name( luaL_checkstring( L , 1 ) );
-                std::int64_t value = lua_tointeger( L , 2 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 3 );
-                game_object->script_flags[flags_name] = value;
-                return 0;
-            }
-        );
-        //void open_dialog( string list dialog_content )
-        lua_register( script_engines , "open_dialog" ,
-            []( lua_State * L ) -> int
-            {
-                std::size_t argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_get_item" , G_LOG_LEVEL_WARNING , "expecting exactly >= 1 arguments" );
-                    return 0;
-                }
-                std::deque<std::string> messages;
-                for ( std::size_t i = 1 ; i <= argument_count ; i++ )
-                {
-                    messages.push_back( luaL_checkstring( L , i ) );
-                }
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , argument_count + 1 );
-                game_object->game_message = messages;
-                game_object->game_status = GAME_STATUS::MESSAGE;
-                return 0;
-            }
-        );
-        //void open_menu( table of ( string item_name , string item_func ) )
-        lua_register( script_engines , "open_menu" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_open_menu" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
-                    return 0;
-                }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                luaL_checktype( L , 1 , LUA_TTABLE );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->menu_items = {};
-                lua_pop( L , 1 );
-                lua_pushnil( L );
-                while( lua_next( L , 1 ) )
-                {
-                    if ( ( lua_type( L , 3 ) == LUA_TFUNCTION ) && ( lua_type( L , 2 ) == LUA_TSTRING ) )
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
                     {
-                        std::string item_name( lua_tostring( L , 2 ) );
-                        std::uint32_t refvalue = 0;
-                        if ( game_object->refmap.find( item_name ) != game_object->refmap.end() )
+                        g_log( "lua_set_volume" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    PLAY_MODE mode_value = static_cast<PLAY_MODE>( luaL_checkinteger( L , 1 ) );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    game_object->music.set_play_mode( mode_value );
+                    return 0;
+                }
+            },
+            {
+                //void set_playlist( string list uri )
+                "set_playlist" , []( lua_State * L ) -> int
+                {
+                    std::uint32_t top = lua_gettop( L );
+                    if ( top < 1 )
+                    {
+                        g_log( "lua_set_playlist" , G_LOG_LEVEL_WARNING , "expecting exactly 1 or more arguments" );
+                        return 0;
+                    }
+                    std::vector<std::string> new_playlist;
+                    for( std::size_t i = 1 ; i <= top ; i++ )
+                    {
+                        new_playlist.push_back( std::string( luaL_checkstring( L , i ) ) );
+                    }
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , top + 1 );
+                    game_object->music.set_music_uri_list( new_playlist );
+                    return 0;
+                }
+            },
+            {
+                //void play_next( void )
+                "play_next" , []( lua_State * L ) -> int
+                {
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    game_object->music.play_next();
+                    return 0;
+                }
+            },
+            {
+                //void play_pause( void )
+                "play_pause" , []( lua_State * L ) -> int
+                {
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    game_object->music.play_pause();
+                    return 0;
+                }
+            },
+            {
+                //void play_resume( void )
+                "play_next" , []( lua_State * L ) -> int
+                {
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    game_object->music.play_resume();
+                    return 0;
+                }
+            },
+            {
+                //void set_tips( string )
+                "set_tips" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_set_tips" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    const char * tips = luaL_checkstring( L , 1 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    set_tips( game_object , tips );
+                    return 0;
+                }
+            },
+            {
+                //void set_grid_type( table position , integer grid_id )
+                "set_grid_type" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 2 )
+                    {
+                        g_log( "lua_set_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 2 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 2 );
+                    luaL_checktype( L , 1 , LUA_TTABLE );
+                    lua_getfield( L , 1 , "floor" );
+                    lua_getfield( L , 1 , "x" );
+                    lua_getfield( L , 1 , "y" );
+                    std::uint32_t type_value = luaL_checkinteger( L , 2 );
+                    std::uint32_t floor = luaL_checkinteger( L , 3 );
+                    std::uint32_t x = luaL_checkinteger( L , 4 );
+                    std::uint32_t y = luaL_checkinteger( L , 5 );
+                    GRID_TYPE grid_type = static_cast<GRID_TYPE>( type_value );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 6 );
+                    set_grid_type( game_object , { x , y , floor } , grid_type );
+                    return 0;
+                }
+            },
+            {
+                //integer get_grid_type( table position )
+                "get_grid_type" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_get_grid_type" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    luaL_checktype( L , 1 , LUA_TTABLE );
+                    lua_getfield( L , 1 , "floor" );
+                    lua_getfield( L , 1 , "x" );
+                    lua_getfield( L , 1 , "y" );
+                    std::uint32_t floor = luaL_checkinteger( L , 2 );
+                    std::uint32_t x = luaL_checkinteger( L , 3 );
+                    std::uint32_t y = luaL_checkinteger( L , 4 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                    TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
+                    lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
+                    return 1;
+                }
+            },
+            {
+                //void set_grid( table position , table grid )
+                "set_grid" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 2 )
+                    {
+                        g_log( "lua_set_grid" , G_LOG_LEVEL_WARNING , "expecting exactly 2 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 2 );
+                    luaL_checktype( L , 1 , LUA_TTABLE );
+                    luaL_checktype( L , 2 , LUA_TTABLE );
+                    lua_getfield( L , 1 , "floor" );
+                    lua_getfield( L , 1 , "x" );
+                    lua_getfield( L , 1 , "y" );
+                    lua_getfield( L , 2 , "type" );
+                    lua_getfield( L , 2 , "id" );
+                    std::uint32_t floor = luaL_checkinteger( L , 3 );
+                    std::uint32_t x = luaL_checkinteger( L , 4 );
+                    std::uint32_t y = luaL_checkinteger( L , 5 );
+                    GRID_TYPE grid_type = static_cast<GRID_TYPE>( luaL_checkinteger( L , 6 ) );
+                    std::uint32_t grid_id = luaL_checkinteger( L , 7 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 8 );
+                    game_object->game_map.set_grid( floor , x , y , { grid_type , grid_id } );
+                    return 0;
+                }
+            },
+            {
+                //table get_grid( table position )
+                "get_grid" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_get_grid" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    luaL_checktype( L , 1 , LUA_TTABLE );
+                    lua_getfield( L , 1 , "floor" );
+                    lua_getfield( L , 1 , "x" );
+                    lua_getfield( L , 1 , "y" );
+                    std::uint32_t floor = luaL_checkinteger( L , 2 );
+                    std::uint32_t x = luaL_checkinteger( L , 3 );
+                    std::uint32_t y = luaL_checkinteger( L , 4 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                    TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
+                    lua_newtable( L );
+                    lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
+                    lua_setfield( L , 6 , "type" );
+                    lua_pushinteger( L , grid.id );
+                    lua_setfield( L , 6 , "id" );
+                    return 1;
+                }
+            },
+            {
+                //table get_hero_property( void )
+                "get_hero_property" , []( lua_State * L ) -> int
+                {
+                    //arguments number impossible less than 0,don't need check
+                    //discard any extra arguments passed
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    Hero& hero = game_object->hero;
+                    lua_pushhero( L , hero );
+                    return 1;
+                }
+            },
+            {
+                //void set_hero_property( table hero )
+                "set_hero_property" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_set_hero_property" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    game_object->hero = lua_gethero( L , 1 );
+                    return 0;
+                }
+            },
+            {
+                //integer get_flag( string flag_name )
+                //if flag not exist,reutn nil
+                "get_flag" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_get_flag" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    std::string flags_name( luaL_checkstring( L , 1 ) );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    if ( game_object->script_flags.find( flags_name ) == game_object->script_flags.end() )
+                    {
+                        lua_pushnil( L );
+                        return 1;
+                    }
+                    std::int64_t value = game_object->script_flags[flags_name];
+                    lua_pushinteger( L , value );
+                    return 1;
+                }
+            },
+            {
+                //void set_flag( string flag_name , integer flag_value )
+                "set_flag" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 2 )
+                    {
+                        g_log( "lua_set_flag" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 2 );
+                    std::string flags_name( luaL_checkstring( L , 1 ) );
+                    std::int64_t value = lua_tointeger( L , 2 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 3 );
+                    game_object->script_flags[flags_name] = value;
+                    return 0;
+                }
+            },
+            {
+                //void open_dialog( string list dialog_content )
+                "open_dialog" , []( lua_State * L ) -> int
+                {
+                    std::size_t argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_get_item" , G_LOG_LEVEL_WARNING , "expecting exactly 1 or more arguments" );
+                        return 0;
+                    }
+                    std::deque<std::string> messages;
+                    for ( std::size_t i = 1 ; i <= argument_count ; i++ )
+                    {
+                        messages.push_back( luaL_checkstring( L , i ) );
+                    }
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , argument_count + 1 );
+                    game_object->game_message = messages;
+                    game_object->game_status = GAME_STATUS::MESSAGE;
+                    return 0;
+                }
+            },
+            {
+                //void open_menu( table of ( string item_name , string item_func ) )
+                "open_menu" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_open_menu" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    luaL_checktype( L , 1 , LUA_TTABLE );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    game_object->menu_items = {};
+                    lua_pop( L , 1 );
+                    lua_pushnil( L );
+                    while( lua_next( L , 1 ) )
+                    {
+                        if ( ( lua_type( L , 3 ) == LUA_TFUNCTION ) && ( lua_type( L , 2 ) == LUA_TSTRING ) )
                         {
-                            refvalue = game_object->refmap[ item_name ];
-                            lua_pop( L , 1 );
+                            std::string item_name( lua_tostring( L , 2 ) );
+                            std::uint32_t refvalue = 0;
+                            if ( game_object->refmap.find( item_name ) != game_object->refmap.end() )
+                            {
+                                refvalue = game_object->refmap[ item_name ];
+                                lua_pop( L , 1 );
+                            }
+                            else
+                            {
+                                refvalue = luaL_ref( L , LUA_REGISTRYINDEX );
+                                game_object->refmap[ item_name ] = refvalue;
+                            }
+                            game_object->menu_items.push_back({
+                                [ item_name ](){ return item_name; },
+                                [ L , refvalue ](){
+                                    lua_rawgeti( L , LUA_REGISTRYINDEX , refvalue );
+                                    lua_call( L , 0 , 0 );
+                                }
+                            });
                         }
                         else
                         {
-                            refvalue = luaL_ref( L , LUA_REGISTRYINDEX );
-                            game_object->refmap[ item_name ] = refvalue;
+                            //luaL_ref pop stack
+                            lua_pop( L , 1 );
                         }
-                        game_object->menu_items.push_back({
-                            [ item_name ](){ return item_name; },
-                            [ L , refvalue ](){
-                                lua_rawgeti( L , LUA_REGISTRYINDEX , refvalue );
-                                lua_call( L , 0 , 0 );
-                            }
-                        });
                     }
-                    else
+                    game_object->menu_items.push_back({
+                        [](){ return std::string( "关闭菜单" ); },
+                        [ game_object ](){ game_object->game_status = GAME_STATUS::NORMAL; }
+                    });
+                    game_object->game_status = GAME_STATUS::GAME_MENU;
+                    game_object->focus_item_id = 0;
+                    return 0;
+                }
+            },
+            {
+                //void close_menu( void )
+                "close_menu" , []( lua_State * L ) -> int
+                {
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    if ( game_object->game_status == GAME_STATUS::GAME_MENU )
                     {
-                        //luaL_ref pop stack
-                        lua_pop( L , 1 );
+                        game_object->game_status = GAME_STATUS::NORMAL;
                     }
-                }
-                game_object->menu_items.push_back({
-                    [](){ return std::string( "关闭菜单" ); },
-                    [ game_object ](){ game_object->game_status = GAME_STATUS::NORMAL; }
-                });
-                game_object->game_status = GAME_STATUS::GAME_MENU;
-                game_object->focus_item_id = 0;
-                return 0;
-            }
-        );
-        //void close_menu( void )
-        lua_register( script_engines , "close_menu" ,
-            []( lua_State * L ) -> int
-            {
-                lua_settop( L , 0 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
-                if ( game_object->game_status == GAME_STATUS::GAME_MENU )
-                {
-                    game_object->game_status = GAME_STATUS::NORMAL;
-                }
-                return 0;
-            }
-        );
-        //void get_item( integer item_id )
-        lua_register( script_engines , "get_item" ,
-            []( lua_State * L ) -> int
-            {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
-                {
-                    g_log( "lua_get_item" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
                     return 0;
                 }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                std::uint32_t item_id = luaL_checkinteger( L , 1 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                
-                get_item( game_object , item_id );
-                return 0;
-            }
-        );
-        //void unlock_store( integer store_id )
-        lua_register( script_engines , "unlock_store" ,
-            []( lua_State * L ) -> int
+            },
             {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
+                //void get_item( integer item_id )
+                "get_item" , []( lua_State * L ) -> int
                 {
-                    g_log( "lua_unlock_store" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_get_item" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    std::uint32_t item_id = luaL_checkinteger( L , 1 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    get_item( game_object , item_id );
                     return 0;
                 }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                std::uint32_t store_id = luaL_checkinteger( L , 1 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->stores[ store_id ].usability = true;
-                std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
-                game_object->script_flags[ flag_name ] = 1;
-                std::string tips = std::string( "解锁商店:" ) + ( game_object->stores[ store_id ] ).store_name;
-                set_tips( game_object , tips );
-                return 0;
-            }
-        );
-        //void lock_store( integer store_id )
-        lua_register( script_engines , "lock_store" ,
-            []( lua_State * L ) -> int
+            },
             {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
+                //void unlock_store( integer store_id )
+                "unlock_store" , []( lua_State * L ) -> int
                 {
-                    g_log( "lua_lock_store" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_unlock_store" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    std::uint32_t store_id = luaL_checkinteger( L , 1 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    game_object->stores[ store_id ].usability = true;
+                    std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
+                    game_object->script_flags[ flag_name ] = 1;
+                    std::string tips = std::string( "解锁商店:" ) + ( game_object->stores[ store_id ] ).store_name;
+                    set_tips( game_object , tips );
                     return 0;
                 }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                std::uint32_t store_id = luaL_checkinteger( L , 1 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
-                game_object->stores[ store_id ].usability = false;
-                std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
-                game_object->script_flags.erase( flag_name );
-                std::string tips = std::string( "锁定商店:" ) + ( game_object->stores[ store_id ] ).store_name;
-                set_tips( game_object , tips );
-                return 0;
-            }
-        );
-        //void move_hero( table position )
-        lua_register( script_engines , "move_hero" ,
-            []( lua_State * L ) -> int
+            },
             {
-                int argument_count = lua_gettop( L );
-                if ( argument_count < 1 )
+                //void lock_store( integer store_id )
+                "lock_store" , []( lua_State * L ) -> int
                 {
-                    g_log( "lua_move_hero" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_lock_store" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    std::uint32_t store_id = luaL_checkinteger( L , 1 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    game_object->stores[ store_id ].usability = false;
+                    std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
+                    game_object->script_flags.erase( flag_name );
+                    std::string tips = std::string( "锁定商店:" ) + ( game_object->stores[ store_id ] ).store_name;
+                    set_tips( game_object , tips );
                     return 0;
                 }
-                //discard any extra arguments passed
-                lua_settop( L , 1 );
-                luaL_checktype( L , 1 , LUA_TTABLE );
-                lua_getfield( L , 1 , "floor" );
-                lua_getfield( L , 1 , "x" );
-                lua_getfield( L , 1 , "y" );
-                std::uint32_t floor = luaL_checkinteger( L , 2 );
-                std::uint32_t x = luaL_checkinteger( L , 3 );
-                std::uint32_t y = luaL_checkinteger( L , 4 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
-                
-                move_hero( game_object , { x , y , floor } );
-                return 0;
-            }
-        );
-        //void game_win( void )
-        lua_register( script_engines , "game_win" ,
-            []( lua_State * L ) -> int
+            },
             {
-                //arguments number impossible less than 0,don't need check
-                //discard any extra arguments passed
-                lua_settop( L , 0 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
-                
-                game_win( game_object );
-                return 0;
-            }
-        );
-        //void game_lose( void )
-        lua_register( script_engines , "game_lose" ,
-            []( lua_State * L ) -> int
+                //void move_hero( table position )
+                "move_hero" , []( lua_State * L ) -> int
+                {
+                    int argument_count = lua_gettop( L );
+                    if ( argument_count < 1 )
+                    {
+                        g_log( "lua_move_hero" , G_LOG_LEVEL_WARNING , "expecting exactly 1 arguments" );
+                        return 0;
+                    }
+                    //discard any extra arguments passed
+                    lua_settop( L , 1 );
+                    luaL_checktype( L , 1 , LUA_TTABLE );
+                    lua_getfield( L , 1 , "floor" );
+                    lua_getfield( L , 1 , "x" );
+                    lua_getfield( L , 1 , "y" );
+                    std::uint32_t floor = luaL_checkinteger( L , 2 );
+                    std::uint32_t x = luaL_checkinteger( L , 3 );
+                    std::uint32_t y = luaL_checkinteger( L , 4 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                    if ( floor > game_object->game_map.map.size() )
+                    {
+                        set_tips( game_object , std::string( "floor id: '" ) + std::to_string( floor ) + std::string( "' illegal" ) );
+                        return 0;
+                    }
+                    if ( game_object->game_status == GAME_STATUS::FIND_PATH )
+                    {
+                        game_object->game_status = GAME_STATUS::NORMAL;
+                    }
+                    Hero& hero = game_object->hero;
+                    hero.x = x;
+                    hero.y = y;
+                    hero.floors = floor;
+                    return 0;
+                }
+            },
             {
-                //arguments number impossible less than 0,don't need check
-                //discard any extra arguments passed
-                lua_settop( L , 0 );
-                lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
-                
-                game_lose( game_object );
-                return 0;
+                //void game_win( void )
+                "game_win" , []( lua_State * L ) -> int
+                {
+                    //arguments number impossible less than 0,don't need check
+                    //discard any extra arguments passed
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    game_win( game_object );
+                    return 0;
+                }
+            },
+            {
+                //void game_lose( void )
+                "game_lose" , []( lua_State * L ) -> int
+                {
+                    //arguments number impossible less than 0,don't need check
+                    //discard any extra arguments passed
+                    lua_settop( L , 0 );
+                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
+                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    game_lose( game_object );
+                    return 0;
+                }
             }
-        );
+        };
+        for ( std::size_t i = 0 ; i < sizeof( funcs )/sizeof( luaL_Reg ) ; i++ )
+        {
+            lua_register( game_object->script_engines.get() , funcs[i].name , funcs[i].func );
+        }
     }
 
     std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal )
@@ -708,58 +794,6 @@ namespace MagicTower
         std::vector<TowerGridLocation> path = reconstruct_path( start , goal , came_from );
         
         return path;
-    }
-
-    bool open_door( GameEnvironment * game_object , event_position_t position )
-    {
-        Hero& hero = game_object->hero;
-        TowerMap& tower = game_object->game_map;
-        auto grid = tower.get_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
-        if ( grid.type != GRID_TYPE::DOOR )
-            return false;
-
-        switch( grid.id )
-        {
-            case 1:
-            {
-                if ( hero.yellow_key >= 1 )
-                {
-                    set_grid_type( game_object , position );
-                    hero.yellow_key--;
-                }
-                break;
-            }
-            case 2:
-            {
-                if ( hero.blue_key >= 1 )
-                {
-                    set_grid_type( game_object , position );
-                    hero.blue_key--;
-                }
-                break;
-            }
-            case 3:
-            {
-                if ( hero.red_key >= 1 )
-                {
-                    set_grid_type( game_object , position );
-                    hero.red_key--;
-                }
-                break;
-            }
-            default :
-            {
-                break;
-            }
-        }
-
-        return false;
-    }
-
-    bool check_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
-    {
-        auto grid = game_object->game_map.get_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
-        return ( grid.type == type_id );
     }
 
     void save_game( GameEnvironment * game_object , size_t save_id )
@@ -851,37 +885,6 @@ namespace MagicTower
         set_tips( game_object , tips );
     }
 
-    void set_tips( GameEnvironment * game_object , std::string tips_content )
-    {
-        game_object->tips_content.push_back( tips_content );
-        Glib::signal_timeout().connect_once( sigc::bind( &remove_tips , game_object ) , 1000 );
-    }
-
-    void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
-    {
-        if ( game_object->game_map.map.find( std::get<2>( position ) ) == game_object->game_map.map.end() )
-        {
-            //do nothing
-            return ;
-        }
-        //TowerMap::set_grid check x , y overflow,no need to check here
-        std::uint32_t defaultid = game_object->game_map.map[ std::get<2>( position ) ].default_floorid;
-        game_object->game_map.set_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) , { type_id , defaultid } );
-    }
-
-    bool move_hero( GameEnvironment * game_object , event_position_t position )
-    {
-        if ( game_object->game_status == GAME_STATUS::FIND_PATH )
-        {
-            game_object->game_status = GAME_STATUS::NORMAL;
-        }
-        Hero& hero = game_object->hero;
-        hero.x = std::get<0>( position );
-        hero.y = std::get<1>( position );
-        hero.floors = std::get<2>( position );
-        return true;
-    }
-
     std::int64_t get_combat_damage( GameEnvironment * game_object , std::uint32_t monster_id )
     {
         if ( game_object->monsters.find( monster_id ) == game_object->monsters.end() )
@@ -943,53 +946,6 @@ namespace MagicTower
         return true;
     }
 
-    bool get_item( GameEnvironment * game_object , std::uint32_t item_id )
-    {
-        if ( game_object->items.find( item_id ) == game_object->items.end() )
-            return false;
-        Item& item = game_object->items[ item_id ];
-
-        if ( game_object->refmap.find( item.item_detail ) == game_object->refmap.end() )
-        {
-            return false;
-        }
-        std::uint32_t refvalue = game_object->refmap[item.item_detail];
-        if ( refvalue == 0 )
-        {
-            return false;
-        }
-        lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
-        lua_call( game_object->script_engines.get() , 0 , 0 );
-        std::string tips = item.item_detail;
-        set_tips( game_object , tips );
-        return true;
-    }
-
-    bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id )
-    {
-        if ( game_object->stairs.find( stair_id ) == game_object->stairs.end() )
-            return false;
-        Stairs stair = game_object->stairs[ stair_id ];
-        TowerMap& tower = game_object->game_map;
-
-        if ( tower.map.find( stair.floors ) == tower.map.end() )
-            return false;
-        if ( stair.x >= tower.map[stair.floors].length )
-            return false;
-        if ( stair.y >= tower.map[stair.floors].width )
-            return false;
-
-        game_object->hero.floors = stair.floors;
-        game_object->hero.x = stair.x;
-        game_object->hero.y = stair.y;
-
-        game_object->access_floor[ stair.floors ] = true;
-        std::string floor_flag = std::string( "floors_" ) + std::to_string( stair.floors );
-        game_object->script_flags[floor_flag] = 1;
-
-        return true;
-    }
-
     bool trigger_collision_event( GameEnvironment * game_object )
     {
         bool state = false;
@@ -1003,13 +959,25 @@ namespace MagicTower
         if ( hero.y >= tower.map[hero.floors].width )
             return false;
 
-        std::string script_name = CUSTOM_SCRIPTS_PATH"F" + std::to_string( ( game_object->hero ).floors ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-        if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
+        Glib::ustring script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"F%1_%2_%3.lua" , game_object->hero.floors ,
+            game_object->hero.x , game_object->hero.y );
+        int res = luaL_loadfile( game_object->script_engines.get() , script_name.data() );
+        if ( res == LUA_OK )
         {
-            if ( luaL_dofile( game_object->script_engines.get() , script_name.data() ) )
+            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) )
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( game_object->script_engines.get() , -1 ) );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
+                lua_pop( game_object->script_engines.get() , 1 );
             }
+        }
+        else
+        {
+            //if undefined this position script,ignore
+            if ( res != LUA_ERRFILE )
+            {
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "loading script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
+            }
+            lua_pop( game_object->script_engines.get() , 1 );
         }
 
         auto grid = tower.get_grid( hero.floors , hero.x , hero.y );
@@ -1063,32 +1031,28 @@ namespace MagicTower
             }
         }
 
-        script_name = CUSTOM_SCRIPTS_PATH"L" + std::to_string( ( game_object->hero ).floors ) + "_" + std::to_string( ( game_object->hero ).x ) + "_" + std::to_string( ( game_object->hero ).y ) + ".lua";
-        if ( Glib::file_test( script_name , Glib::FILE_TEST_EXISTS ) )
+        script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"L%1_%2_%3.lua" , game_object->hero.floors ,
+            game_object->hero.x , game_object->hero.y );
+        res = luaL_loadfile( game_object->script_engines.get() , script_name.data() );
+        if ( res == LUA_OK )
         {
-            if ( luaL_dofile( game_object->script_engines.get() , script_name.data() ) )
+            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) )
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , lua_tostring( game_object->script_engines.get() , -1 ) );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
+                lua_pop( game_object->script_engines.get() , 1 );
             }
+        }
+        else
+        {
+            //if undefined this position script,ignore
+            if ( res != LUA_ERRFILE )
+            {
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "loading script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
+            }
+            lua_pop( game_object->script_engines.get() , 1 );
         }
 
         return state;
-    }
-
-    void background_music_switch( GameEnvironment * game_object )
-    {
-        static bool play_music = true;
-        play_music = !play_music;
-
-        if ( play_music == true )
-            game_object->music.play_resume();
-        else
-            game_object->music.play_pause();
-    }
-
-    void path_line_switch( GameEnvironment * game_object )
-    {
-        game_object->draw_path = !game_object->draw_path;
     }
 
     void open_floor_jump( GameEnvironment * game_object )
@@ -1247,11 +1211,6 @@ namespace MagicTower
         game_object->game_status = GAME_STATUS::GAME_LOSE;
     }
 
-    void exit_game( GameEnvironment * game_object )
-    {
-        game_object->game_status = GAME_STATUS::GAME_END;
-    }
-
     static std::int64_t get_combat_damage_of_last( const Hero& hero , const Monster& monster )
     {
         //if don't cast to int64_t when attack < defense the result underflow to UINT32_MAX - result
@@ -1339,6 +1298,124 @@ namespace MagicTower
             return hero_combat_count*monster_combat_damage*2;
         }
         return -1;
+    }
+
+    static void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
+    {
+        if ( game_object->game_map.map.find( std::get<2>( position ) ) == game_object->game_map.map.end() )
+        {
+            //do nothing
+            return ;
+        }
+        //TowerMap::set_grid check x , y overflow,no need to check here
+        std::uint32_t defaultid = game_object->game_map.map[ std::get<2>( position ) ].default_floorid;
+        game_object->game_map.set_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) , { type_id , defaultid } );
+    }
+
+    static void set_tips( GameEnvironment * game_object , std::string tips_content )
+    {
+        game_object->tips_content.push_back( tips_content );
+        Glib::signal_timeout().connect_once( 
+            [ game_object ]()
+            {
+                if ( game_object->tips_content.empty() )
+                    return ;
+                game_object->tips_content.pop_front();
+            }
+        , 1000 );
+    }
+
+    static bool open_door( GameEnvironment * game_object , event_position_t position )
+    {
+        Hero& hero = game_object->hero;
+        TowerMap& tower = game_object->game_map;
+        auto grid = tower.get_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
+        if ( grid.type != GRID_TYPE::DOOR )
+            return false;
+
+        switch( grid.id )
+        {
+            case 1:
+            {
+                if ( hero.yellow_key >= 1 )
+                {
+                    set_grid_type( game_object , position );
+                    hero.yellow_key--;
+                }
+                break;
+            }
+            case 2:
+            {
+                if ( hero.blue_key >= 1 )
+                {
+                    set_grid_type( game_object , position );
+                    hero.blue_key--;
+                }
+                break;
+            }
+            case 3:
+            {
+                if ( hero.red_key >= 1 )
+                {
+                    set_grid_type( game_object , position );
+                    hero.red_key--;
+                }
+                break;
+            }
+            default :
+            {
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id )
+    {
+        if ( game_object->stairs.find( stair_id ) == game_object->stairs.end() )
+            return false;
+        Stairs stair = game_object->stairs[ stair_id ];
+        TowerMap& tower = game_object->game_map;
+
+        if ( tower.map.find( stair.floors ) == tower.map.end() )
+            return false;
+        if ( stair.x >= tower.map[stair.floors].length )
+            return false;
+        if ( stair.y >= tower.map[stair.floors].width )
+            return false;
+
+        game_object->hero.floors = stair.floors;
+        game_object->hero.x = stair.x;
+        game_object->hero.y = stair.y;
+
+        game_object->access_floor[ stair.floors ] = true;
+        std::string floor_flag = std::string( "floors_" ) + std::to_string( stair.floors );
+        game_object->script_flags[floor_flag] = 1;
+
+        return true;
+    }
+
+    static bool get_item( GameEnvironment * game_object , std::uint32_t item_id )
+    {
+        if ( game_object->items.find( item_id ) == game_object->items.end() )
+            return false;
+        Item& item = game_object->items[ item_id ];
+
+        if ( game_object->refmap.find( item.item_detail ) == game_object->refmap.end() )
+        {
+            return false;
+        }
+        std::uint32_t refvalue = game_object->refmap[item.item_detail];
+        if ( refvalue == 0 )
+        {
+            return false;
+        }
+        lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
+        lua_call( game_object->script_engines.get() , 0 , 0 );
+        std::string tips = item.item_detail;
+        set_tips( game_object , tips );
+        return true;
     }
 
     static void set_jump_menu( GameEnvironment * game_object )
@@ -1436,7 +1513,7 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "退出游戏" ); },
             [ game_object ](){
-                exit_game( game_object );
+                game_object->game_status = GAME_STATUS::GAME_END;
             }
         });
     }
@@ -1460,16 +1537,21 @@ namespace MagicTower
                 else
                     return std::string( "背景音乐: 关" );
             },
-            [ game_object ](){ background_music_switch( game_object ); }
+            [ game_object ](){
+                if ( game_object->music.get_state() == PLAY_STATE::PLAYING )
+                    game_object->music.play_pause();
+                else
+                    game_object->music.play_resume();
+            }
         });
         game_object->menu_items.push_back({
             [ game_object ](){
-                if ( game_object->draw_path == TRUE )
+                if ( game_object->draw_path == true )
                     return std::string( "寻路指示: 开" );
                 else
                     return std::string( "寻路指示: 关" );
             },
-            [ game_object ](){ path_line_switch( game_object ); }
+            [ game_object ](){ game_object->draw_path = !game_object->draw_path; }
         });
         game_object->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
@@ -1534,12 +1616,5 @@ namespace MagicTower
             [](){ return std::string( "关闭菜单" ); },
             [ game_object ](){ close_store_menu( game_object ); }
         });
-    }
-
-    static void remove_tips( GameEnvironment * game_object )
-    {
-        if ( game_object->tips_content.empty() )
-            return ;
-        game_object->tips_content.pop_front();
     }
 }
