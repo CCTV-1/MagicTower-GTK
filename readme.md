@@ -73,6 +73,24 @@ function get_volume( void )
 function set_volume( number )
 
 --no return
+--mode value see music.h enum PLAY_MODE
+function set_playmode( number )
+
+--no return
+--argument:any number string(Lua c api exist limits)
+--uri like: file:///C:/MSYS2/home/user/1.mp3
+function set_playlist( string uri , ... )
+
+--no return
+function play_next( void )
+
+--no return
+function play_pause( void )
+
+--no return
+function play_resume( void )
+
+--no return
 function set_tips( string tips_content )
 
 --no return
@@ -139,6 +157,8 @@ function game_lose()
 - hero_property
 - floorjump
 - gamemap
+
+**forbid modify Z2FtZV9vYmplY3QK from game script**
 
 ### keeped flag
 - stores_$(stores_id)
