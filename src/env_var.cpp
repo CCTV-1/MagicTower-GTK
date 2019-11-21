@@ -10,14 +10,9 @@ namespace MagicTower
 {
     static std::map<std::uint32_t,Item> initial_items( lua_State * L , std::map<std::string,std::uint32_t>& func_regmap )
     {
-        std::string item_script = CUSTOM_SCRIPTS_PATH"items.lua";
-        if ( Glib::file_test( item_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"items.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing items.lua resources" );
-        }
-        if ( luaL_dofile( L , item_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'items.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Item> items;
@@ -56,14 +51,9 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Store> initial_stores( lua_State * L , std::map<std::string , std::uint32_t>& script_flags , std::map<std::string,std::uint32_t>& func_regmap )
     {
-        std::string store_script = CUSTOM_SCRIPTS_PATH"stores.lua";
-        if ( Glib::file_test( store_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"stores.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing stores.lua resources" );
-        }
-        if ( luaL_dofile( L , store_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'stores.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Store> stores;
@@ -119,14 +109,9 @@ namespace MagicTower
 
     static Hero initial_hero( lua_State * L )
     {
-        std::string hero_script = CUSTOM_SCRIPTS_PATH"hero.lua";
-        if ( Glib::file_test( hero_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"hero.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing hero.lua resources" );
-        }
-        if ( luaL_dofile( L , hero_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'hero.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         std::uint32_t top = lua_gettop( L );
         lua_getglobal( L , "hero_property" );
@@ -138,14 +123,9 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Monster> initial_monsters( lua_State * L )
     {
-        std::string monsters_script = CUSTOM_SCRIPTS_PATH"monsters.lua";
-        if ( Glib::file_test( monsters_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"monsters.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing monsters.lua resources" );
-        }
-        if ( luaL_dofile( L , monsters_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'monsters.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Monster> monsters;
@@ -185,14 +165,9 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Stairs> initial_stairs( lua_State * L )
     {
-        std::string stairs_script = CUSTOM_SCRIPTS_PATH"stairs.lua";
-        if ( Glib::file_test( stairs_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"stairs.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing monsters.lua resources" );
-        }
-        if ( luaL_dofile( L , stairs_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'stairs.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Stairs> stairs;
@@ -218,16 +193,11 @@ namespace MagicTower
         return stairs;
     }
 
-    static std::map<std::size_t , std::pair<std::size_t , std::size_t> > initial_floorjump( lua_State * L )
+    static std::map<std::size_t , std::pair<std::size_t , std::size_t>> initial_floorjump( lua_State * L )
     {
-        std::string jumper_script = CUSTOM_SCRIPTS_PATH"jumper.lua";
-        if ( Glib::file_test( jumper_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"jumper.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing jumper.lua resources" );
-        }
-        if ( luaL_dofile( L , jumper_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'jumper.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         std::uint32_t top = lua_gettop( L );
         std::map<std::size_t , std::pair<std::size_t , std::size_t> > jumper;
@@ -252,14 +222,9 @@ namespace MagicTower
 
     static TowerMap initial_gamemap( lua_State * L )
     {
-        std::string gamemap_script = CUSTOM_SCRIPTS_PATH"gamemap.lua";
-        if ( Glib::file_test( gamemap_script , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"gamemap.lua" ) )
         {
-            throw Glib::FileError( Glib::FileError::NO_SUCH_ENTITY , "missing gamemap.lua resources" );
-        }
-        if ( luaL_dofile( L , gamemap_script.data() ) )
-        {
-            throw std::runtime_error( lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "do file:'gamemap.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
         TowerMap towers;
 

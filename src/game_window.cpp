@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <cstring>
 #include <cinttypes>
 
@@ -7,8 +6,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <lua.hpp>
 
 #include <cairomm/cairomm.h>
 #include <gdkmm.h>
