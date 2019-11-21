@@ -300,7 +300,7 @@ namespace MagicTower
             },
             {
                 //void play_resume( void )
-                "play_next" , []( lua_State * L ) -> int
+                "play_resume" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
                     lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
