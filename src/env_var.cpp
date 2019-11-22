@@ -193,33 +193,6 @@ namespace MagicTower
         return stairs;
     }
 
-    static std::map<std::size_t , std::pair<std::size_t , std::size_t>> initial_floorjump( lua_State * L )
-    {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"jumper.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'jumper.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
-        std::uint32_t top = lua_gettop( L );
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> > jumper;
-        lua_getglobal( L , "floorjump" );
-        luaL_checktype( L , top + 1 , LUA_TTABLE );
-        lua_pushnil( L );
-        while( lua_next( L , top + 1 ) )
-        {
-            std::uint32_t jump_id = luaL_checkinteger( L , top + 2 );
-            luaL_checktype( L , top + 3 , LUA_TTABLE );
-            lua_getfield( L , top + 3 , "x" );
-            lua_getfield( L , top + 3 , "y" );
-
-            std::uint32_t jump_x = luaL_checkinteger( L , top + 4 );
-            std::uint32_t jump_y = luaL_checkinteger( L , top + 5 );
-            jumper[jump_id] = { jump_x , jump_y };
-            lua_pop( L , 3 );
-        }
-        lua_pop( L , 1 );
-        return jumper;
-    }
-
     static TowerMap initial_gamemap( lua_State * L )
     {
         if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"gamemap.lua" ) )
@@ -242,6 +215,7 @@ namespace MagicTower
             lua_getfield( L , top + 3 , "length" );
             lua_getfield( L , top + 3 , "width" );
             lua_getfield( L , top + 3 , "default_floorid" );
+            lua_getfield( L , top + 3 , "teleport" );
             lua_getfield( L , top + 3 , "content" );
             std::string floor_name = luaL_checkstring( L , top + 4 );
             std::uint32_t floor_length = luaL_checkinteger( L , top + 5 );
@@ -255,26 +229,40 @@ namespace MagicTower
                 max_width = floor_width;
             }
             std::uint32_t default_floorid = luaL_checkinteger( L , top + 7 );
+            if ( lua_istable( L , top + 8 ) )
+            {
+                lua_getfield( L , top + 8 , "x" );
+                lua_getfield( L , top + 8 , "y" );
+                //top + 9 has content table
+                std::uint32_t tp_x = luaL_checkinteger( L , top + 10 );
+                std::uint32_t tp_y = luaL_checkinteger( L , top + 11 );
+                lua_pop( L , 2 );
+                towers.map[floor_id].teleport_point = { tp_x , tp_y };
+            }
+            else
+            {
+                towers.map[floor_id].teleport_point = std::nullopt;
+            }
             towers.map[floor_id].name = floor_name;
             towers.map[floor_id].length = floor_length;
             towers.map[floor_id].width = floor_width;
             towers.map[floor_id].default_floorid = default_floorid;
 
-            luaL_checktype( L , top + 8 , LUA_TTABLE );
+            luaL_checktype( L , top + 9 , LUA_TTABLE );
             lua_pushnil( L );
-            while( lua_next( L , top + 8 ) )  //floor content table
+            while( lua_next( L , top + 9 ) )  //floor content table
             {
-                luaL_checktype( L , top + 9 , LUA_TNUMBER );
-                luaL_checktype( L , top + 10 , LUA_TTABLE );   //grid table
-                lua_rawgeti( L , top + 10 , 1 );
-                lua_rawgeti( L , top + 10 , 2 );
-                std::uint32_t grid_type = luaL_checkinteger( L , top + 11 );
-                std::uint32_t grid_id = luaL_checkinteger( L , top + 12 );
+                luaL_checktype( L , top + 10 , LUA_TNUMBER );
+                luaL_checktype( L , top + 11 , LUA_TTABLE );   //grid table
+                lua_rawgeti( L , top + 11 , 1 );
+                lua_rawgeti( L , top + 11 , 2 );
+                std::uint32_t grid_type = luaL_checkinteger( L , top + 12 );
+                std::uint32_t grid_id = luaL_checkinteger( L , top + 13 );
                 towers.map[floor_id].content.push_back({ static_cast<GRID_TYPE>( grid_type ) , grid_id });
                 lua_pop( L , 3 );
             }
 
-            lua_pop( L , 6 );
+            lua_pop( L , 7 );
         }
         lua_pop( L , 1 );
         towers.MAX_LENGTH = max_length;
@@ -319,7 +307,6 @@ namespace MagicTower
         this->hero = initial_hero( this->script_engines.get() );
         this->monsters = initial_monsters( this->script_engines.get() );
         this->stairs = initial_stairs( this->script_engines.get() );
-        this->floors_jump = initial_floorjump( this->script_engines.get() );
         this->game_map = initial_gamemap( this->script_engines.get() );
 
         this->focus_item_id = 0;

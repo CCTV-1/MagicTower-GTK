@@ -1069,7 +1069,7 @@ namespace MagicTower
                 break;
         }
 
-        if ( game_object->floors_jump.find( game_object->hero.floors ) == game_object->floors_jump.end() )
+        if ( game_object->game_map.map.find( game_object->hero.floors ) == game_object->game_map.map.end() )
         {
             set_tips( game_object , "这层楼禁止使用楼层跳跃器！" );
             return ;
@@ -1468,17 +1468,22 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "确定跳跃" ); },
             [ game_object ](){
-                //open_floor_jump have done the check
-                //don't need check game_object->floors_jump.find( std::get<0>( temp_pos ) ) != game_object->floors_jump.end();
+                //floor change menu have done the check
+                //don't need check game_object->game_map.map.find( game_object->hero.floors ) != game_object->game_map.map.end();
+                auto& floor_ref = game_object->game_map.map[ game_object->hero.floors ];
+                if ( !floor_ref.teleport_point.has_value() )
+                {
+                    set_tips( game_object , std::string( "所选择的楼层禁止跃入" ) );
+                    return ;
+                }
                 if ( game_object->access_floor[ game_object->hero.floors ] == false )
                 {
-                    std::string tips = std::string( "所选择的楼层当前禁止跃入" );
-                    set_tips( game_object , tips );
+                    set_tips( game_object , std::string( "所选择的楼层当前禁止跃入" ) );
                     return ;
                 }
                 std::uint32_t floor = game_object->hero.floors;
-                std::uint32_t x = game_object->floors_jump.at( game_object->hero.floors ).first;
-                std::uint32_t y = game_object->floors_jump.at( game_object->hero.floors ).second;
+                std::uint32_t x = floor_ref.teleport_point.value().x;
+                std::uint32_t y = floor_ref.teleport_point.value().y;
                 //close_floor_jump rollback hero position
                 close_floor_jump( game_object );
                 game_object->hero.floors = floor;

@@ -7,6 +7,7 @@
 #include <string>
 
 #include <vector>
+#include <optional>
 #include <map>
 #include <memory>
 
@@ -55,6 +56,7 @@ namespace MagicTower
         //when grid type is GRID_TYPE::UNKNOWN display { GRID_TYPE::FLOOR , default_floorid },or some transparent grid(item,monster...),background image display { GRID_TYPE::FLOOR , default_floorid }
         std::uint32_t default_floorid;
         std::string name;
+        std::optional<TowerGridLocation> teleport_point;
         std::vector<TowerGrid> content;
     };
 

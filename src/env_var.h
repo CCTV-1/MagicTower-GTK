@@ -57,7 +57,6 @@ namespace MagicTower
         std::map<std::uint32_t,Monster> monsters;
         std::map<std::uint32_t,Item> items;
         std::map<std::uint32_t,Store> stores;
-        std::map<std::size_t , std::pair<std::size_t , std::size_t> > floors_jump;
         std::map<std::string,std::uint32_t> script_flags;
         std::map<std::string,std::uint32_t> refmap;
         std::unique_ptr< lua_State , decltype( &lua_close ) > script_engines;
