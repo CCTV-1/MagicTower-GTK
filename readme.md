@@ -7,7 +7,7 @@
 -  ```lua 5.3```+
 
 ## Language: 
-- ```C++11```+
+- ```C++17```+
 
 ## Game Script
 
@@ -265,19 +265,6 @@ stairs=
 }
 ```
 
-- jumper.lua --> defines game floor jump property,the contents as follows:
-```lua
-floorjump =
-{
-    [0] =           --jump to 0 floor,position:(x,y) = (5,10)
-    {               --when a floor does not exist in floorjump,in the floor floorjump permanently disabled
-        ["x"] = 5,  --when exist,hero enter stairs goto floor,enabled jump to the floor,call set_flag("floor_$(floor_id)")
-        ["y"] = 10
-    },
-    ...
-}
-```
-
 - gamemap.lua -> defines game map,the contents as follows:
 ```lua
 gamemap =
@@ -288,6 +275,11 @@ gamemap =
         ["length"] = 2,
         ["width"] = 2,
         ["default_floorid"] = 1,        -- the floor background floor image id
+        ["teleport"] =                  --optional,if does not exist,floorjumper can't teleport to this floor
+        {
+            ["x"] = 5,                  --telepotr to this floor,position:(x,y) = (5,10)
+            ["y"] = 10
+        },
         ["content"] =
         {
             {  3 ,  2 } , {  1 ,  1 }   -- there are $(length) grid
