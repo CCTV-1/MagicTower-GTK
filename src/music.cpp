@@ -18,9 +18,9 @@ namespace MagicTower
             grand_gen( g_rand_new() , g_rand_free )
         {
             gboolean init_status = true;
-            if ( gst_is_initialized() == FALSE )
+            if ( !gst_is_initialized() )
                 init_status = gst_init_check( nullptr , nullptr , nullptr );
-            if ( init_status == false )
+            if ( !init_status )
                 throw music_init_failure( std::string( "gstreamer initial failure" ) );
             if ( ( this->pipeline = gst_pipeline_new( "audio-player" ) ) == nullptr )
             {
@@ -193,7 +193,7 @@ namespace MagicTower
     {
         for ( auto uri : uri_list )
         {
-            if ( is_music( uri ) == true )
+            if ( is_music( uri ) )
             {
                 this->imp_ptr->music_uri_list.insert( this->imp_ptr->music_uri_list.end() , uri );
             }

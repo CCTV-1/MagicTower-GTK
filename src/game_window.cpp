@@ -134,11 +134,11 @@ namespace MagicTower
 
         std::vector<std::string> load_music( std::string music_path )
         {
-            if ( Glib::file_test( music_path , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+            if ( !Glib::file_test( music_path , Glib::FileTest::FILE_TEST_EXISTS ) )
             {
                 return {};
             }
-            if ( Glib::file_test( music_path , Glib::FileTest::FILE_TEST_IS_DIR ) == false )
+            if ( !Glib::file_test( music_path , Glib::FileTest::FILE_TEST_IS_DIR ) )
             {
                 return {};
             }
@@ -156,9 +156,9 @@ namespace MagicTower
         std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> load_image_resource( std::string image_path )
         {
             //exists and type check
-            if ( Glib::file_test( image_path , Glib::FileTest::FILE_TEST_EXISTS ) == false )
+            if ( !Glib::file_test( image_path , Glib::FileTest::FILE_TEST_EXISTS ) )
                 return {};
-            if ( Glib::file_test( image_path , Glib::FileTest::FILE_TEST_IS_DIR ) == false )
+            if ( !Glib::file_test( image_path , Glib::FileTest::FILE_TEST_IS_DIR ) )
                 return {};
 
             Glib::Dir image_dir( image_path );
@@ -219,7 +219,7 @@ namespace MagicTower
             ( game_object->hero ).x = goal.x;
             ( game_object->hero ).y = goal.y;
             bool flags = trigger_collision_event( game_object );
-            if ( flags == false )
+            if ( !flags )
             {
                 ( game_object->hero ).x = temp.x;
                 ( game_object->hero ).y = temp.y;
@@ -323,7 +323,7 @@ namespace MagicTower
                 return false;
             if ( game_object->path.empty() )
                 return false;
-            if ( game_object->draw_path == false )
+            if ( !game_object->draw_path )
                 return false;
 
             cairo_context->save();
@@ -763,7 +763,7 @@ namespace MagicTower
                         {
                             ( game_object->hero ).x -= 1;
                             bool flags = trigger_collision_event( game_object );
-                            if ( flags == false )
+                            if ( !flags )
                                 ( game_object->hero ).x += 1;
                             break;
                         }
@@ -771,7 +771,7 @@ namespace MagicTower
                         {
                             ( game_object->hero ).x += 1;
                             bool flags = trigger_collision_event( game_object );
-                            if ( flags == false )
+                            if ( !flags )
                                 ( game_object->hero ).x -= 1;
                             break;
                         }
@@ -779,7 +779,7 @@ namespace MagicTower
                         {
                             ( game_object->hero ).y -= 1;
                             bool flags = trigger_collision_event( game_object );
-                            if ( flags == false )
+                            if ( !flags )
                                 ( game_object->hero ).y += 1;
                             break;
                         }
@@ -787,7 +787,7 @@ namespace MagicTower
                         {
                             ( game_object->hero ).y += 1;
                             bool flags = trigger_collision_event( game_object );
-                            if ( flags == false )
+                            if ( !flags )
                                 ( game_object->hero ).y -= 1;
                             break;
                         }

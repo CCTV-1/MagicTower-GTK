@@ -1007,7 +1007,7 @@ namespace MagicTower
             case GRID_TYPE::MONSTER:
             {
                 state = battle( game_object , grid.id );
-                if ( state == true )
+                if ( state )
                     set_grid_type( game_object , { hero.x , hero.y , hero.floors } );
                 else
                 {
@@ -1020,7 +1020,7 @@ namespace MagicTower
             case GRID_TYPE::ITEM:
             {
                 state = get_item( game_object , grid.id );
-                if ( state == true )
+                if ( state )
                     set_grid_type( game_object , { hero.x , hero.y , hero.floors } );
                 break;
             }
@@ -1476,7 +1476,7 @@ namespace MagicTower
                     set_tips( game_object , std::string( "所选择的楼层禁止跃入" ) );
                     return ;
                 }
-                if ( game_object->access_floor[ game_object->hero.floors ] == false )
+                if ( !game_object->access_floor[ game_object->hero.floors ] )
                 {
                     set_tips( game_object , std::string( "所选择的楼层当前禁止跃入" ) );
                     return ;
@@ -1551,7 +1551,7 @@ namespace MagicTower
         });
         game_object->menu_items.push_back({
             [ game_object ](){
-                if ( game_object->draw_path == true )
+                if ( game_object->draw_path )
                     return std::string( "寻路指示: 开" );
                 else
                     return std::string( "寻路指示: 关" );
@@ -1569,7 +1569,7 @@ namespace MagicTower
         game_object->menu_items.clear();
         for ( auto& store : game_object->stores )
         {
-            if ( store.second.usability != true )
+            if ( !store.second.usability )
             {
                 continue;
             }
