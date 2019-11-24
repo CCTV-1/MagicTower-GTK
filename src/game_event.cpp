@@ -24,15 +24,15 @@
 namespace MagicTower
 {
     //floor , x , y
-    std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> temp_pos;
+    position_t temp_pos;
 
     static std::int64_t get_combat_damage_of_last  ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_first ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster );
-    static void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id = GRID_TYPE::FLOOR );
+    static void set_grid_type( GameEnvironment * game_object , position_t position , GRID_TYPE type_id = GRID_TYPE::FLOOR );
     static void set_tips( GameEnvironment * game_object , std::string tips_content );
-    static bool open_door( GameEnvironment * game_object , event_position_t position );
+    static bool open_door( GameEnvironment * game_object , position_t position );
     static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
     static bool get_item( GameEnvironment * game_object , std::uint32_t item_id );
     static void set_jump_menu( GameEnvironment * game_object );
@@ -198,6 +198,15 @@ namespace MagicTower
                 }
             }
         }
+    }
+
+    bool operator==( const EventPosition& lhs , const EventPosition& rhs )
+    {
+        return ( ( lhs.floor == rhs.floor ) && ( lhs.x == rhs.x ) && ( lhs.y == rhs.y ) );
+    }
+    bool operator!=( const EventPosition& lhs , const EventPosition& rhs )
+    {
+        return !( lhs == rhs );
     }
 
     void scriptengines_register_eventfunc( GameEnvironment * game_object )
@@ -946,18 +955,23 @@ namespace MagicTower
         return true;
     }
 
-    bool trigger_collision_event( GameEnvironment * game_object )
+    bool move_hero( GameEnvironment * game_object , const position_t& new_pos )
     {
-        bool state = false;
         Hero& hero = game_object->hero;
         TowerMap& tower = game_object->game_map;
+        if ( tower.map.find( new_pos.floor ) == tower.map.end() )
+            return false;
+        if ( new_pos.x >= tower.map[new_pos.floor].length )
+            return false;
+        if ( new_pos.y >= tower.map[new_pos.floor].width )
+            return false;
+        position_t old_pos = { hero.floors , hero.x , hero.y };
+        if ( old_pos == new_pos )
+            return true;
 
-        if ( tower.map.find( hero.floors ) == tower.map.end() )
-            return false;
-        if ( hero.x >= tower.map[hero.floors].length )
-            return false;
-        if ( hero.y >= tower.map[hero.floors].width )
-            return false;
+        hero.floors = new_pos.floor;
+        hero.x = new_pos.x;
+        hero.y = new_pos.y;
 
         Glib::ustring script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"F%1_%2_%3.lua" , game_object->hero.floors ,
             game_object->hero.x , game_object->hero.y );
@@ -979,7 +993,12 @@ namespace MagicTower
             }
             lua_pop( game_object->script_engines.get() , 1 );
         }
+        if ( new_pos != position_t({ hero.floors , hero.x , hero.y }) )
+        {
+            return false;
+        }
 
+        bool state = false;
         auto grid = tower.get_grid( hero.floors , hero.x , hero.y );
         switch( grid.type )
         {
@@ -995,7 +1014,7 @@ namespace MagicTower
             }
             case GRID_TYPE::DOOR:
             {
-                open_door( game_object , { hero.x , hero.y , hero.floors } );
+                open_door( game_object , { hero.floors , hero.x , hero.y } );
                 state = false;
                 break;
             }
@@ -1008,12 +1027,11 @@ namespace MagicTower
             {
                 state = battle( game_object , grid.id );
                 if ( state )
-                    set_grid_type( game_object , { hero.x , hero.y , hero.floors } );
+                    set_grid_type( game_object , { hero.floors , hero.x , hero.y } );
                 else
                 {
                     game_lose( game_object );
                 }
-                
                 state = false;
                 break;
             }
@@ -1021,7 +1039,7 @@ namespace MagicTower
             {
                 state = get_item( game_object , grid.id );
                 if ( state )
-                    set_grid_type( game_object , { hero.x , hero.y , hero.floors } );
+                    set_grid_type( game_object , { hero.floors , hero.x , hero.y } );
                 break;
             }
             default :
@@ -1051,8 +1069,15 @@ namespace MagicTower
             }
             lua_pop( game_object->script_engines.get() , 1 );
         }
+        if ( !state )
+        {
+            hero.floors = old_pos.floor;
+            hero.x = old_pos.x;
+            hero.y = old_pos.y;
+            return false;
+        }
 
-        return state;
+        return true;
     }
 
     void open_floor_jump( GameEnvironment * game_object )
@@ -1089,9 +1114,9 @@ namespace MagicTower
     {
         if ( game_object->game_status != GAME_STATUS::JUMP_MENU )
             return ;
-        game_object->hero.floors = std::get<0>( temp_pos );
-        game_object->hero.x = std::get<1>( temp_pos );
-        game_object->hero.y = std::get<2>( temp_pos );
+        game_object->hero.floors = temp_pos.floor;
+        game_object->hero.x = temp_pos.x;
+        game_object->hero.y = temp_pos.y;
         game_object->game_status = GAME_STATUS::NORMAL;
     }
 
@@ -1300,16 +1325,16 @@ namespace MagicTower
         return -1;
     }
 
-    static void set_grid_type( GameEnvironment * game_object , event_position_t position , GRID_TYPE type_id )
+    static void set_grid_type( GameEnvironment * game_object , position_t position , GRID_TYPE type_id )
     {
-        if ( game_object->game_map.map.find( std::get<2>( position ) ) == game_object->game_map.map.end() )
+        if ( game_object->game_map.map.find( position.floor ) == game_object->game_map.map.end() )
         {
             //do nothing
             return ;
         }
         //TowerMap::set_grid check x , y overflow,no need to check here
-        std::uint32_t defaultid = game_object->game_map.map[ std::get<2>( position ) ].default_floorid;
-        game_object->game_map.set_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) , { type_id , defaultid } );
+        std::uint32_t defaultid = game_object->game_map.map[ position.floor ].default_floorid;
+        game_object->game_map.set_grid( position.floor , position.x , position.y , { type_id , defaultid } );
     }
 
     static void set_tips( GameEnvironment * game_object , std::string tips_content )
@@ -1325,11 +1350,11 @@ namespace MagicTower
         , 1000 );
     }
 
-    static bool open_door( GameEnvironment * game_object , event_position_t position )
+    static bool open_door( GameEnvironment * game_object , position_t position )
     {
         Hero& hero = game_object->hero;
         TowerMap& tower = game_object->game_map;
-        auto grid = tower.get_grid( std::get<2>( position ) , std::get<0>( position ) , std::get<1>( position ) );
+        auto grid = tower.get_grid( position.floor , position.x , position.y );
         if ( grid.type != GRID_TYPE::DOOR )
             return false;
 

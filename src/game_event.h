@@ -9,8 +9,16 @@
 namespace MagicTower
 {
     struct GameEnvironment;
-    //x,y,floor --> 1,5,10
-    typedef std::tuple<std::uint32_t,std::uint32_t,std::uint32_t> event_position_t;
+    typedef struct EventPosition
+    {
+        std::uint32_t floor;
+        std::uint32_t x;
+        std::uint32_t y;
+
+    }position_t;
+
+    inline bool operator==( const EventPosition& lhs , const EventPosition& rhs );
+    inline bool operator!=( const EventPosition& lhs , const EventPosition& rhs );
 
     void scriptengines_register_eventfunc( GameEnvironment * game_object );
 
@@ -22,7 +30,7 @@ namespace MagicTower
     bool battle( GameEnvironment * game_object , std::uint32_t monster_id );
 
     //if can't move return false.
-    bool trigger_collision_event( GameEnvironment * game_object );
+    bool move_hero( GameEnvironment * game_object , const position_t& new_pos );
 
     void open_start_menu( GameEnvironment * game_object );
 
