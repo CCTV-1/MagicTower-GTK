@@ -215,20 +215,12 @@ namespace MagicTower
                 return true;
             }
             TowerGridLocation goal = game_object->path.back();
-            TowerGridLocation temp = { ( game_object->hero ).x , ( game_object->hero ).y };
-            ( game_object->hero ).x = goal.x;
-            ( game_object->hero ).y = goal.y;
-            bool flags = trigger_collision_event( game_object );
-            if ( !flags )
+            game_object->path.pop_back();
+            if ( !move_hero( game_object , { game_object->hero.floors , (std::uint32_t)goal.x , (std::uint32_t)goal.y } ) )
             {
-                ( game_object->hero ).x = temp.x;
-                ( game_object->hero ).y = temp.y;
-                //if goal is npc,game status set to dialog,now can't set game status to NORMAL
                 if ( game_object->game_status == GAME_STATUS::FIND_PATH )
                     game_object->game_status = GAME_STATUS::NORMAL;
-                return true;
             }
-            game_object->path.pop_back();
             return true;
         }
 
@@ -761,34 +753,22 @@ namespace MagicTower
                     {
                         case GDK_KEY_Left:
                         {
-                            ( game_object->hero ).x -= 1;
-                            bool flags = trigger_collision_event( game_object );
-                            if ( !flags )
-                                ( game_object->hero ).x += 1;
+                            move_hero( game_object , { game_object->hero.floors , game_object->hero.x - 1 , game_object->hero.y } );
                             break;
                         }
                         case GDK_KEY_Right:
                         {
-                            ( game_object->hero ).x += 1;
-                            bool flags = trigger_collision_event( game_object );
-                            if ( !flags )
-                                ( game_object->hero ).x -= 1;
+                            move_hero( game_object , { game_object->hero.floors , game_object->hero.x + 1 , game_object->hero.y } );
                             break;
                         }
                         case GDK_KEY_Up:
                         {
-                            ( game_object->hero ).y -= 1;
-                            bool flags = trigger_collision_event( game_object );
-                            if ( !flags )
-                                ( game_object->hero ).y += 1;
+                            move_hero( game_object , { game_object->hero.floors , game_object->hero.x , game_object->hero.y - 1 } );
                             break;
                         }
                         case GDK_KEY_Down:
                         {
-                            ( game_object->hero ).y += 1;
-                            bool flags = trigger_collision_event( game_object );
-                            if ( !flags )
-                                ( game_object->hero ).y -= 1;
+                            move_hero( game_object , { game_object->hero.floors , game_object->hero.x , game_object->hero.y + 1 } );
                             break;
                         }
                         case GDK_KEY_Escape:
