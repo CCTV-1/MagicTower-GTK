@@ -432,9 +432,9 @@ namespace MagicTower
                     TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
                     lua_newtable( L );
                     lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
-                    lua_setfield( L , 6 , "type" );
+                    lua_setfield( L , 5 , "type" );
                     lua_pushinteger( L , grid.id );
-                    lua_setfield( L , 6 , "id" );
+                    lua_setfield( L , 5 , "id" );
                     return 1;
                 }
             },
@@ -548,7 +548,6 @@ namespace MagicTower
                     luaL_checktype( L , 1 , LUA_TTABLE );
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->menu_items = {};
-                    lua_pop( L , 1 );
                     lua_pushnil( L );
                     while( lua_next( L , 1 ) )
                     {
