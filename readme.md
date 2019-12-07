@@ -11,7 +11,14 @@
 
 ## Game Script
 
-**if no special statement,this chapter all 'number' is lua_Integer in C API type**
+### Language
+**Lua5.3 Sandbox**
+- disallow:create global variable,access non-exist global variable
+- the following standard library function/table has be disable:
+"load","loadfile","loadstring","dofile","collectgarbage","getmetatable","rawget",
+"rawset","rawequal","require","package","debug","os","io"
+- forbid load a binary chunk
+- if no special statement,this chapter all 'number' is lua_Integer in C API type
 
 ### Table Format
 ```lua
@@ -148,19 +155,15 @@ function game_win()
 function game_lose()
 ```
 
-### keeped name
-- Z2FtZV9vYmplY3QK
+### global variable name
 - items
 - monsters
 - stores
 - stairs
 - hero_property
-- floorjump
 - gamemap
 
-**forbid modify Z2FtZV9vYmplY3QK from game script**
-
-### keeped flag
+### keeped flag(see function set_flag)
 - stores_$(stores_id)
 - floor_$(floor_id)
 
