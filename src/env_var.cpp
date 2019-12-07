@@ -8,12 +8,90 @@
 
 namespace MagicTower
 {
+    static int getter( lua_State * L )
+    {
+        luaL_error( L , "script attempted to access nonexistent global variable" );
+        return 0;
+    }
+
+    static int setter( lua_State * L )
+    {
+        luaL_error( L , "script attempted to create global variable" );
+        return 0;
+    }
+
+    static void do_textscript( lua_State * L , const char * filename )
+    {
+        int res = luaL_loadfilex( L , filename , "t" );
+        if ( res != LUA_OK )
+        {
+            throw std::runtime_error( std::string( "load file:'" ) + std::string( filename ) + std::string( "' failure,error message:" ) + lua_tostring( L , -1 ) );
+        }
+        if ( lua_pcall( L , 0 , 0 , 0 ) != LUA_OK )
+        {
+            throw std::runtime_error( std::string( "execute file:'" ) + std::string( filename ) + std::string( "' failure,error message:" ) + lua_tostring( L , -1 ) );
+        }
+    }
+
+    static void initial_sandbox( lua_State * L )
+    {
+        const char * unsafe_funcnames[] =
+        {
+            "load",
+            "loadfile",
+            "loadstring",
+            "dofile",
+            "collectgarbage",
+            "getmetatable",
+            "rawget",
+            "rawset",
+            "rawequal",
+            "require",
+            "package",
+            "debug",
+            "os",
+            "io"
+        };
+        for ( std::size_t i = 0 ; i < sizeof( unsafe_funcnames )/sizeof( const char * ) ; i++ )
+        {
+            lua_pushnil( L );
+            lua_setglobal( L , unsafe_funcnames[i] );
+        }
+
+        const char * global_variablenames[] =
+        {
+            "items",
+            "stores",
+            "hero_property",
+            "monsters",
+            "stairs",
+            "gamemap"
+        };
+        for ( std::size_t i = 0 ; i < sizeof( global_variablenames )/sizeof( const char * ) ; i++ )
+        {
+            lua_pushboolean( L , true );
+            lua_setglobal( L , global_variablenames[i] );
+        }
+        //disallow:create global variable,access non-exist global variable
+        int top = lua_gettop( L );
+        lua_getglobal( L , "_G" );
+        lua_newtable( L );
+        lua_pushstring( L , "__index" );
+        lua_pushcfunction( L , &getter );
+        lua_rawset( L , top + 2 );
+        lua_pushstring( L , "__newindex" );
+        lua_pushcfunction( L , &setter );
+        lua_rawset( L , top + 2 );
+        lua_pushstring( L , "__metatable" );
+        lua_newtable( L );
+        lua_rawset( L , top + 2 );
+        lua_setmetatable( L , top + 1 );
+        lua_pop( L , 1 );
+    }
+
     static std::map<std::uint32_t,Item> initial_items( lua_State * L , std::map<std::string,std::uint32_t>& func_regmap )
     {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"items.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'items.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
+        do_textscript( L , CUSTOM_SCRIPTS_PATH"items.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Item> items;
         lua_getglobal( L , "items" );
@@ -51,10 +129,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Store> initial_stores( lua_State * L , std::map<std::string , std::uint32_t>& script_flags , std::map<std::string,std::uint32_t>& func_regmap )
     {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"stores.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'stores.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
+        do_textscript( L , CUSTOM_SCRIPTS_PATH"stores.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Store> stores;
         lua_getglobal( L , "stores" );
@@ -109,10 +184,7 @@ namespace MagicTower
 
     static Hero initial_hero( lua_State * L )
     {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"hero.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'hero.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
+        do_textscript( L , CUSTOM_SCRIPTS_PATH"hero.lua" );
         std::uint32_t top = lua_gettop( L );
         lua_getglobal( L , "hero_property" );
         Hero hero = lua_gethero( L , top + 1 );
@@ -123,10 +195,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Monster> initial_monsters( lua_State * L )
     {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"monsters.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'monsters.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
+        do_textscript( L , CUSTOM_SCRIPTS_PATH"monsters.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Monster> monsters;
         lua_getglobal( L , "monsters" );
@@ -165,10 +234,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Stairs> initial_stairs( lua_State * L )
     {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"stairs.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'stairs.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
+        do_textscript( L , CUSTOM_SCRIPTS_PATH"stairs.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Stairs> stairs;
         lua_getglobal( L , "stairs" );
@@ -195,10 +261,7 @@ namespace MagicTower
 
     static TowerMap initial_gamemap( lua_State * L )
     {
-        if ( luaL_dofile( L , CUSTOM_SCRIPTS_PATH"gamemap.lua" ) )
-        {
-            throw std::runtime_error( std::string( "do file:'gamemap.lua' failure,error message:" ) + lua_tostring( L , -1 ) );
-        }
+        do_textscript( L , CUSTOM_SCRIPTS_PATH"gamemap.lua" );
         TowerMap towers;
 
         std::uint32_t top = lua_gettop( L );
@@ -283,31 +346,30 @@ namespace MagicTower
         music( music_list ),
         game_status()
     {
-        luaL_openlibs( this->script_engines.get() );
-        //game environment to lua vm
-        lua_pushlightuserdata( this->script_engines.get() , ( void * )this );
-        //base64 game_object -> Z2FtZV9vYmplY3QK
-        lua_setglobal( this->script_engines.get() , "Z2FtZV9vYmplY3QK" );
-
+        lua_State * L = this->script_engines.get();
+        luaL_openlibs( L );
+        initial_sandbox( L );
         this->initial_gamedata();
     }
 
     GameEnvironment::~GameEnvironment()
     {
+        lua_State * L = this->script_engines.get();
         for ( auto& func : this->refmap )
         {
-            luaL_unref( this->script_engines.get() , LUA_REGISTRYINDEX , func.second );
+            luaL_unref( L , LUA_REGISTRYINDEX , func.second );
         }
     }
 
     void GameEnvironment::initial_gamedata()
     {
-        this->items = initial_items( this->script_engines.get() , this->refmap );
-        this->stores = initial_stores( this->script_engines.get() , this->script_flags , this->refmap );
-        this->hero = initial_hero( this->script_engines.get() );
-        this->monsters = initial_monsters( this->script_engines.get() );
-        this->stairs = initial_stairs( this->script_engines.get() );
-        this->game_map = initial_gamemap( this->script_engines.get() );
+        lua_State * L = this->script_engines.get();
+        this->items = initial_items( L , this->refmap );
+        this->stores = initial_stores( L , this->script_flags , this->refmap );
+        this->hero = initial_hero( L );
+        this->monsters = initial_monsters( L );
+        this->stairs = initial_stairs( L );
+        this->game_map = initial_gamemap( L );
 
         this->focus_item_id = 0;
         this->game_status = GAME_STATUS::NORMAL;
