@@ -226,8 +226,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     double volume = luaL_checknumber( L , 1 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->music.set_volume( volume );
                     return 0;
                 }
@@ -238,8 +237,7 @@ namespace MagicTower
                 {
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     double volume = game_object->music.get_volume();
                     lua_pushnumber( L , volume );
                     return 1;
@@ -258,8 +256,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     PLAY_MODE mode_value = static_cast<PLAY_MODE>( luaL_checkinteger( L , 1 ) );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->music.set_play_mode( mode_value );
                     return 0;
                 }
@@ -279,8 +276,7 @@ namespace MagicTower
                     {
                         new_playlist.push_back( std::string( luaL_checkstring( L , i ) ) );
                     }
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , top + 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->music.set_music_uri_list( new_playlist );
                     return 0;
                 }
@@ -290,8 +286,7 @@ namespace MagicTower
                 "play_next" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->music.play_next();
                     return 0;
                 }
@@ -301,8 +296,7 @@ namespace MagicTower
                 "play_pause" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->music.play_pause();
                     return 0;
                 }
@@ -312,8 +306,7 @@ namespace MagicTower
                 "play_resume" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->music.play_resume();
                     return 0;
                 }
@@ -331,8 +324,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     const char * tips = luaL_checkstring( L , 1 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     set_tips( game_object , tips );
                     return 0;
                 }
@@ -358,8 +350,7 @@ namespace MagicTower
                     std::uint32_t x = luaL_checkinteger( L , 4 );
                     std::uint32_t y = luaL_checkinteger( L , 5 );
                     GRID_TYPE grid_type = static_cast<GRID_TYPE>( type_value );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 6 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     set_grid_type( game_object , { x , y , floor } , grid_type );
                     return 0;
                 }
@@ -383,8 +374,7 @@ namespace MagicTower
                     std::uint32_t floor = luaL_checkinteger( L , 2 );
                     std::uint32_t x = luaL_checkinteger( L , 3 );
                     std::uint32_t y = luaL_checkinteger( L , 4 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
                     lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
                     return 1;
@@ -414,8 +404,7 @@ namespace MagicTower
                     std::uint32_t y = luaL_checkinteger( L , 5 );
                     GRID_TYPE grid_type = static_cast<GRID_TYPE>( luaL_checkinteger( L , 6 ) );
                     std::uint32_t grid_id = luaL_checkinteger( L , 7 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 8 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->game_map.set_grid( floor , x , y , { grid_type , grid_id } );
                     return 0;
                 }
@@ -439,8 +428,7 @@ namespace MagicTower
                     std::uint32_t floor = luaL_checkinteger( L , 2 );
                     std::uint32_t x = luaL_checkinteger( L , 3 );
                     std::uint32_t y = luaL_checkinteger( L , 4 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
                     lua_newtable( L );
                     lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
@@ -457,8 +445,7 @@ namespace MagicTower
                     //arguments number impossible less than 0,don't need check
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     Hero& hero = game_object->hero;
                     lua_pushhero( L , hero );
                     return 1;
@@ -476,8 +463,7 @@ namespace MagicTower
                     }
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->hero = lua_gethero( L , 1 );
                     return 0;
                 }
@@ -496,8 +482,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::string flags_name( luaL_checkstring( L , 1 ) );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     if ( game_object->script_flags.find( flags_name ) == game_object->script_flags.end() )
                     {
                         lua_pushnil( L );
@@ -522,8 +507,7 @@ namespace MagicTower
                     lua_settop( L , 2 );
                     std::string flags_name( luaL_checkstring( L , 1 ) );
                     std::int64_t value = lua_tointeger( L , 2 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 3 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->script_flags[flags_name] = value;
                     return 0;
                 }
@@ -543,8 +527,7 @@ namespace MagicTower
                     {
                         messages.push_back( luaL_checkstring( L , i ) );
                     }
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , argument_count + 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->game_message = messages;
                     game_object->game_status = GAME_STATUS::MESSAGE;
                     return 0;
@@ -563,8 +546,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     luaL_checktype( L , 1 , LUA_TTABLE );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->menu_items = {};
                     lua_pop( L , 1 );
                     lua_pushnil( L );
@@ -612,8 +594,7 @@ namespace MagicTower
                 "close_menu" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     if ( game_object->game_status == GAME_STATUS::GAME_MENU )
                     {
                         game_object->game_status = GAME_STATUS::NORMAL;
@@ -634,8 +615,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::uint32_t item_id = luaL_checkinteger( L , 1 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     get_item( game_object , item_id );
                     return 0;
                 }
@@ -653,8 +633,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::uint32_t store_id = luaL_checkinteger( L , 1 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->stores[ store_id ].usability = true;
                     std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
                     game_object->script_flags[ flag_name ] = 1;
@@ -676,8 +655,7 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::uint32_t store_id = luaL_checkinteger( L , 1 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 2 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_object->stores[ store_id ].usability = false;
                     std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
                     game_object->script_flags.erase( flag_name );
@@ -705,8 +683,7 @@ namespace MagicTower
                     std::uint32_t floor = luaL_checkinteger( L , 2 );
                     std::uint32_t x = luaL_checkinteger( L , 3 );
                     std::uint32_t y = luaL_checkinteger( L , 4 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 5 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     if ( floor > game_object->game_map.map.size() )
                     {
                         set_tips( game_object , std::string( "floor id: '" ) + std::to_string( floor ) + std::string( "' illegal" ) );
@@ -730,8 +707,7 @@ namespace MagicTower
                     //arguments number impossible less than 0,don't need check
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_win( game_object );
                     return 0;
                 }
@@ -743,17 +719,23 @@ namespace MagicTower
                     //arguments number impossible less than 0,don't need check
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    lua_getglobal( L , "Z2FtZV9vYmplY3QK" );
-                    GameEnvironment * game_object = ( GameEnvironment * )lua_touserdata( L , 1 );
+                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
                     game_lose( game_object );
                     return 0;
                 }
             }
         };
+        lua_State * L = game_object->script_engines.get();
+        int top = lua_gettop( L );
+        lua_getglobal( L , "_G" );
         for ( std::size_t i = 0 ; i < sizeof( funcs )/sizeof( luaL_Reg ) ; i++ )
         {
-            lua_register( game_object->script_engines.get() , funcs[i].name , funcs[i].func );
+            lua_pushstring( L , funcs[i].name );
+            lua_pushlightuserdata( L , ( void * )game_object );
+            lua_pushcclosure( L , funcs[i].func , 1 );
+            lua_rawset( L , top + 1 );
         }
+        lua_pop( L , 1 );
     }
 
     std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal )
@@ -975,7 +957,7 @@ namespace MagicTower
 
         Glib::ustring script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"F%1_%2_%3.lua" , game_object->hero.floors ,
             game_object->hero.x , game_object->hero.y );
-        int res = luaL_loadfile( game_object->script_engines.get() , script_name.data() );
+        int res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
         {
             if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) )
@@ -1051,7 +1033,7 @@ namespace MagicTower
 
         script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"L%1_%2_%3.lua" , game_object->hero.floors ,
             game_object->hero.x , game_object->hero.y );
-        res = luaL_loadfile( game_object->script_engines.get() , script_name.data() );
+        res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
         {
             if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) )
