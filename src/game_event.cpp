@@ -351,7 +351,7 @@ namespace MagicTower
                     std::uint32_t y = luaL_checkinteger( L , 5 );
                     GRID_TYPE grid_type = static_cast<GRID_TYPE>( type_value );
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    set_grid_type( game_object , { x , y , floor } , grid_type );
+                    set_grid_type( game_object , { floor , x , y  } , grid_type );
                     return 0;
                 }
             },
