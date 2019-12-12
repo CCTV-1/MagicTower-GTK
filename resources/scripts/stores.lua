@@ -14,19 +14,19 @@ stores =
                     set_hero_property(hero_propertys)
                 end
             end,
-            ["25金币购买5攻击"] = function()
+            ["25金币购买4攻击"] = function()
                 local hero_propertys = get_hero_property()
                 if hero_propertys["gold"] >= 25 then
                     hero_propertys["gold"] = hero_propertys["gold"] - 25
-                    hero_propertys["attack"] = hero_propertys["attack"] + 5
+                    hero_propertys["attack"] = hero_propertys["attack"] + 4
                     set_hero_property(hero_propertys)
                 end
             end,
-            ["25金币购买5防御"] = function()
+            ["25金币购买4防御"] = function()
                 local hero_propertys = get_hero_property()
                 if hero_propertys["gold"] >= 25 then
                     hero_propertys["gold"] = hero_propertys["gold"] - 25
-                    hero_propertys["defense"] = hero_propertys["defense"] + 5
+                    hero_propertys["defense"] = hero_propertys["defense"] + 4
                     set_hero_property(hero_propertys)
                 end
             end
@@ -143,8 +143,8 @@ stores =
                     hero_propertys["experience"] = hero_propertys["experience"] - 270
                     hero_propertys["level"] = hero_propertys["level"] + 3
                     hero_propertys["life"] = hero_propertys["life"] + 3000
-                    hero_propertys["attack"] = hero_propertys["attack"] + 21
-                    hero_propertys["defense"] = hero_propertys["defense"] + 21
+                    hero_propertys["attack"] = hero_propertys["attack"] + 20
+                    hero_propertys["defense"] = hero_propertys["defense"] + 20
                     set_hero_property(hero_propertys)
                 end
             end,
