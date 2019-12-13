@@ -1419,7 +1419,7 @@ namespace MagicTower
         }
         lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
         lua_call( game_object->script_engines.get() , 0 , 0 );
-        std::string tips = item.item_detail;
+        std::string tips = std::string( "获得:'" ) + item.item_name + std::string( "'" );
         set_tips( game_object , tips );
         return true;
     }
