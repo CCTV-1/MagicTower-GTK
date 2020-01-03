@@ -32,10 +32,6 @@ if [ -d /mingw64/share/icons/Adwaita ]; then
     cp -r /mingw64/share/icons/Adwaita ./build/share/icons
 fi
 
-if [ ! -d ./build/share/themes ]; then
-    
-fi
-
 if [ -d /mingw64/share/themes/Default ]; then
     cp -r /mingw64/share/themes/Default ./build/share/themes
 fi
