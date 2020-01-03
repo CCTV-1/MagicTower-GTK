@@ -206,7 +206,8 @@ hero_property=
     ["experience"] = 0,
     ["yellow_key"] = 0,
     ["blue_key"] = 1,
-    ["red_key"] = 1
+    ["red_key"] = 1,
+    ["direction"] = 1   --see hero.h enum DIRECTION
 }
 ```
 
