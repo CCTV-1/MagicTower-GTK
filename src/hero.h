@@ -8,6 +8,14 @@
 
 namespace MagicTower
 { 
+    enum class DIRECTION:std::uint32_t
+    {
+        UP = 1,
+        DOWN,
+        LEFT,
+        RIGHT
+    };
+
     /* 
     CREATE TABLE hero (
         id         INTEGER  PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +47,7 @@ namespace MagicTower
         std::uint32_t yellow_key;
         std::uint32_t blue_key;
         std::uint32_t red_key;
-    
+        enum DIRECTION direction;
     };
 
     //don't pop table,return hero
@@ -61,6 +69,7 @@ namespace MagicTower
         lua_getfield( L , index , "yellow_key" );
         lua_getfield( L , index , "blue_key" );
         lua_getfield( L , index , "red_key" );
+        lua_getfield( L , index , "direction" );
 
         hero.floors = luaL_checkinteger( L , top + 1 );
         hero.x = luaL_checkinteger( L , top + 2 );
@@ -74,8 +83,9 @@ namespace MagicTower
         hero.yellow_key = luaL_checkinteger( L , top + 10 );
         hero.blue_key = luaL_checkinteger( L , top + 11 );
         hero.red_key = luaL_checkinteger( L , top + 12 );
+        hero.direction = static_cast<DIRECTION>( luaL_checkinteger( L , top + 13 ) );
 
-        lua_pop( L , 12 );
+        lua_pop( L , 13 );
         return hero;
     }
 
@@ -108,6 +118,8 @@ namespace MagicTower
         lua_setfield( L , top , "blue_key" );
         lua_pushinteger( L , hero.red_key );
         lua_setfield( L , top , "red_key" );
+        lua_pushinteger( L , static_cast<lua_Integer>( hero.direction ) );
+        lua_setfield( L , top , "direction" );
     }
 }
 

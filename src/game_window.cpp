@@ -125,7 +125,7 @@ namespace MagicTower
                 for ( size_t x = 0 ; x < width ; x++ )
                 {
                     bg_pixbuf->composite( info_frame , x*this->pixel_size , y*this->pixel_size , this->pixel_size , this->pixel_size ,
-                    x*this->pixel_size , y*this->pixel_size , 1.0 , 1.0 , Gdk::InterpType::INTERP_NEAREST , 255 );
+                    x*this->pixel_size , y*this->pixel_size , 1.0 , 1.0 , Gdk::InterpType::INTERP_BILINEAR , 255 );
                 }
             }
 
@@ -349,7 +349,13 @@ namespace MagicTower
             {
                 return false;
             }
-            draw_grid_image( cairo_context , ( game_object->hero ).x , ( game_object->hero ).y , "hero" , 1 );
+            //unsigned interger type can not less 0,don't need check game_object->hero.direction < DIRECTION::UP
+            if ( game_object->hero.direction > DIRECTION::RIGHT )
+            {
+                return false;
+            }
+            draw_grid_image( cairo_context , ( game_object->hero ).x , ( game_object->hero ).y , "hero" , static_cast<int>( game_object->hero.direction ) );
+
 
             return false;
         }
@@ -754,21 +760,25 @@ namespace MagicTower
                         case GDK_KEY_Left:
                         {
                             move_hero( game_object , { game_object->hero.floors , game_object->hero.x - 1 , game_object->hero.y } );
+                            game_object->hero.direction = DIRECTION::LEFT;
                             break;
                         }
                         case GDK_KEY_Right:
                         {
                             move_hero( game_object , { game_object->hero.floors , game_object->hero.x + 1 , game_object->hero.y } );
+                            game_object->hero.direction = DIRECTION::RIGHT;
                             break;
                         }
                         case GDK_KEY_Up:
                         {
                             move_hero( game_object , { game_object->hero.floors , game_object->hero.x , game_object->hero.y - 1 } );
+                            game_object->hero.direction = DIRECTION::UP;
                             break;
                         }
                         case GDK_KEY_Down:
                         {
                             move_hero( game_object , { game_object->hero.floors , game_object->hero.x , game_object->hero.y + 1 } );
+                            game_object->hero.direction = DIRECTION::DOWN;
                             break;
                         }
                         case GDK_KEY_Escape:
