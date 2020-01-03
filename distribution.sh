@@ -9,20 +9,13 @@ if [ $# != 1 ];then
     exit 1;
 fi
 
-if [ ! -d ./build ]; then
-    mkdir build
-fi
-
-if [ ! -d ./build/lib ]; then
-    mkdir ./build/lib
-fi
+mkdir -p build
+mkdir -p build/bin
+mkdir -p build/lib
+mkdir -p build/share
 
 if [ -d /mingw64/lib/gstreamer-1.0 ]; then
     cp -r /mingw64/lib/gstreamer-1.0 ./build/lib
-fi
-
-if [ ! -d ./build/share ]; then
-    mkdir ./build/share
 fi
 
 if [ -d /mingw64/lib/gdk-pixbuf-2.0 ]; then
@@ -55,3 +48,6 @@ load_info=$(sort <<< $load_info)
 load_info=$(awk '{print $5}' <<< $load_info)
 load_info=$(sed 's/\\/\//g' <<< $load_info)
 xargs -i cp {} ./build/bin/ <<< $load_info
+
+cp MagicTower.exe ./build/bin
+cp -r ./resources ./build/bin/resources
