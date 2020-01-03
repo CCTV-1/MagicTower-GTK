@@ -13,6 +13,8 @@ mkdir -p build
 mkdir -p build/bin
 mkdir -p build/lib
 mkdir -p build/share
+mkdir -p build/share/icons
+mkdir -p build/share/themes
 
 if [ -d /mingw64/lib/gstreamer-1.0 ]; then
     cp -r /mingw64/lib/gstreamer-1.0 ./build/lib
@@ -26,16 +28,12 @@ if [ -d /mingw64/share/glib-2.0 ]; then
     cp -r /mingw64/share/glib-2.0 ./build/share
 fi
 
-if [ ! -d ./build/share/icons ]; then
-    mkdir ./build/share/icons
-fi
-
 if [ -d /mingw64/share/icons/Adwaita ]; then
     cp -r /mingw64/share/icons/Adwaita ./build/share/icons
 fi
 
 if [ ! -d ./build/share/themes ]; then
-    mkdir ./build/share/themes
+    
 fi
 
 if [ -d /mingw64/share/themes/Default ]; then
