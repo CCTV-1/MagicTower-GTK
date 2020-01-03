@@ -786,6 +786,12 @@ namespace MagicTower
                             open_game_menu( game_object );
                             break;
                         }
+                        case GDK_KEY_T:
+                        case GDK_KEY_t:
+                        {
+                            ( game_object->hero.direction )++;
+                            break;
+                        }
                         case GDK_KEY_s:
                         case GDK_KEY_S:
                         {

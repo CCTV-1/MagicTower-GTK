@@ -16,6 +16,28 @@ namespace MagicTower
         RIGHT
     };
 
+    inline DIRECTION& operator++( DIRECTION& rhs )
+    {
+        if ( rhs < DIRECTION::RIGHT )
+        {
+            rhs = static_cast<DIRECTION>( static_cast<std::uint32_t>( rhs ) + 1 );
+        }
+        else
+        {
+            rhs = DIRECTION::UP;
+        }
+        
+        return rhs;
+    }
+
+    inline DIRECTION operator++( DIRECTION& rhs , int )
+    {
+        DIRECTION temp = rhs;
+        ++rhs;
+        
+        return temp;
+    }
+
     /* 
     CREATE TABLE hero (
         id         INTEGER  PRIMARY KEY AUTOINCREMENT,
