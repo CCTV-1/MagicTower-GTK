@@ -646,9 +646,7 @@ namespace MagicTower
                 { std::string( "黄钥匙:  " ) + std::to_string( hero.yellow_key ) , 0 },
                 { std::string( "蓝钥匙:  " ) + std::to_string( hero.blue_key ) , 0 },
                 { std::string( "红钥匙:  " ) + std::to_string( hero.red_key ) , 0 },
-                { std::string( "游戏菜单(ESC)" ) , 2 },
-                { std::string( "商店菜单(S/s)" ) , 2 },
-                { std::string( "楼层跳跃/浏览器(J/j)" ) , 2 },
+                { std::string( "按键说明(F1)" ) , 2 }
             };
 
             Gtk::DrawingArea * widget = nullptr;
@@ -757,6 +755,14 @@ namespace MagicTower
                 {
                     switch( event->keyval )
                     {
+                        case GDK_KEY_F1:
+                        {
+                            game_object->game_message = {
+                                std::string( "\n\n方向键移动(或使用鼠标)\n\n改变人物朝向(T/t)\n\n游戏菜单(ESC)\n\n商店菜单(S/s)\n\n楼层跳跃/浏览器(J/j)\n\n")
+                            };
+                            game_object->game_status = GAME_STATUS::MESSAGE;
+                            break;
+                        }
                         case GDK_KEY_Left:
                         {
                             move_hero( game_object , { game_object->hero.floors , game_object->hero.x - 1 , game_object->hero.y } );
