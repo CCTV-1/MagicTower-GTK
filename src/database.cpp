@@ -73,7 +73,8 @@ namespace MagicTower
                     experience INT (32),
                     yellow_key INT (32),
                     blue_key   INT (32),
-                    red_key    INT (32) 
+                    red_key    INT (32),
+                    direction  INT (32)
                 );
             )",
             R"(
@@ -91,7 +92,7 @@ namespace MagicTower
     {
         Hero hero;
         const char sql_statement[] = "SELECT floors,x,y,level,life,attack,defense,gold,experience,yellow_key,"
-        "blue_key,red_key FROM hero WHERE id = ?";
+        "blue_key,red_key,direction FROM hero WHERE id = ?";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
@@ -109,7 +110,7 @@ namespace MagicTower
         //id should be unique,so hero will not be repeat setting
         while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
         {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 12 )
+            if ( sqlite3_column_count( this->sql_statement_handler ) != 13 )
             {
                 sqlite3_finalize( this->sql_statement_handler );
                 throw std::runtime_error( std::string( sql_statement ) );
@@ -126,6 +127,7 @@ namespace MagicTower
             hero.yellow_key = sqlite3_column_int( this->sql_statement_handler , 9 );
             hero.blue_key = sqlite3_column_int( this->sql_statement_handler , 10 );
             hero.red_key = sqlite3_column_int( this->sql_statement_handler , 11 );
+            hero.direction = static_cast<DIRECTION>( sqlite3_column_int( this->sql_statement_handler , 12 ) );
         }
 
         if ( this->sqlite3_error_code != SQLITE_DONE )
@@ -247,7 +249,7 @@ namespace MagicTower
     void DataBase::set_hero_info( const Hero& hero , std::size_t archive_id )
     {
         const char sql_statement[] = "INSERT OR REPLACE INTO hero(id,floors,x,y,level,life,attack,defense,"
-            "gold,experience,yellow_key,blue_key,red_key) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
+            "gold,experience,yellow_key,blue_key,red_key,direction) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
 
@@ -257,7 +259,7 @@ namespace MagicTower
             throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 13 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 14 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw std::runtime_error( std::string( "sql statement:\"" ) + std::string( sql_statement ) + std::string( "\" bind argument count out of expectation" ) );
@@ -276,6 +278,7 @@ namespace MagicTower
         sqlite3_bind_int( this->sql_statement_handler , 11 , hero.yellow_key );
         sqlite3_bind_int( this->sql_statement_handler , 12 , hero.blue_key );
         sqlite3_bind_int( this->sql_statement_handler , 13 , hero.red_key );
+        sqlite3_bind_int( this->sql_statement_handler , 14 , static_cast<int>( hero.direction ) );
 
         //UPDATE not return data so sqlite3_step not return SQLITE_ROW
         this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );

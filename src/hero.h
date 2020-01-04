@@ -52,7 +52,8 @@ namespace MagicTower
         experience INT (32),
         yellow_key INT (32),
         blue_key   INT (32),
-        red_key    INT (32) 
+        red_key    INT (32),
+        direction  INT (32)
     );
      */
     struct Hero
