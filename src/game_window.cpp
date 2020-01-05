@@ -487,6 +487,7 @@ namespace MagicTower
                 case GAME_STATUS::STORE_MENU:
                 case GAME_STATUS::GAME_MENU:
                 case GAME_STATUS::JUMP_MENU:
+                case GAME_STATUS::INVENTORIES_MENU:
                     break;
                 default:
                     return false;
@@ -758,7 +759,7 @@ namespace MagicTower
                         case GDK_KEY_F1:
                         {
                             game_object->game_message = {
-                                std::string( "\n\n方向键移动(或使用鼠标)\n\n改变人物朝向(T/t)\n\n游戏菜单(ESC)\n\n商店菜单(S/s)\n\n楼层跳跃/浏览器(J/j)\n\n")
+                                std::string( "\n\n方向键移动(或使用鼠标)\n\n改变人物朝向(T/t)\n\n游戏菜单(ESC)\n\n商店菜单(S/s)\n\n楼层跳跃/浏览器(J/j)\n\n物品栏(I/i)\n\n")
                             };
                             game_object->game_status = GAME_STATUS::MESSAGE;
                             break;
@@ -810,10 +811,11 @@ namespace MagicTower
                             open_floor_jump( game_object );
                             break;
                         }
-                        case GDK_KEY_N:
-                        case GDK_KEY_n:
+                        case GDK_KEY_I:
+                        case GDK_KEY_i:
                         {
-                            game_object->music.play_next();
+                            open_inventories_menu( game_object );
+                            break;
                         }
                         default :
                             break;
@@ -860,7 +862,10 @@ namespace MagicTower
                         game_object->game_status = GAME_STATUS::NORMAL;
                     break;
                 }
+                case GAME_STATUS::STORE_MENU:
                 case GAME_STATUS::GAME_MENU:
+                case GAME_STATUS::JUMP_MENU:
+                case GAME_STATUS::INVENTORIES_MENU:
                 {
                     switch( event->keyval )
                     {
@@ -887,77 +892,33 @@ namespace MagicTower
                         }
                         case GDK_KEY_Escape:
                         {
-                            close_game_menu( game_object );
-                            break;
-                        }
-                        default :
-                            break;
-                    }
-                    break;
-                }
-                case GAME_STATUS::STORE_MENU:
-                {
-                    switch( event->keyval )
-                    {
-                        case GDK_KEY_Up:
-                        {
-                            if ( game_object->focus_item_id > 0 )
-                                game_object->focus_item_id--;
-                            else
-                                game_object->focus_item_id = game_object->menu_items.size() - 1;
-                            break;
-                        }
-                        case GDK_KEY_Down:
-                        {
-                            if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
-                                game_object->focus_item_id++;
-                            else
-                                game_object->focus_item_id = 0;
-                            break;
-                        }
-                        case GDK_KEY_Return:
-                        {
-                            ( game_object->menu_items[ game_object->focus_item_id ] ).second();
-                            break;
-                        }
-                        case GDK_KEY_s:
-                        case GDK_KEY_S:
-                        {
-                            close_store_menu( game_object );
-                            break;
-                        }
-                    }
-                    break;
-                }
-                case GAME_STATUS::JUMP_MENU:
-                {
-                    switch( event->keyval )
-                    {
-                        case GDK_KEY_Up:
-                        {
-                            if ( game_object->focus_item_id > 0 )
-                                game_object->focus_item_id--;
-                            else
-                                game_object->focus_item_id = game_object->menu_items.size() - 1;
-                            break;
-                        }
-                        case GDK_KEY_Down:
-                        {
-                            if ( game_object->focus_item_id < game_object->menu_items.size() - 1 )
-                                game_object->focus_item_id++;
-                            else
-                                game_object->focus_item_id = 0;
-                            break;
-                        }
-                        case GDK_KEY_Return:
-                        {
-                            ( game_object->menu_items[ game_object->focus_item_id ] ).second();
-                            break;
-                        }
-                        case GDK_KEY_j:
-                        case GDK_KEY_J:
-                        {
-                            close_floor_jump( game_object );
+                            switch ( game_object->game_status )
+                            {
+                                case GAME_STATUS::GAME_MENU:
+                                {
+                                    close_game_menu( game_object );
+                                    break;
+                                }
+                                case GAME_STATUS::STORE_MENU:
+                                {
+                                    close_store_menu( game_object );
+                                    break;
+                                }
+                                case GAME_STATUS::JUMP_MENU:
+                                {
+                                    close_floor_jump( game_object );
+                                    break;
+                                }
+                                case GAME_STATUS::INVENTORIES_MENU:
+                                {
+                                    close_inventories_menu( game_object );
+                                    break;
+                                }
+                                default:
+                                {
+                                    break;
+                                }
+                            }
                             break;
                         }
                     }
@@ -1043,6 +1004,7 @@ namespace MagicTower
                         case GAME_STATUS::STORE_MENU:
                         case GAME_STATUS::GAME_MENU:
                         case GAME_STATUS::JUMP_MENU:
+                        case GAME_STATUS::INVENTORIES_MENU:
                         {
                             Gdk::Rectangle menu_ractangle = this->get_menu_ractangle();
                             if ( x > menu_ractangle.get_x() &&

@@ -32,6 +32,8 @@ namespace MagicTower
     //if can't move return false.
     bool move_hero( GameEnvironment * game_object , const position_t& new_pos );
 
+    bool use_item( GameEnvironment * game_object , std::uint32_t item_id );
+
     void open_start_menu( GameEnvironment * game_object );
 
     void open_game_menu(  GameEnvironment * game_object );
@@ -45,6 +47,10 @@ namespace MagicTower
     void open_floor_jump( GameEnvironment * game_object );
 
     void close_floor_jump( GameEnvironment * game_object );
+
+    void open_inventories_menu( GameEnvironment * game_object );
+
+    void close_inventories_menu( GameEnvironment * game_object );
 
     void save_game( GameEnvironment * game_object , size_t save_id );
 

@@ -33,6 +33,7 @@ namespace MagicTower
         START_MENU,
         STORE_MENU,
         JUMP_MENU,
+        INVENTORIES_MENU,
         GAME_LOSE,
         GAME_WIN,
         GAME_END,
@@ -57,6 +58,7 @@ namespace MagicTower
         std::map<std::uint32_t,Monster> monsters;
         std::map<std::uint32_t,Item> items;
         std::map<std::uint32_t,Store> stores;
+        std::map<std::uint32_t,std::uint32_t> inventories;
         std::map<std::string,std::uint32_t> script_flags;
         std::map<std::string,std::uint32_t> refmap;
         std::unique_ptr< lua_State , decltype( &lua_close ) > script_engines;

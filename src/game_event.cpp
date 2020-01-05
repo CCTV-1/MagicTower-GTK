@@ -26,18 +26,19 @@ namespace MagicTower
     //floor , x , y
     position_t temp_pos;
 
+    static bool open_door( GameEnvironment * game_object , position_t position );
+    static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
     static std::int64_t get_combat_damage_of_last  ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_first ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster );
+    static bool get_item( GameEnvironment * game_object , std::uint32_t item_id );
     static void set_grid_type( GameEnvironment * game_object , position_t position , GRID_TYPE type_id = GRID_TYPE::FLOOR );
     static void set_tips( GameEnvironment * game_object , std::string tips_content );
-    static bool open_door( GameEnvironment * game_object , position_t position );
-    static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
-    static bool get_item( GameEnvironment * game_object , std::uint32_t item_id );
     static void set_jump_menu( GameEnvironment * game_object );
     static void set_start_menu( GameEnvironment * game_object );
     static void set_game_menu( GameEnvironment * game_object );
+    static void set_inventories_menu( GameEnvironment * game_object );
     static void set_store_menu( GameEnvironment * game_object );
     static void set_sub_store_menu( GameEnvironment * game_object , std::uint32_t store_id );
 
@@ -807,6 +808,7 @@ namespace MagicTower
             db.set_tower_info( game_object->game_map );
             db.set_hero_info( game_object->hero , 0 );
             db.set_script_flags( game_object->script_flags );
+            db.set_inventories( game_object->inventories );
         }
         catch ( const std::runtime_error& e )
         {
@@ -835,6 +837,7 @@ namespace MagicTower
             game_object->game_map = db.get_tower_info();
             game_object->hero = db.get_hero_info( 0 );
             game_object->script_flags = db.get_script_flags();
+            game_object->inventories = db.get_inventories();
 
             //store unlock flag
             for ( auto& store : game_object->stores )
@@ -1021,6 +1024,10 @@ namespace MagicTower
                 state = get_item( game_object , grid.id );
                 if ( state )
                     set_grid_type( game_object , { hero.floors , hero.x , hero.y } );
+                else
+                {
+                    set_tips( game_object , "你太弱了 拿不起来" );
+                }
                 break;
             }
             default :
@@ -1058,6 +1065,26 @@ namespace MagicTower
             return false;
         }
 
+        return true;
+    }
+
+    bool use_item( GameEnvironment * game_object , std::uint32_t item_id )
+    {
+        if ( game_object->items.find( item_id ) == game_object->items.end() )
+            return false;
+        Item& item = game_object->items[ item_id ];
+
+        if ( game_object->refmap.find( item.item_detail ) == game_object->refmap.end() )
+        {
+            return false;
+        }
+        std::uint32_t refvalue = game_object->refmap[item.item_detail];
+        if ( refvalue == 0 )
+        {
+            return false;
+        }
+        lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
+        lua_call( game_object->script_engines.get() , 0 , 0 );
         return true;
     }
 
@@ -1165,6 +1192,20 @@ namespace MagicTower
     void close_game_menu( GameEnvironment * game_object )
     {
         if ( game_object->game_status != GAME_STATUS::GAME_MENU )
+            return ;
+        game_object->game_status = GAME_STATUS::NORMAL;
+    }
+
+    void open_inventories_menu( GameEnvironment * game_object )
+    {
+        game_object->game_status = GAME_STATUS::INVENTORIES_MENU;
+        game_object->focus_item_id = 0;
+        set_inventories_menu( game_object );
+    }
+
+    void close_inventories_menu( GameEnvironment * game_object )
+    {
+        if ( game_object->game_status != GAME_STATUS::INVENTORIES_MENU )
             return ;
         game_object->game_status = GAME_STATUS::NORMAL;
     }
@@ -1408,17 +1449,18 @@ namespace MagicTower
             return false;
         Item& item = game_object->items[ item_id ];
 
-        if ( game_object->refmap.find( item.item_detail ) == game_object->refmap.end() )
+        if ( !item.needactive )
         {
-            return false;
+            if ( !use_item( game_object , item_id ) )
+            {
+                return false;
+            }
         }
-        std::uint32_t refvalue = game_object->refmap[item.item_detail];
-        if ( refvalue == 0 )
+        else
         {
-            return false;
+            game_object->inventories[item_id]++;
         }
-        lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
-        lua_call( game_object->script_engines.get() , 0 , 0 );
+
         std::string tips = std::string( "获得:'" ) + item.item_name + std::string( "'" );
         set_tips( game_object , tips );
         return true;
@@ -1567,6 +1609,36 @@ namespace MagicTower
         game_object->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
             [ game_object ](){ close_game_menu( game_object ); }
+        });
+    }
+
+    static void set_inventories_menu( GameEnvironment * game_object )
+    {
+        game_object->menu_items.clear();
+        for ( auto& item : game_object->inventories )
+        {
+            std::uint32_t item_id = item.first;
+            std::uint32_t & item_number = item.second;
+            if ( item_number == 0 )
+            {
+                continue;
+            }
+            std::string item_name = game_object->items[item.first].item_name;
+            game_object->menu_items.push_back({
+                [ item_name , &item_number ](){ return item_name + std::string( " X " ) + std::to_string( item_number ); },
+                [ game_object , item_id ](){
+                    if ( game_object->inventories[item_id] == 0 )
+                        return ;
+                    if ( use_item( game_object , item_id ) )
+                    {
+                        game_object->inventories[item_id]--;
+                    }
+                }
+            });
+        }
+        game_object->menu_items.push_back({
+            [](){ return std::string( "关闭菜单" ); },
+            [ game_object ](){ close_inventories_menu( game_object ); }
         });
     }
 

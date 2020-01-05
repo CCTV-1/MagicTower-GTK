@@ -82,6 +82,12 @@ namespace MagicTower
                     flag_name   TEXT,
                     flag_value  INT (32)
                 );
+            )",
+            R"(
+                CREATE TABLE IF NOT EXISTS inventories (
+                    item_id      INTEGER  PRIMARY KEY AUTOINCREMENT,
+                    item_number  INT(32)
+                );
             )"
         };
         for ( size_t i = 0 ; i < sizeof( create_table_sqls )/sizeof( const char * ) ; i++ )
@@ -239,6 +245,45 @@ namespace MagicTower
         return script_flags;
     }
 
+    std::map<std::uint32_t , std::uint32_t> DataBase::get_inventories()
+    {
+        std::map<std::uint32_t , std::uint32_t> inventories;
+        const char sql_statement[] = "SELECT item_id , item_number FROM inventories";
+        this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
+            , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+        }
+
+        while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
+        {
+            if ( sqlite3_column_count( this->sql_statement_handler ) != 2 )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw std::runtime_error( std::string( sql_statement ) );
+            }
+
+            std::uint32_t item_id = sqlite3_column_int( this->sql_statement_handler , 0 );
+            std::uint32_t item_number = sqlite3_column_int( this->sql_statement_handler , 1 );
+            inventories[item_id] = item_number;
+        }
+        
+        if ( this->sqlite3_error_code != SQLITE_DONE )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+        }
+        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+        }
+
+        return inventories;
+    }
+
     /*  
     sqlite document:
         The initial "INSERT" keyword can be replaced by "REPLACE" or "INSERT OR action" to specify an alternative constraint conflict
@@ -373,6 +418,56 @@ namespace MagicTower
         {
             sqlite3_bind_text( this->sql_statement_handler , 1 , flag.first.c_str() , flag.first.size() , SQLITE_STATIC );
             sqlite3_bind_int64( this->sql_statement_handler , 2 , flag.second );
+
+            //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
+            this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_DONE )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw std::runtime_error( std::string( "evaluate statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+            }
+            this->sqlite3_error_code = sqlite3_reset( this->sql_statement_handler );
+            if ( this->sqlite3_error_code != SQLITE_OK )
+            {
+                sqlite3_finalize( this->sql_statement_handler );
+                throw std::runtime_error( std::string( "reset statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+            }
+            sqlite3_clear_bindings( this->sql_statement_handler );
+        }
+        
+        sqlite3_exec( this->db_handler , "COMMIT TRANSACTION" , nullptr , nullptr , nullptr );
+        
+        this->sqlite3_error_code = sqlite3_finalize( this->sql_statement_handler );
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            throw std::runtime_error( std::string( "finalize statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+        }
+    }
+
+    void DataBase::set_inventories( std::map<std::uint32_t , std::uint32_t>& inventories )
+    {
+        sqlite3_exec( this->db_handler , "BEGIN TRANSACTION" , nullptr , nullptr , nullptr );
+
+        const char sql_statement[] = "INSERT OR REPLACE INTO inventories(item_id,item_number) VALUES( ? , ? )";
+        this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
+        sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
+
+        if ( this->sqlite3_error_code != SQLITE_OK )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
+        }
+        
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 2 )
+        {
+            sqlite3_finalize( this->sql_statement_handler );
+            throw std::runtime_error( std::string( "sql statement:\"" ) + std::string( sql_statement ) + std::string( "\" bind argument count out of expectation" ) );
+        }
+
+        for( auto& item : inventories )
+        {
+            sqlite3_bind_int( this->sql_statement_handler , 1 , item.first );
+            sqlite3_bind_int64( this->sql_statement_handler , 2 , item.second );
 
             //UPDATE or INSERT not return data so sqlite3_step not return SQLITE_ROW
             this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler );

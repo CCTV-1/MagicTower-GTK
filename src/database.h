@@ -21,11 +21,13 @@ namespace MagicTower
 
         Hero get_hero_info( std::size_t archive_id );
         TowerMap get_tower_info( void );
-        std::map<std::string , std::uint32_t> get_script_flags();
+        std::map<std::string , std::uint32_t> get_script_flags( void );
+        std::map<std::uint32_t , std::uint32_t> get_inventories( void );
 
         void set_hero_info( const Hero& hero , std::size_t archive_id );
         void set_tower_info( const TowerMap& tower );
         void set_script_flags( std::map<std::string , std::uint32_t>& flags );
+        void set_inventories( std::map<std::uint32_t , std::uint32_t>& inventories );
 
     protected:
         DataBase( const DataBase& )=delete;

@@ -10,6 +10,7 @@ namespace MagicTower
 {
     struct Item
     {
+        bool needactive;
         std::string item_name;
         std::string item_detail;
     };

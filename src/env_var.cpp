@@ -102,12 +102,18 @@ namespace MagicTower
             std::uint32_t item_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "item_name" );
+            lua_getfield( L , top +3 , "item_type" );
             lua_getfield( L , top + 3 , "item_detail" );
             lua_getfield( L , top + 3 , "item_func" );
-            luaL_checktype( L , top + 6 , LUA_TFUNCTION );
+            luaL_checktype( L , top + 7 , LUA_TFUNCTION );
             std::string item_name = luaL_checkstring( L , top + 4 );
-            std::string item_detail = luaL_checkstring( L , top + 5 );
-            items[item_id] = { item_name , item_detail };
+            bool needactive = true;
+            if ( lua_isnil( L , top + 5 ) )
+            {
+                needactive = false;
+            }
+            std::string item_detail = luaL_checkstring( L , top + 6 );
+            items[item_id] = { needactive , item_name , item_detail };
 
             if ( func_regmap.find( item_detail ) == func_regmap.end() )
             {
@@ -120,7 +126,7 @@ namespace MagicTower
                 //luaL_ref pop top,
                 lua_pop( L , 1 );
             }
-            lua_pop( L , 3 );
+            lua_pop( L , 4 );
         }
         lua_pop( L , 1 );
 
@@ -339,6 +345,7 @@ namespace MagicTower
         focus_item_id(),
         game_message( {} ),
         tips_content( {} ),
+        inventories({}),
         script_flags(),
         script_engines( luaL_newstate() , lua_close ),
         path( {} ),
