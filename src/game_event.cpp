@@ -962,7 +962,7 @@ namespace MagicTower
         int res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
         {
-            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) )
+            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
             {
                 g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
                 lua_pop( game_object->script_engines.get() , 1 );
@@ -1042,7 +1042,7 @@ namespace MagicTower
         res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
         {
-            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) )
+            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
             {
                 g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
                 lua_pop( game_object->script_engines.get() , 1 );
@@ -1084,7 +1084,13 @@ namespace MagicTower
             return false;
         }
         lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
-        lua_call( game_object->script_engines.get() , 0 , 0 );
+        
+        if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
+        {
+            set_tips( game_object , lua_tostring( game_object->script_engines.get() , -1 ) );
+            lua_pop( game_object->script_engines.get() , 1 );
+            return false;
+        }
         return true;
     }
 
