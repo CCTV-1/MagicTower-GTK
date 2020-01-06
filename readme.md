@@ -181,10 +181,11 @@ items =
     [item_id] =                 --item_id is a number
     {
         ["item_name"] = ""      --detail dialog display text
-        ["item_detail"] = "",   --detail dialog display text,item_detail is function reference map key -> game call map[item_detail] get func(by lua_ref lua_rewgeti lua_call).
+        ["item_detail"] = "",   --detail dialog display text,item_detail is function reference map key -> game call map[item_detail] get func(by lua_ref lua_rewgeti lua_pcall).
         -- if the string already exists in the map,simple skip save function reference,don't replace old function reference.
         ["item_func"] = function()
             ;                   --get item trigger call this function,0 argument,0 return value.
+                                --call error(message,0) if use item failure.
         end
     },
     ...
