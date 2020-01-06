@@ -102,7 +102,7 @@ namespace MagicTower
             std::uint32_t item_id = luaL_checkinteger( L , top + 2 );
             luaL_checktype( L , top + 3 , LUA_TTABLE );
             lua_getfield( L , top + 3 , "item_name" );
-            lua_getfield( L , top +3 , "item_type" );
+            lua_getfield( L , top + 3 , "item_type" );
             lua_getfield( L , top + 3 , "item_detail" );
             lua_getfield( L , top + 3 , "item_func" );
             luaL_checktype( L , top + 7 , LUA_TFUNCTION );
