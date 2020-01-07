@@ -706,6 +706,7 @@ namespace MagicTower
                 case GAME_STATUS::GAME_MENU:
                 case GAME_STATUS::STORE_MENU:
                 case GAME_STATUS::JUMP_MENU:
+                case GAME_STATUS::INVENTORIES_MENU:
                 {
                     switch ( event->direction )
                     {
