@@ -35,7 +35,9 @@ namespace MagicTower
         GameWindowImp():
             game_object( new GameEnvironment() ),
             main_loop(),
-            font_desc( "Microsoft YaHei 16" )
+            font_desc( "Microsoft YaHei 16" ),
+            findpath_connection(),
+            draw_connection()
         {
             scriptengines_register_eventfunc( game_object );
 
@@ -89,9 +91,6 @@ namespace MagicTower
 
             this->layout = window->create_pango_layout( "字符串" );
             this->layout->set_font_description( this->font_desc );
-
-            Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::draw_loop ) , 100 );
-            Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::automatic_movement ) , 100 );
 
             this->info_frame = info_background_image_factory( this->game_object->game_map.MAX_WIDTH/2 , this->game_object->game_map.MAX_LENGTH );
             this->image_resource = load_image_resource( IMAGE_RESOURCES_PATH );
@@ -191,7 +190,7 @@ namespace MagicTower
             return { box_start_x , box_start_y , box_width , box_height };
         }
 
-        bool draw_loop( void )
+        bool refrsh_draw( void )
         {
             if ( this->game_object->game_status == GAME_STATUS::GAME_END )
             {
@@ -199,7 +198,7 @@ namespace MagicTower
             }
             this->info_area->queue_draw();
             this->game_area->queue_draw();
-            return true;
+            return ( game_object->game_status == GAME_STATUS::FIND_PATH );
         }
 
         bool automatic_movement( void )
@@ -207,12 +206,12 @@ namespace MagicTower
             auto game_object = this->game_object;
             if ( game_object->game_status != GAME_STATUS::FIND_PATH )
             {
-                return true;
+                return false;
             }
             if ( game_object->path.empty() )
             {
                 game_object->game_status = GAME_STATUS::NORMAL;
-                return true;
+                return false;
             }
             TowerGridLocation goal = game_object->path.back();
             game_object->path.pop_back();
@@ -699,6 +698,10 @@ namespace MagicTower
 
         bool scroll_signal_handler( GdkEventScroll * event )
         {
+            if ( !this->draw_connection.connected() )
+            {
+                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refrsh_draw ) , 100 );
+            }
             GameEnvironment * game_object = this->game_object;
             switch ( game_object->game_status )
             {
@@ -744,6 +747,10 @@ namespace MagicTower
 
         bool key_press_handler( GdkEventKey * event )
         {
+            if ( !this->draw_connection.connected() )
+            {
+                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refrsh_draw ) , 100 );
+            }
             GameEnvironment * game_object = this->game_object;
             switch ( game_object->game_status )
             {
@@ -947,9 +954,12 @@ namespace MagicTower
 
         bool button_press_handler( GdkEventButton * event )
         {
+            if ( !this->draw_connection.connected() )
+            {
+                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refrsh_draw ) , 100 );
+            }
             GameEnvironment * game_object = this->game_object;
             gint x = event->x , y = event->y;
-            //gdk_window_get_device_position( event->window , event->device , &x , &y , nullptr );
 
             switch ( event->type )
             {
@@ -978,25 +988,24 @@ namespace MagicTower
                                 game_object->game_status = GAME_STATUS::NORMAL;
                             break;
                         }
-                        //if event->button == 1,behavior equal to GAME_STATUS::FIND_PATH,so don't break.
-                        #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
                         case GAME_STATUS::NORMAL:
+                        case GAME_STATUS::FIND_PATH:
                         {
-                            if ( event->button == 3 )
+                            if ( ( event->button == 3 ) && ( game_object->game_status == GAME_STATUS::NORMAL ) )
                             {
                                 this->click_x = x;
                                 this->click_y = y;
                                 game_object->game_status = GAME_STATUS::REVIEW_DETAIL;
                                 break;
                             }
-                        }
-                        #pragma GCC diagnostic warning "-Wimplicit-fallthrough" 
-                        case GAME_STATUS::FIND_PATH:
-                        {
-                            if ( event->button == 1 )
+                            else if ( event->button == 1 )
                             {
                                 game_object->path = find_path( game_object , { x/this->pixel_size , y/this->pixel_size } );
                                 game_object->game_status = GAME_STATUS::FIND_PATH;
+                                if ( !this->findpath_connection.connected() )
+                                {
+                                    this->findpath_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::automatic_movement ) , 100 );
+                                }
                                 break;
                             }
                             break;
@@ -1047,7 +1056,7 @@ namespace MagicTower
 
         bool exit_game( GdkEventAny * )
         {
-            this->game_object->game_status = GAME_STATUS::GAME_END;
+            this->main_loop.quit();
             return true;
         }
 
@@ -1057,6 +1066,8 @@ namespace MagicTower
         Pango::FontDescription font_desc;
         Glib::RefPtr<Pango::Layout> layout;
         Glib::RefPtr<Gtk::Builder> builder_refptr;
+        sigc::connection findpath_connection;
+        sigc::connection draw_connection;
         Gtk::Window * window;
         Gtk::DrawingArea * game_area;
         Gtk::DrawingArea * info_area;
