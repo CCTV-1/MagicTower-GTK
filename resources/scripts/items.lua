@@ -151,9 +151,9 @@ items=
         ["item_detail"] = "三围各加1/3",
         ["item_func"] = function()
             local hero_propertys = get_hero_property()
-            hero_propertys["life"] = hero_propertys["life"] + hero_propertys["life"]/3
-            hero_propertys["attack"] = hero_propertys["attack"] + hero_propertys["attack"]/3
-            hero_propertys["defense"] = hero_propertys["defense"] + hero_propertys["defense"]/3
+            hero_propertys["life"] = math.floor(hero_propertys["life"] + hero_propertys["life"]/3)
+            hero_propertys["attack"] = math.floor(hero_propertys["attack"] + hero_propertys["attack"]/3)
+            hero_propertys["defense"] = math.floor(hero_propertys["defense"] + hero_propertys["defense"]/3)
             set_hero_property(hero_propertys)
         end
     },
