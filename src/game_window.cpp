@@ -214,12 +214,22 @@ namespace MagicTower
                 return false;
             }
             TowerGridLocation goal = game_object->path.back();
+            DIRECTION new_direction = game_object->hero.direction;
+            if ( game_object->hero.x == (std::uint32_t)goal.x )
+            {
+                new_direction = ( game_object->hero.y > (std::uint32_t)goal.y ) ? DIRECTION::UP : DIRECTION::DOWN;
+            }
+            else if ( game_object->hero.y == (std::uint32_t)goal.y )
+            {
+                new_direction = ( game_object->hero.x > (std::uint32_t)goal.x ) ? DIRECTION::LEFT : DIRECTION::RIGHT;
+            }
             game_object->path.pop_back();
             if ( !move_hero( game_object , { game_object->hero.floors , (std::uint32_t)goal.x , (std::uint32_t)goal.y } ) )
             {
                 if ( game_object->game_status == GAME_STATUS::FIND_PATH )
                     game_object->game_status = GAME_STATUS::NORMAL;
             }
+            game_object->hero.direction = new_direction;
             return true;
         }
 
