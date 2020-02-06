@@ -789,7 +789,8 @@ namespace MagicTower
 
     void save_game( GameEnvironment * game_object , size_t save_id )
     {
-        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( DATABSE_RESOURCES_PATH );
+        std::string save_path = ResourcesManager::get_save_path( save_id );
+        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( save_path );
         try
         {
             save_dir->make_directory_with_parents();
@@ -800,11 +801,10 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_WARNING , "%s" , e.what().c_str() );
         }
 
-        std::string db_name = std::string( DATABSE_RESOURCES_PATH ) + std::to_string( save_id ) + std::string( ".db" );
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
         {
-            DataBase db( db_name );
+            DataBase db( save_path );
             db.set_tower_info( game_object->game_map );
             db.set_hero_info( game_object->hero , 0 );
             db.set_script_flags( game_object->script_flags );
@@ -822,9 +822,9 @@ namespace MagicTower
 
     void load_game( GameEnvironment * game_object , size_t save_id )
     {
-        std::string db_name = std::string( DATABSE_RESOURCES_PATH ) + std::to_string( save_id ) + std::string( ".db" );
+        std::string save_path = ResourcesManager::get_save_path( save_id );
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
-        Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( db_name );
+        Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( save_path );
         if ( db_file->query_exists() == false )
         {
             fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
@@ -833,7 +833,7 @@ namespace MagicTower
         }
         try
         {
-            DataBase db( db_name );
+            DataBase db( save_path );
             game_object->game_map = db.get_tower_info();
             game_object->hero = db.get_hero_info( 0 );
             game_object->script_flags = db.get_script_flags();
@@ -957,7 +957,7 @@ namespace MagicTower
         hero.x = new_pos.x;
         hero.y = new_pos.y;
 
-        Glib::ustring script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"F%1_%2_%3.lua" , game_object->hero.floors ,
+        Glib::ustring script_name = Glib::ustring::compose( "%1F%2_%3_%4.lua" , ResourcesManager::get_script_path() , game_object->hero.floors ,
             game_object->hero.x , game_object->hero.y );
         int res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
@@ -1037,7 +1037,7 @@ namespace MagicTower
             }
         }
 
-        script_name = Glib::ustring::compose( CUSTOM_SCRIPTS_PATH"L%1_%2_%3.lua" , game_object->hero.floors ,
+        script_name = Glib::ustring::compose( "%1L%2_%3_%4.lua" , ResourcesManager::get_script_path() , game_object->hero.floors ,
             game_object->hero.x , game_object->hero.y );
         res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )

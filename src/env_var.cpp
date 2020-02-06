@@ -20,16 +20,16 @@ namespace MagicTower
         return 0;
     }
 
-    static void do_textscript( lua_State * L , const char * filename )
+    static void do_textscript( lua_State * L , std::string filename , std::uint32_t arg_count = 0 , std::uint32_t ret_count = 0 )
     {
-        int res = luaL_loadfilex( L , filename , "t" );
+        int res = luaL_loadfilex( L , filename.c_str() , "t" );
         if ( res != LUA_OK )
         {
-            throw std::runtime_error( std::string( "load file:'" ) + std::string( filename ) + std::string( "' failure,error message:" ) + lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "load file:'" ) + filename + std::string( "' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
-        if ( lua_pcall( L , 0 , 0 , 0 ) != LUA_OK )
+        if ( lua_pcall( L , arg_count , ret_count , 0 ) != LUA_OK )
         {
-            throw std::runtime_error( std::string( "execute file:'" ) + std::string( filename ) + std::string( "' failure,error message:" ) + lua_tostring( L , -1 ) );
+            throw std::runtime_error( std::string( "execute file:'" ) + filename + std::string( "' failure,error message:" ) + lua_tostring( L , -1 ) );
         }
     }
 
@@ -91,7 +91,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Item> initial_items( lua_State * L , std::map<std::string,std::uint32_t>& func_regmap )
     {
-        do_textscript( L , CUSTOM_SCRIPTS_PATH"items.lua" );
+        do_textscript( L , ResourcesManager::get_script_path() + "items.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Item> items;
         lua_getglobal( L , "items" );
@@ -135,7 +135,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Store> initial_stores( lua_State * L , std::map<std::string , std::uint32_t>& script_flags , std::map<std::string,std::uint32_t>& func_regmap )
     {
-        do_textscript( L , CUSTOM_SCRIPTS_PATH"stores.lua" );
+        do_textscript( L , ResourcesManager::get_script_path() + "stores.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Store> stores;
         lua_getglobal( L , "stores" );
@@ -190,7 +190,7 @@ namespace MagicTower
 
     static Hero initial_hero( lua_State * L )
     {
-        do_textscript( L , CUSTOM_SCRIPTS_PATH"hero.lua" );
+        do_textscript( L , ResourcesManager::get_script_path() + "hero.lua" );
         std::uint32_t top = lua_gettop( L );
         lua_getglobal( L , "hero_property" );
         Hero hero = lua_gethero( L , top + 1 );
@@ -201,7 +201,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Monster> initial_monsters( lua_State * L )
     {
-        do_textscript( L , CUSTOM_SCRIPTS_PATH"monsters.lua" );
+        do_textscript( L , ResourcesManager::get_script_path() + "monsters.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Monster> monsters;
         lua_getglobal( L , "monsters" );
@@ -240,7 +240,7 @@ namespace MagicTower
 
     static std::map<std::uint32_t,Stairs> initial_stairs( lua_State * L )
     {
-        do_textscript( L , CUSTOM_SCRIPTS_PATH"stairs.lua" );
+        do_textscript( L , ResourcesManager::get_script_path() + "stairs.lua" );
         std::uint32_t top = lua_gettop( L );
         std::map<std::uint32_t,Stairs> stairs;
         lua_getglobal( L , "stairs" );
@@ -267,7 +267,7 @@ namespace MagicTower
 
     static TowerMap initial_gamemap( lua_State * L )
     {
-        do_textscript( L , CUSTOM_SCRIPTS_PATH"gamemap.lua" );
+        do_textscript( L , ResourcesManager::get_script_path() + "gamemap.lua" );
         TowerMap towers;
 
         std::uint32_t top = lua_gettop( L );

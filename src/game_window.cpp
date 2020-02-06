@@ -13,12 +13,10 @@
 #include <glibmm.h>
 #include <glib/gstdio.h>
 #include <gtkmm/builder.h>
-#include <gtkmm/button.h>
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/main.h>
 #include <gtkmm/widget.h>
 #include <gtkmm/window.h>
-#include <gtkmm/spinbutton.h>
 #include <pangomm.h>
 #include <sigc++/sigc++.h>
 
@@ -41,7 +39,7 @@ namespace MagicTower
         {
             scriptengines_register_eventfunc( game_object );
 
-            std::vector<std::string> music_list = this->load_music( MUSIC_RESOURCES_PATH );
+            std::vector<std::string> music_list = ResourcesManager::get_musics_uri();
             this->game_object->music.set_play_mode( PLAY_MODE::RANDOM_PLAYING );
             this->game_object->music.set_music_uri_list( music_list );
             this->game_object->music.play( 0 );
@@ -57,7 +55,7 @@ namespace MagicTower
                 grid_width = grid_height;
             this->pixel_size = grid_width/32*32;
 
-            this->builder_refptr = Gtk::Builder::create_from_file( UI_DEFINE_RESOURCES_PATH );
+            this->builder_refptr = Gtk::Builder::create_from_file( "./resources/UI/magictower.ui" );
 
             int tower_width = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
             int info_width = ( this->game_object->game_map.MAX_LENGTH/2 )*this->pixel_size;
@@ -93,7 +91,17 @@ namespace MagicTower
             this->layout->set_font_description( this->font_desc );
 
             this->info_frame = info_background_image_factory( this->game_object->game_map.MAX_WIDTH/2 , this->game_object->game_map.MAX_LENGTH );
-            this->image_resource = load_image_resource( IMAGE_RESOURCES_PATH );
+            std::vector<std::string> image_paths = ResourcesManager::get_images();
+            for ( auto& image_path : image_paths )
+            {
+                Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_file( image_path , this->pixel_size , this->pixel_size );
+                if ( pixbuf.get() == nullptr )
+                {
+                    g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_path.c_str() );
+                    continue;
+                }
+                this->image_resource[image_path] = pixbuf;
+            }
         }
 
         ~GameWindowImp()
@@ -111,11 +119,10 @@ namespace MagicTower
         Glib::RefPtr<Gdk::Pixbuf> info_background_image_factory( size_t width , size_t height )
         {
             Glib::RefPtr<Gdk::Pixbuf> info_frame = Gdk::Pixbuf::create( Gdk::Colorspace::COLORSPACE_RGB , TRUE , 8 , width*this->pixel_size , height*this->pixel_size );
-
-            Glib::RefPtr<Gdk::Pixbuf> bg_pixbuf = Gdk::Pixbuf::create_from_file( IMAGE_RESOURCES_PATH"floor11.png" , this->pixel_size , this->pixel_size );
+            Glib::RefPtr<Gdk::Pixbuf> bg_pixbuf = Gdk::Pixbuf::create_from_file( ResourcesManager::get_image( "floor" , 11 ) , this->pixel_size , this->pixel_size );
             if( bg_pixbuf.get() == nullptr )
             {
-                g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , IMAGE_RESOURCES_PATH"floor11.png" );
+                g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , ResourcesManager::get_image( "floor" , 11 ).c_str() );
                 return info_frame;
             }
 
@@ -129,52 +136,6 @@ namespace MagicTower
             }
 
             return info_frame;
-        }
-
-        std::vector<std::string> load_music( std::string music_path )
-        {
-            if ( !Glib::file_test( music_path , Glib::FileTest::FILE_TEST_EXISTS ) )
-            {
-                return {};
-            }
-            if ( !Glib::file_test( music_path , Glib::FileTest::FILE_TEST_IS_DIR ) )
-            {
-                return {};
-            }
-            Glib::Dir music_dir( music_path );
-            std::vector<std::string> uri_list;
-            std::string name;
-            while( ( name = music_dir.read_name() ) != std::string( "" ) )
-            {
-                Glib::RefPtr<Gio::File> music_file = Gio::File::create_for_path( music_path + name );
-                uri_list.push_back( music_file->get_uri() );
-            }
-            return uri_list;
-        }
-
-        std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> load_image_resource( std::string image_path )
-        {
-            //exists and type check
-            if ( !Glib::file_test( image_path , Glib::FileTest::FILE_TEST_EXISTS ) )
-                return {};
-            if ( !Glib::file_test( image_path , Glib::FileTest::FILE_TEST_IS_DIR ) )
-                return {};
-
-            Glib::Dir image_dir( image_path );
-            std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> image_resource;
-            std::string name;
-            while( ( name = image_dir.read_name() ) != std::string( "" ) )
-            {
-                std::string image_name = image_path + name;
-                Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_file( image_name , this->pixel_size , this->pixel_size );
-                if ( pixbuf.get() == nullptr )
-                {
-                    g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_name.c_str() );
-                    continue;
-                }
-                image_resource.insert({ image_name , pixbuf });
-            }
-            return image_resource;
         }
 
         Gdk::Rectangle get_menu_ractangle( void )
@@ -236,7 +197,7 @@ namespace MagicTower
         //GDK coordinate origin : Top left corner,left -> right x add,up -> down y add.
         void draw_grid_image( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::uint32_t x , std::uint32_t y , std::string image_type , std::uint32_t image_id )
         {
-            std::string image_file_name = std::string( IMAGE_RESOURCES_PATH ) + image_type + std::to_string( image_id ) + std::string( ".png" );
+            std::string image_file_name = ResourcesManager::get_image( image_type , image_id );
             const Glib::RefPtr<Gdk::Pixbuf> element = this->image_resource[ image_file_name ];
             if ( element.get() == nullptr )
             {

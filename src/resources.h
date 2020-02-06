@@ -2,10 +2,17 @@
 #ifndef RESOURCES_H
 #define RESOURCES_H
 
-#define UI_DEFINE_RESOURCES_PATH "./resources/UI/magictower.ui"
-#define IMAGE_RESOURCES_PATH "./resources/images/"
-#define MUSIC_RESOURCES_PATH "./resources/music/"
-#define DATABSE_RESOURCES_PATH "./resources/database/"
-#define CUSTOM_SCRIPTS_PATH "./resources/scripts/"
+#include <string>
+#include <vector>
+
+class ResourcesManager
+{
+public:
+    static std::string get_image( std::string image_type , std::uint32_t image_id );
+    static std::vector<std::string> get_images( void );
+    static std::vector<std::string> get_musics_uri( void );
+    static std::string get_save_path( std::uint32_t save_id );
+    static std::string get_script_path( void );
+};
 
 #endif
