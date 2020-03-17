@@ -65,6 +65,7 @@ namespace MagicTower
         std::vector<TowerGridLocation> path;
         Menu_t menu_items;
         Music music;
+        Music soundeffect_player;
         Hero hero;
         TowerMap game_map;
         GAME_STATUS game_status;

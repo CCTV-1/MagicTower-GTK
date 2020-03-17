@@ -28,7 +28,8 @@ namespace MagicTower
 
     enum class PLAY_MODE:std::uint32_t
     {
-        SIGLE_CYCLE = 0,
+        SINGLE_PLAY = 0,
+        SINGLE_CYCLE,
         LIST_CYCLE,
         RANDOM_PLAYING,
     };
@@ -42,6 +43,7 @@ namespace MagicTower
         ~Music();
 
         bool play( std::size_t id );
+        bool play( std::string uri );
         bool play_next();
         void play_stop();
         void play_pause();
@@ -57,6 +59,8 @@ namespace MagicTower
         void set_play_mode( PLAY_MODE mode );
 
         void add_music_uri_list( std::vector<std::string> uri_list );
+
+        static bool is_music_file( std::string& file_uri );
 
         Music( const Music& rhs )=delete;
         Music( Music&& rhs )=delete;

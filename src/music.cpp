@@ -7,7 +7,13 @@
 
 namespace MagicTower
 {
-    static void pad_added_handler( GstElement * src , GstPad * new_pad , GstElement * conver );
+    static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
+    static void pad_added_handler( GstElement * , GstPad * new_pad , GstElement * conver );
+    static gboolean single_play( GstBus * , GstMessage * , GstElement * );
+    static gboolean single_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline );
+    static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
+    static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
+
     struct MusicImp
     {
         MusicImp():
@@ -77,12 +83,6 @@ namespace MagicTower
         std::unique_ptr< GRand , decltype( &g_rand_free ) > grand_gen;
     };
 
-    static void have_type_handler( GstElement * typefind , guint probability , const GstCaps * caps , GstCaps ** p_caps );
-    static bool is_music( std::string& file_uri );
-    static gboolean sigle_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline );
-    static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
-    static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
-
     Music::Music( std::vector<std::string> _music_uri_list ):
         imp_ptr( new MusicImp )
     {
@@ -108,6 +108,25 @@ namespace MagicTower
 
         this->imp_ptr->play_id = id;
         g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , this->imp_ptr->music_uri_list[ id ].c_str() , nullptr );
+        GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
+        if ( ret == GST_STATE_CHANGE_FAILURE )
+        {
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
+            return false;
+        }
+        return true;
+    }
+
+    bool Music::play( std::string uri )
+    {
+        if ( uri.empty() )
+        {
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "uri not found" );
+            return false;
+        }
+
+        gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_NULL );
+        g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , uri.c_str() , nullptr );
         GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
         if ( ret == GST_STATE_CHANGE_FAILURE )
         {
@@ -193,7 +212,7 @@ namespace MagicTower
     {
         for ( auto uri : uri_list )
         {
-            if ( is_music( uri ) )
+            if ( is_music_file( uri ) )
             {
                 this->imp_ptr->music_uri_list.insert( this->imp_ptr->music_uri_list.end() , uri );
             }
@@ -227,9 +246,9 @@ namespace MagicTower
             g_signal_handler_disconnect( G_OBJECT( bus.get() ) , this->imp_ptr->handler_id );
         switch ( mode )
         {
-            case PLAY_MODE::SIGLE_CYCLE:
+            case PLAY_MODE::SINGLE_CYCLE:
             {
-                this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->imp_ptr->pipeline );
+                this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( single_cycle ) , this->imp_ptr->pipeline );
                 break;
             }
             case PLAY_MODE::LIST_CYCLE:
@@ -242,15 +261,15 @@ namespace MagicTower
                 this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( random_playing ) , this->imp_ptr );
                 break;
             }
-            default :
+            default:
             {
-                this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( sigle_cycle ) , this->imp_ptr->pipeline );
+                this->imp_ptr->handler_id = g_signal_connect( G_OBJECT( bus.get() ) , "message::eos" , G_CALLBACK( single_play ) , this->imp_ptr->pipeline );
                 break;
             }
         }
     }
 
-    static bool is_music( std::string& file_uri )
+    bool Music::is_music_file( std::string& file_uri )
     {
         GstCaps * caps = nullptr;
         std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( file_uri.c_str() , nullptr , nullptr ) , g_free );
@@ -272,7 +291,7 @@ namespace MagicTower
                 std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_pipeline_get_bus( GST_PIPELINE( pipeline.get() ) ) , gst_object_unref );
                 std::unique_ptr< GstMessage , decltype( &gst_message_unref ) > msg( gst_bus_poll( bus.get() , GST_MESSAGE_ERROR , 0 ) , gst_message_unref );
                 GError * err = nullptr;
-    
+
                 if ( msg != nullptr )
                 {
                     gst_message_parse_error( msg.get() , &err , nullptr );
@@ -349,7 +368,13 @@ namespace MagicTower
 
     }
 
-    static gboolean sigle_cycle( GstBus * , GstMessage * , GstElement * pipeline )
+    static gboolean single_play( GstBus * , GstMessage * , GstElement * pipeline )
+    {
+        gst_element_set_state( pipeline , GST_STATE_NULL );
+        return TRUE;
+    }
+
+    static gboolean single_cycle( GstBus * , GstMessage * , GstElement * pipeline )
     {
         gst_element_set_state( pipeline , GST_STATE_NULL );
         GstStateChangeReturn ret = gst_element_set_state( pipeline , GST_STATE_PLAYING );

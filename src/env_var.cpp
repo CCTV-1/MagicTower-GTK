@@ -351,12 +351,15 @@ namespace MagicTower
         path( {} ),
         menu_items( {} ),
         music( music_list ),
+        soundeffect_player( std::vector<std::string>({}) ),
         game_status()
     {
         lua_State * L = this->script_engines.get();
         luaL_openlibs( L );
         initial_sandbox( L );
         this->initial_gamedata();
+
+        soundeffect_player.set_play_mode(PLAY_MODE::SINGLE_PLAY);
     }
 
     GameEnvironment::~GameEnvironment()

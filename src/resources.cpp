@@ -8,6 +8,7 @@
 
 #define IMAGE_RESOURCES_PATH "./resources/images/"
 #define MUSIC_RESOURCES_PATH "./resources/music/"
+#define SOUND_EFFECT_PATH "./resources/soundeffect/"
 #define DATABSE_RESOURCES_PATH "./resources/database/"
 #define CUSTOM_SCRIPTS_PATH "./resources/scripts/"
 
@@ -32,6 +33,11 @@ std::vector<std::string> ResourcesManager::get_images( void )
         images.push_back(IMAGE_RESOURCES_PATH + name);
     }
     return images;
+}
+
+std::string ResourcesManager::get_soundeffect_uri( std::string soundeffect_name )
+{
+    return Gio::File::create_for_path( SOUND_EFFECT_PATH + soundeffect_name + ".mp3" )->get_uri();
 }
 
 std::vector<std::string> ResourcesManager::get_musics_uri( void )

@@ -930,6 +930,7 @@ namespace MagicTower
         std::int64_t damage = get_combat_damage( game_object , monster_id );
         if ( ( damage < 0 ) || ( damage >= hero.life ) )
             return false;
+        game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "attack" ) );
         hero.life =  hero.life - damage;
         hero.gold = hero.gold + monster.gold;
         hero.experience = hero.experience + monster.experience;
@@ -1394,6 +1395,7 @@ namespace MagicTower
                 {
                     set_grid_type( game_object , position );
                     hero.yellow_key--;
+                    game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
                 }
                 break;
             }
@@ -1403,6 +1405,7 @@ namespace MagicTower
                 {
                     set_grid_type( game_object , position );
                     hero.blue_key--;
+                    game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
                 }
                 break;
             }
@@ -1412,6 +1415,7 @@ namespace MagicTower
                 {
                     set_grid_type( game_object , position );
                     hero.red_key--;
+                    game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
                 }
                 break;
             }
@@ -1438,6 +1442,7 @@ namespace MagicTower
         if ( stair.y >= tower.map[stair.floors].width )
             return false;
 
+        game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "floor" ) );
         game_object->hero.floors = stair.floors;
         game_object->hero.x = stair.x;
         game_object->hero.y = stair.y;
@@ -1467,6 +1472,7 @@ namespace MagicTower
             game_object->inventories[item_id]++;
         }
 
+        game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "item" ) );
         std::string tips = std::string( "获得:'" ) + item.item_name + std::string( "'" );
         set_tips( game_object , tips );
         return true;
