@@ -620,11 +620,7 @@ namespace MagicTower
                 { std::string( "按键说明(F1)" ) , 2 }
             };
 
-            Gtk::DrawingArea * widget = nullptr;
-            builder_refptr->get_widget( "info_area" , widget );
-            if ( widget == nullptr )
-                return true;
-            Gtk::Allocation allocation = widget->get_allocation();
+            Gtk::Allocation allocation = this->info_area->get_allocation();
             const int widget_width = allocation.get_width();
             const int widget_height = allocation.get_height();
             std::size_t arr_size = arr.size();
