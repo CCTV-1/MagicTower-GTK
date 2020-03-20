@@ -159,7 +159,7 @@ namespace MagicTower
             }
             this->info_area->queue_draw();
             this->game_area->queue_draw();
-            return ( game_object->game_status == GAME_STATUS::FIND_PATH );
+            return ( ( game_object->game_status == GAME_STATUS::FIND_PATH ) || ( !game_object->tips_content.empty() ) );
         }
 
         bool automatic_movement( void )
