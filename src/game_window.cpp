@@ -55,17 +55,17 @@ namespace MagicTower
                 grid_width = grid_height;
             this->pixel_size = grid_width/32*32;
 
-            this->builder_refptr = Gtk::Builder::create_from_file( "./resources/UI/magictower.ui" );
+            auto builder_refptr = Gtk::Builder::create_from_file( "./resources/UI/magictower.ui" );
 
             int tower_width = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
             int info_width = ( this->game_object->game_map.MAX_LENGTH/2 )*this->pixel_size;
             int window_height = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
 
-            this->builder_refptr->get_widget( "info_area" , this->info_area );
+            builder_refptr->get_widget( "info_area" , this->info_area );
             this->info_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_info ) );
             this->info_area->set_size_request( info_width , window_height );
 
-            this->builder_refptr->get_widget( "tower_area" , this->game_area );
+            builder_refptr->get_widget( "tower_area" , this->game_area );
             this->game_area->add_events( Gdk::EventMask::BUTTON_PRESS_MASK );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_maps ) );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_path_line ) );
@@ -78,7 +78,7 @@ namespace MagicTower
             this->game_area->signal_button_press_event().connect( sigc::mem_fun( *this , &GameWindowImp::button_press_handler ) );
             this->game_area->set_size_request( tower_width , window_height );
 
-            this->builder_refptr->get_widget( "game_window" , this->window );
+            builder_refptr->get_widget( "game_window" , this->window );
             this->window->add_events( Gdk::EventMask::SCROLL_MASK );
             this->window->signal_delete_event().connect( sigc::mem_fun( *this , &GameWindowImp::exit_game ) );
             //if after is true,Key Up Space Down Return Left Right.... key_press_handler can't receive.
@@ -90,18 +90,35 @@ namespace MagicTower
             this->layout = window->create_pango_layout( "字符串" );
             this->layout->set_font_description( this->font_desc );
 
-            this->info_frame = info_background_image_factory( this->game_object->game_map.MAX_WIDTH/2 , this->game_object->game_map.MAX_LENGTH );
+            auto surface = Cairo::ImageSurface::create( Cairo::Format::FORMAT_ARGB32 , this->pixel_size , this->pixel_size );
+            auto cairo_context = Cairo::Context::create( surface );
+            cairo_context->save();
+            cairo_context->set_source_rgb( 0 , 0 , 0 );
+            cairo_context->paint();
+            cairo_context->restore();
+            this->backup_image = Gdk::Pixbuf::create( surface , 0  , 0 , this->pixel_size , this->pixel_size );
+
             std::vector<std::string> image_paths = ResourcesManager::get_images();
             for ( auto& image_path : image_paths )
             {
-                Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_file( image_path , this->pixel_size , this->pixel_size );
-                if ( pixbuf.get() == nullptr )
+                Glib::RefPtr<Gdk::Pixbuf> pixbuf;
+                try
                 {
-                    g_log( __func__ , G_LOG_LEVEL_MESSAGE , "\'%s\' not be image file,ignore this." , image_path.c_str() );
-                    continue;
+                    pixbuf = Gdk::Pixbuf::create_from_file( image_path , this->pixel_size , this->pixel_size );
+                }
+                catch ( const Gdk::PixbufError& e )
+                {
+                    g_log( __func__ , G_LOG_LEVEL_WARNING , "from \'%s\' create gdkpixbuf failure,error code:%d,fallback to backup image." , image_path.c_str() , e.code() );
+                    pixbuf = this->backup_image;
+                }
+                catch ( const Glib::FileError& e )
+                {
+                    g_log( __func__ , G_LOG_LEVEL_WARNING , "open \'%s\' failure,error code:%d,fallback to backup image." , image_path.c_str() , e.code() );
+                    pixbuf = this->backup_image;
                 }
                 this->image_resource[image_path] = pixbuf;
             }
+            this->info_frame = info_background_image_factory( this->game_object->game_map.MAX_WIDTH/2 , this->game_object->game_map.MAX_LENGTH );
         }
 
         ~GameWindowImp()
@@ -119,11 +136,16 @@ namespace MagicTower
         Glib::RefPtr<Gdk::Pixbuf> info_background_image_factory( size_t width , size_t height )
         {
             Glib::RefPtr<Gdk::Pixbuf> info_frame = Gdk::Pixbuf::create( Gdk::Colorspace::COLORSPACE_RGB , TRUE , 8 , width*this->pixel_size , height*this->pixel_size );
-            Glib::RefPtr<Gdk::Pixbuf> bg_pixbuf = Gdk::Pixbuf::create_from_file( ResourcesManager::get_image( "floor" , 11 ) , this->pixel_size , this->pixel_size );
-            if( bg_pixbuf.get() == nullptr )
+            std::string image_path = ResourcesManager::get_image( "floor" , 11 );
+            Glib::RefPtr<Gdk::Pixbuf> bg_pixbuf;
+            try
             {
-                g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , ResourcesManager::get_image( "floor" , 11 ).c_str() );
-                return info_frame;
+                bg_pixbuf = this->image_resource.at(image_path);
+            }
+            catch ( const std::out_of_range& e)
+            {
+                g_log( __func__ , G_LOG_LEVEL_WARNING , "image resource \'%s\' not found,fallback to backup image." , image_path.c_str() );
+                bg_pixbuf = this->backup_image;
             }
 
             for ( size_t y = 0 ; y < height ; y++ )
@@ -198,11 +220,15 @@ namespace MagicTower
         void draw_grid_image( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::uint32_t x , std::uint32_t y , std::string image_type , std::uint32_t image_id )
         {
             std::string image_file_name = ResourcesManager::get_image( image_type , image_id );
-            const Glib::RefPtr<Gdk::Pixbuf> element = this->image_resource[ image_file_name ];
-            if ( element.get() == nullptr )
+            Glib::RefPtr<Gdk::Pixbuf> element;
+            try
             {
-                g_log( __func__ , G_LOG_LEVEL_WARNING , "\'%s\' not be image file" , image_file_name.c_str() );
-                return ;
+                element = this->image_resource.at(image_file_name);
+            }
+            catch ( const std::out_of_range& e)
+            {
+                g_log( __func__ , G_LOG_LEVEL_WARNING , "image resource \'%s\' not found,fallback to backup image." , image_file_name.c_str() );
+                element = this->backup_image;
             }
             Gdk::Cairo::set_source_pixbuf( cairo_context , element , x*this->pixel_size , y*this->pixel_size );
             cairo_context->paint();
@@ -1032,13 +1058,13 @@ namespace MagicTower
         Gtk::Main main_loop;
         Pango::FontDescription font_desc;
         Glib::RefPtr<Pango::Layout> layout;
-        Glib::RefPtr<Gtk::Builder> builder_refptr;
         sigc::connection findpath_connection;
         sigc::connection draw_connection;
         Gtk::Window * window;
         Gtk::DrawingArea * game_area;
         Gtk::DrawingArea * info_area;
         std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> image_resource;
+        Glib::RefPtr<Gdk::Pixbuf> backup_image;
         Glib::RefPtr<Gdk::Pixbuf> info_frame;
         std::uint32_t pixel_size = 32;
         std::uint32_t click_x = 0;
