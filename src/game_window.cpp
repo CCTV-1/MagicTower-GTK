@@ -49,7 +49,7 @@ namespace MagicTower
             Glib::RefPtr<const Gdk::Monitor> monitor = default_display->get_monitor( 0 );
             Gdk::Rectangle rectangle;
             monitor->get_workarea( rectangle );
-            int grid_width = rectangle.get_width()/this->game_object->game_map.MAX_LENGTH/3*2;
+            int grid_width = rectangle.get_width()/this->game_object->game_map.MAX_LENGTH/4*3;
             int grid_height = rectangle.get_height()/this->game_object->game_map.MAX_WIDTH;
             if ( grid_width > grid_height )
                 grid_width = grid_height;
@@ -58,7 +58,7 @@ namespace MagicTower
             auto builder_refptr = Gtk::Builder::create_from_file( "./resources/UI/magictower.ui" );
 
             int tower_width = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
-            int info_width = ( this->game_object->game_map.MAX_LENGTH/2 )*this->pixel_size;
+            int info_width = ( this->game_object->game_map.MAX_LENGTH/3 )*this->pixel_size;
             int window_height = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
 
             builder_refptr->get_widget( "info_area" , this->info_area );
@@ -70,7 +70,6 @@ namespace MagicTower
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_maps ) );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_path_line ) );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_hero ) );
-            this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_damage ) );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_tips ) );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_detail ) );
             this->game_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_menu ) );
@@ -173,7 +172,7 @@ namespace MagicTower
             return { box_start_x , box_start_y , box_width , box_height };
         }
 
-        bool refrsh_draw( void )
+        bool refresh_draw( void )
         {
             if ( this->game_object->game_status == GAME_STATUS::GAME_END )
             {
@@ -234,9 +233,47 @@ namespace MagicTower
             cairo_context->paint();
         }
 
+        void draw_damage( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::uint32_t x , std::uint32_t y )
+        {
+            auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
+            if ( grid.type == GRID_TYPE::MONSTER )
+            {
+                //todo:cache damage list
+                std::int64_t damage = get_combat_damage( game_object , grid.id );
+                std::string damage_text;
+                if ( damage >= 0 )
+                    damage_text = std::to_string( damage );
+                else
+                    damage_text = std::string( "????" );
+                this->layout->set_text( damage_text );
+
+                cairo_context->save();
+                cairo_context->move_to( x*this->pixel_size , ( y + 0.5 )*this->pixel_size );
+                double red_value = 0;
+                double green_value = 0;
+                if ( damage >= game_object->hero.life || damage < 0 )
+                {
+                    red_value = 1;
+                }
+                else
+                {
+                    red_value = static_cast<double>( damage )/( game_object->hero.life );
+                    green_value = 1 - red_value;
+                }
+                cairo_context->set_source_rgb( red_value , green_value , 0.0 );
+                cairo_context->set_line_width( 0.5 );
+                this->layout->show_in_cairo_context( cairo_context );
+                cairo_context->fill_preserve();
+
+                cairo_context->stroke();
+                cairo_context->restore();
+            }
+        }
+
         //always return false to do other draw signal handler
         bool draw_maps( const Cairo::RefPtr<Cairo::Context> & cairo_context )
         {
+            //todo: lazy refresh
             GameEnvironment * game_object = this->game_object;
             std::uint32_t default_id = this->game_object->game_map.map[ this->game_object->hero.floors ].default_floorid;
             for( size_t y = 0 ; y < game_object->game_map.MAX_LENGTH ; y++ )
@@ -283,6 +320,7 @@ namespace MagicTower
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "monster" , grid.id );
+                            this->draw_damage( cairo_context , x , y );
                             break;
                         }
                         case GRID_TYPE::ITEM:
@@ -351,54 +389,6 @@ namespace MagicTower
                 return false;
             }
             draw_grid_image( cairo_context , ( game_object->hero ).x , ( game_object->hero ).y , "hero" , static_cast<int>( game_object->hero.direction ) );
-
-
-            return false;
-        }
-
-        //always return false to do other draw signal handler
-        bool draw_damage( const Cairo::RefPtr<Cairo::Context> & cairo_context )
-        {
-            GameEnvironment * game_object = this->game_object;
-            for( size_t y = 0 ; y < game_object->game_map.MAX_LENGTH ; y++ )
-            {
-                for ( size_t x = 0 ; x < game_object->game_map.MAX_WIDTH ; x++ )
-                {
-                    auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
-                    if ( grid.type == GRID_TYPE::MONSTER )
-                    {
-                        //todo:cache damage list
-                        std::int64_t damage = get_combat_damage( game_object , grid.id );
-                        std::string damage_text;
-                        if ( damage >= 0 )
-                            damage_text = std::to_string( damage );
-                        else
-                            damage_text = std::string( "????" );
-                        this->layout->set_text( damage_text );
-
-                        cairo_context->save();
-                        cairo_context->move_to( x*this->pixel_size , ( y + 0.5 )*this->pixel_size );
-                        double red_value = 0;
-                        double green_value = 0;
-                        if ( damage >= game_object->hero.life || damage < 0 )
-                        {
-                            red_value = 1;
-                        }
-                        else
-                        {
-                            red_value = static_cast<double>( damage )/( game_object->hero.life );
-                            green_value = 1 - red_value;
-                        }
-                        cairo_context->set_source_rgb( red_value , green_value , 0.0 );
-                        cairo_context->set_line_width( 0.5 );
-                        this->layout->show_in_cairo_context( cairo_context );
-                        cairo_context->fill_preserve();
-
-                        cairo_context->stroke();
-                        cairo_context->restore();
-                    }
-                }
-            }
 
             return false;
         }
@@ -693,7 +683,7 @@ namespace MagicTower
         {
             if ( !this->draw_connection.connected() )
             {
-                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refrsh_draw ) , 100 );
+                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refresh_draw ) , 100 );
             }
             GameEnvironment * game_object = this->game_object;
             switch ( game_object->game_status )
@@ -742,7 +732,7 @@ namespace MagicTower
         {
             if ( !this->draw_connection.connected() )
             {
-                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refrsh_draw ) , 100 );
+                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refresh_draw ) , 100 );
             }
             GameEnvironment * game_object = this->game_object;
             switch ( game_object->game_status )
@@ -949,7 +939,7 @@ namespace MagicTower
         {
             if ( !this->draw_connection.connected() )
             {
-                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refrsh_draw ) , 100 );
+                this->draw_connection = Glib::signal_timeout().connect( sigc::mem_fun( *this , &GameWindowImp::refresh_draw ) , 100 );
             }
             GameEnvironment * game_object = this->game_object;
             gint x = event->x , y = event->y;
