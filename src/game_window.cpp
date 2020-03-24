@@ -49,17 +49,17 @@ namespace MagicTower
             Glib::RefPtr<const Gdk::Monitor> monitor = default_display->get_monitor( 0 );
             Gdk::Rectangle rectangle;
             monitor->get_workarea( rectangle );
-            int grid_width = rectangle.get_width()/this->game_object->game_map.MAX_LENGTH/4*3;
-            int grid_height = rectangle.get_height()/this->game_object->game_map.MAX_WIDTH;
+            int grid_width = rectangle.get_width()/this->max_grid_x/4*3;
+            int grid_height = rectangle.get_height()/this->max_grid_y;
             if ( grid_width > grid_height )
                 grid_width = grid_height;
             this->pixel_size = grid_width/32*32;
 
             auto builder_refptr = Gtk::Builder::create_from_file( "./resources/UI/magictower.ui" );
 
-            int tower_width = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
-            int info_width = ( this->game_object->game_map.MAX_LENGTH/3 )*this->pixel_size;
-            int window_height = ( this->game_object->game_map.MAX_LENGTH )*this->pixel_size;
+            int tower_width = ( this->max_grid_x )*this->pixel_size;
+            int info_width = ( this->max_grid_x/3 )*this->pixel_size;
+            int window_height = ( this->max_grid_y )*this->pixel_size;
 
             builder_refptr->get_widget( "info_area" , this->info_area );
             this->info_area->signal_draw().connect( sigc::mem_fun( *this , &GameWindowImp::draw_info ) );
@@ -117,7 +117,7 @@ namespace MagicTower
                 }
                 this->image_resource[image_path] = pixbuf;
             }
-            this->info_frame = info_background_image_factory( this->game_object->game_map.MAX_WIDTH/2 , this->game_object->game_map.MAX_LENGTH );
+            this->info_frame = info_background_image_factory( this->max_grid_y/2 , this->max_grid_x );
         }
 
         ~GameWindowImp()
@@ -170,6 +170,44 @@ namespace MagicTower
             const int box_height = widget_height*2/3;
             const int box_width = widget_width*2/3;
             return { box_start_x , box_start_y , box_width , box_height };
+        }
+
+        std::pair<std::uint8_t,std::uint8_t> get_draw_offsets( void )
+        {
+            std::uint32_t floor_length = this->game_object->game_map.map[ this->game_object->hero.floors ].length;
+            std::uint32_t floor_width = this->game_object->game_map.map[ this->game_object->hero.floors ].width;
+            std::uint32_t offset_x = 0;
+            std::uint32_t offset_y = 0;
+            if ( floor_length > this->max_grid_x )
+            {
+                if ( this->game_object->hero.x > this->max_grid_x/2 )
+                {
+                    if ( ( this->game_object->hero.x + this->max_grid_x/2 ) > floor_length )
+                    {
+                        offset_x = floor_length - this->max_grid_x;
+                    }
+                    else
+                    {
+                        offset_x = this->game_object->hero.x - this->max_grid_x/2;
+                    }
+                }
+            }
+            if ( floor_width > this->max_grid_y )
+            {
+                if ( this->game_object->hero.y > this->max_grid_y/2 )
+                {
+                    if ( ( this->game_object->hero.y + this->max_grid_y/2 ) > floor_width )
+                    {
+                        offset_y = floor_width - this->max_grid_y;
+                    }
+                    else
+                    {
+                        offset_y = this->game_object->hero.y - this->max_grid_y/2;
+                    }
+                }
+            }
+
+            return { offset_x , offset_y };
         }
 
         bool refresh_draw( void )
@@ -233,41 +271,37 @@ namespace MagicTower
             cairo_context->paint();
         }
 
-        void draw_damage( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::uint32_t x , std::uint32_t y )
+        void draw_damage( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::uint32_t x , std::uint32_t y , std::uint32_t monster_id )
         {
-            auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
-            if ( grid.type == GRID_TYPE::MONSTER )
+            //todo:cache damage list
+            std::int64_t damage = get_combat_damage( game_object , monster_id );
+            std::string damage_text;
+            if ( damage >= 0 )
+                damage_text = std::to_string( damage );
+            else
+                damage_text = std::string( "????" );
+            this->layout->set_text( damage_text );
+
+            cairo_context->save();
+            cairo_context->move_to( x*this->pixel_size , ( y + 0.5 )*this->pixel_size );
+            double red_value = 0;
+            double green_value = 0;
+            if ( damage >= game_object->hero.life || damage < 0 )
             {
-                //todo:cache damage list
-                std::int64_t damage = get_combat_damage( game_object , grid.id );
-                std::string damage_text;
-                if ( damage >= 0 )
-                    damage_text = std::to_string( damage );
-                else
-                    damage_text = std::string( "????" );
-                this->layout->set_text( damage_text );
-
-                cairo_context->save();
-                cairo_context->move_to( x*this->pixel_size , ( y + 0.5 )*this->pixel_size );
-                double red_value = 0;
-                double green_value = 0;
-                if ( damage >= game_object->hero.life || damage < 0 )
-                {
-                    red_value = 1;
-                }
-                else
-                {
-                    red_value = static_cast<double>( damage )/( game_object->hero.life );
-                    green_value = 1 - red_value;
-                }
-                cairo_context->set_source_rgb( red_value , green_value , 0.0 );
-                cairo_context->set_line_width( 0.5 );
-                this->layout->show_in_cairo_context( cairo_context );
-                cairo_context->fill_preserve();
-
-                cairo_context->stroke();
-                cairo_context->restore();
+                red_value = 1;
             }
+            else
+            {
+                red_value = static_cast<double>( damage )/( game_object->hero.life );
+                green_value = 1 - red_value;
+            }
+            cairo_context->set_source_rgb( red_value , green_value , 0.0 );
+            cairo_context->set_line_width( 0.5 );
+            this->layout->show_in_cairo_context( cairo_context );
+            cairo_context->fill_preserve();
+
+            cairo_context->stroke();
+            cairo_context->restore();
         }
 
         //always return false to do other draw signal handler
@@ -276,11 +310,16 @@ namespace MagicTower
             //todo: lazy refresh
             GameEnvironment * game_object = this->game_object;
             std::uint32_t default_id = this->game_object->game_map.map[ this->game_object->hero.floors ].default_floorid;
-            for( size_t y = 0 ; y < game_object->game_map.MAX_LENGTH ; y++ )
+
+            auto offsets = this->get_draw_offsets();
+            std::uint32_t offset_x = offsets.first;
+            std::uint32_t offset_y = offsets.second;
+
+            for( size_t y = 0 ; y < this->max_grid_x ; y++ )
             {
-                for ( size_t x = 0 ; x < game_object->game_map.MAX_WIDTH ; x++ )
+                for ( size_t x = 0 ; x < this->max_grid_y ; x++ )
                 {
-                    auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
+                    auto grid = game_object->game_map.get_grid( game_object->hero.floors , x + offset_x , y + offset_y );
                     switch( grid.type )
                     {
                         case GRID_TYPE::BOUNDARY:
@@ -320,7 +359,7 @@ namespace MagicTower
                         {
                             this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
                             this->draw_grid_image( cairo_context , x , y , "monster" , grid.id );
-                            this->draw_damage( cairo_context , x , y );
+                            this->draw_damage( cairo_context , x , y , grid.id );
                             break;
                         }
                         case GRID_TYPE::ITEM:
@@ -331,7 +370,7 @@ namespace MagicTower
                         }
                         default :
                         {
-                            this->draw_grid_image( cairo_context , x , y , "floor" , default_id );
+                            this->draw_grid_image( cairo_context , x , y , "boundary" , 1 );
                             break;
                         }
                     }
@@ -352,18 +391,32 @@ namespace MagicTower
             if ( !game_object->draw_path )
                 return false;
 
+            auto offsets = this->get_draw_offsets();
+            double draw_x = 0;
+            double draw_y = 0;
+
             cairo_context->save();
             cairo_context->set_source_rgba( 1.0 , 0.2 , 0.2 , 1.0 );
             cairo_context->set_line_width( 4.0 );
-            cairo_context->arc( ( ( game_object->path[0] ).x + 0.5 )*this->pixel_size , ( ( game_object->path[0] ).y + 0.5 )*this->pixel_size 
-                , 0.1*this->pixel_size , 0 , 2*G_PI );
+            
+            draw_x = ( game_object->path[0] ).x - offsets.first + 0.5;
+            draw_y = ( game_object->path[0] ).y - offsets.second + 0.5;
+
+            cairo_context->arc( draw_x*this->pixel_size , draw_y*this->pixel_size , 0.1*this->pixel_size , 0 , 2*G_PI );
             cairo_context->fill();
             for ( auto point : game_object->path )
             {
-                cairo_context->line_to( ( ( point ).x + 0.5 )*this->pixel_size , ( ( point ).y + 0.5 )*this->pixel_size );
-                cairo_context->move_to( ( ( point ).x + 0.5 )*this->pixel_size , ( ( point ).y + 0.5 )*this->pixel_size );
+                draw_x = ( point ).x - offsets.first + 0.5;
+                draw_y = ( point ).y - offsets.second + 0.5;
+
+                cairo_context->line_to( draw_x*this->pixel_size , draw_y*this->pixel_size );
+                cairo_context->move_to( draw_x*this->pixel_size , draw_y*this->pixel_size );
             }
-            cairo_context->line_to( ( ( game_object->hero ).x + 0.5 )*this->pixel_size , ( ( game_object->hero ).y + 0.5 )*this->pixel_size );
+
+            draw_x = ( game_object->hero ).x - offsets.first + 0.5;
+            draw_y = ( game_object->hero ).y - offsets.second + 0.5;
+
+            cairo_context->line_to( draw_x*this->pixel_size , draw_y*this->pixel_size );
             cairo_context->stroke();
             cairo_context->restore();
 
@@ -388,7 +441,13 @@ namespace MagicTower
             {
                 return false;
             }
-            draw_grid_image( cairo_context , ( game_object->hero ).x , ( game_object->hero ).y , "hero" , static_cast<int>( game_object->hero.direction ) );
+            auto offsets = this->get_draw_offsets();
+            std::uint32_t draw_x = 0;
+            std::uint32_t draw_y = 0;
+
+            draw_x = ( game_object->hero ).x - offsets.first;
+            draw_y = ( game_object->hero ).y - offsets.second;
+            draw_grid_image( cairo_context , draw_x , draw_y , "hero" , static_cast<int>( game_object->hero.direction ) );
 
             return false;
         }
@@ -581,7 +640,6 @@ namespace MagicTower
 
         void draw_dialog( const Cairo::RefPtr<Cairo::Context> & cairo_context , std::string text , std::uint32_t x , std::uint32_t y )
         {
-            GameEnvironment * game_object = this->game_object;
             this->layout->set_text( text );
             int layout_width , layout_height;
             this->layout->get_pixel_size( layout_width , layout_height );
@@ -590,9 +648,9 @@ namespace MagicTower
             layout_width += this->pixel_size/2;
             layout_height += this->pixel_size/2;
 
-            if ( static_cast<std::uint32_t>( x + layout_width ) > ( game_object->game_map.MAX_LENGTH )*this->pixel_size )
+            if ( static_cast<std::uint32_t>( x + layout_width ) > ( this->max_grid_x )*this->pixel_size )
                 x -= layout_width;
-            if ( static_cast<std::uint32_t>( y + layout_height ) > ( game_object->game_map.MAX_WIDTH )*this->pixel_size)
+            if ( static_cast<std::uint32_t>( y + layout_height ) > ( this->max_grid_y )*this->pixel_size)
                 y -= layout_height;
 
             cairo_context->save();
@@ -983,7 +1041,8 @@ namespace MagicTower
                             }
                             else if ( event->button == 1 )
                             {
-                                game_object->path = find_path( game_object , { x/this->pixel_size , y/this->pixel_size } );
+                                auto offsets = this->get_draw_offsets();
+                                game_object->path = find_path( game_object , { x/this->pixel_size + offsets.first , y/this->pixel_size + offsets.second } );
                                 game_object->game_status = GAME_STATUS::FIND_PATH;
                                 if ( !this->findpath_connection.connected() )
                                 {
@@ -1059,6 +1118,8 @@ namespace MagicTower
         std::uint32_t pixel_size = 32;
         std::uint32_t click_x = 0;
         std::uint32_t click_y = 0;
+        std::uint8_t max_grid_x = 10;
+        std::uint8_t max_grid_y = 10;
     };
 
     GameWindow::GameWindow( std::string program_name )
