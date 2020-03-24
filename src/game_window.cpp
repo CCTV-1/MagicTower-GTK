@@ -459,10 +459,10 @@ namespace MagicTower
             if ( game_object->game_status != GAME_STATUS::REVIEW_DETAIL )
                 return false;
 
-            std::int32_t x , y;
+            auto offsets = this->get_draw_offsets();
+            std::uint32_t x = this->click_x/this->pixel_size + offsets.first;
+            std::uint32_t y = this->click_y/this->pixel_size + offsets.second;
             std::string detail_str;
-            x = this->click_x/this->pixel_size;
-            y = this->click_y/this->pixel_size;
             auto grid = game_object->game_map.get_grid( game_object->hero.floors , x , y );
             if ( grid.type == GRID_TYPE::MONSTER )
             {
