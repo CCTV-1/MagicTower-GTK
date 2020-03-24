@@ -180,9 +180,9 @@ namespace MagicTower
             std::uint32_t offset_y = 0;
             if ( floor_length > this->max_grid_x )
             {
-                if ( this->game_object->hero.x > this->max_grid_x/2 )
+                if ( this->game_object->hero.x >= this->max_grid_x/2 )
                 {
-                    if ( ( this->game_object->hero.x + this->max_grid_x/2 ) > floor_length )
+                    if ( ( this->game_object->hero.x + this->max_grid_x/2 ) >= floor_length )
                     {
                         offset_x = floor_length - this->max_grid_x;
                     }
@@ -194,9 +194,9 @@ namespace MagicTower
             }
             if ( floor_width > this->max_grid_y )
             {
-                if ( this->game_object->hero.y > this->max_grid_y/2 )
+                if ( this->game_object->hero.y >= this->max_grid_y/2 )
                 {
-                    if ( ( this->game_object->hero.y + this->max_grid_y/2 ) > floor_width )
+                    if ( ( this->game_object->hero.y + this->max_grid_y/2 ) >= floor_width )
                     {
                         offset_y = floor_width - this->max_grid_y;
                     }
