@@ -58,6 +58,7 @@ namespace MagicTower
         std::string name;
         std::optional<TowerGridLocation> teleport_point;
         std::vector<TowerGrid> content;
+        //todo: field of vision
     };
 
     struct TowerMap
@@ -73,7 +74,8 @@ namespace MagicTower
                 return { GRID_TYPE::UNKNOWN , 0 };
             }
             TowerFloor& floor = this->map[floor_id];
-            if ( ( x > floor.length ) || ( y > floor.width ) )
+            //starting from 0
+            if ( ( x >= floor.length ) || ( y >= floor.width ) )
             {
                 return { GRID_TYPE::UNKNOWN , 0 };
             }
@@ -86,7 +88,8 @@ namespace MagicTower
                 return ;
             }
             TowerFloor& floor = this->map[floor_id];
-            if ( ( x > floor.length ) || ( y > floor.width ) )
+            //starting from 0
+            if ( ( x >= floor.length ) || ( y >= floor.width ) )
             {
                 return ;
             }
