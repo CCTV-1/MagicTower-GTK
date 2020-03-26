@@ -45,6 +45,10 @@ namespace MagicTower
         length              INT (32),
         width               INT (32),
         default_floorid     INT (32),
+        tp_x                INT (32),
+        tp_y                INT (32),
+        fv_x                INT (32),
+        fv_y                INT (32),
         name                TEXT,
         content             BLOB
     );
@@ -57,14 +61,12 @@ namespace MagicTower
         std::uint32_t default_floorid;
         std::string name;
         std::optional<TowerGridLocation> teleport_point;
+        std::optional<TowerGridLocation> field_vision;
         std::vector<TowerGrid> content;
-        //todo: field of vision
     };
 
     struct TowerMap
     {
-        std::uint32_t MAX_LENGTH;
-        std::uint32_t MAX_WIDTH;
         std::map<std::uint32_t,TowerFloor> map;
 
         TowerGrid get_grid( std::uint32_t floor_id , std::uint32_t x , std::uint32_t y )

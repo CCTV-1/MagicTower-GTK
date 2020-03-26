@@ -271,8 +271,6 @@ namespace MagicTower
         TowerMap towers;
 
         std::uint32_t top = lua_gettop( L );
-        std::uint32_t max_length = 0;
-        std::uint32_t max_width = 0;
         lua_getglobal( L , "gamemap" );
         luaL_checktype( L , top + 1 , LUA_TTABLE ); //map table
         lua_pushnil( L );
@@ -285,26 +283,19 @@ namespace MagicTower
             lua_getfield( L , top + 3 , "width" );
             lua_getfield( L , top + 3 , "default_floorid" );
             lua_getfield( L , top + 3 , "teleport" );
+            lua_getfield( L , top + 3 , "field_vision" );
             lua_getfield( L , top + 3 , "content" );
             std::string floor_name = luaL_checkstring( L , top + 4 );
             std::uint32_t floor_length = luaL_checkinteger( L , top + 5 );
-            if ( floor_length > max_length )
-            {
-                max_length = floor_length;
-            }
             std::uint32_t floor_width = luaL_checkinteger( L , top + 6 );
-            if ( floor_width > max_width )
-            {
-                max_width = floor_width;
-            }
             std::uint32_t default_floorid = luaL_checkinteger( L , top + 7 );
             if ( lua_istable( L , top + 8 ) )
             {
                 lua_getfield( L , top + 8 , "x" );
                 lua_getfield( L , top + 8 , "y" );
-                //top + 9 has content table
-                std::uint32_t tp_x = luaL_checkinteger( L , top + 10 );
-                std::uint32_t tp_y = luaL_checkinteger( L , top + 11 );
+                //top + 10 has content table
+                std::uint32_t tp_x = luaL_checkinteger( L , top + 11 );
+                std::uint32_t tp_y = luaL_checkinteger( L , top + 12 );
                 lua_pop( L , 2 );
                 towers.map[floor_id].teleport_point = { tp_x , tp_y };
             }
@@ -312,30 +303,44 @@ namespace MagicTower
             {
                 towers.map[floor_id].teleport_point = std::nullopt;
             }
+
+            if ( lua_istable( L , top + 9 ) )
+            {
+                lua_getfield( L , top + 9 , "x" );
+                lua_getfield( L , top + 9 , "y" );
+                //top + 10 has content table
+                std::uint32_t tp_x = luaL_checkinteger( L , top + 11 );
+                std::uint32_t tp_y = luaL_checkinteger( L , top + 12 );
+                lua_pop( L , 2 );
+                towers.map[floor_id].field_vision = { tp_x , tp_y };
+            }
+            else
+            {
+                towers.map[floor_id].field_vision = std::nullopt;
+            }
+
             towers.map[floor_id].name = floor_name;
             towers.map[floor_id].length = floor_length;
             towers.map[floor_id].width = floor_width;
             towers.map[floor_id].default_floorid = default_floorid;
 
-            luaL_checktype( L , top + 9 , LUA_TTABLE );
+            luaL_checktype( L , top + 10 , LUA_TTABLE );
             lua_pushnil( L );
-            while( lua_next( L , top + 9 ) )  //floor content table
+            while( lua_next( L , top + 10 ) )  //floor content table
             {
-                luaL_checktype( L , top + 10 , LUA_TNUMBER );
-                luaL_checktype( L , top + 11 , LUA_TTABLE );   //grid table
-                lua_rawgeti( L , top + 11 , 1 );
-                lua_rawgeti( L , top + 11 , 2 );
-                std::uint32_t grid_type = luaL_checkinteger( L , top + 12 );
-                std::uint32_t grid_id = luaL_checkinteger( L , top + 13 );
+                luaL_checktype( L , top + 11 , LUA_TNUMBER );
+                luaL_checktype( L , top + 12 , LUA_TTABLE );   //grid table
+                lua_rawgeti( L , top + 12 , 1 );
+                lua_rawgeti( L , top + 12 , 2 );
+                std::uint32_t grid_type = luaL_checkinteger( L , top + 13 );
+                std::uint32_t grid_id = luaL_checkinteger( L , top + 14 );
                 towers.map[floor_id].content.push_back({ static_cast<GRID_TYPE>( grid_type ) , grid_id });
                 lua_pop( L , 3 );
             }
 
-            lua_pop( L , 7 );
+            lua_pop( L , 8 );
         }
         lua_pop( L , 1 );
-        towers.MAX_LENGTH = max_length;
-        towers.MAX_WIDTH = max_width;
 
         return towers;
     }

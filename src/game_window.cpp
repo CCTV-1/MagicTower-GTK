@@ -95,7 +95,8 @@ namespace MagicTower
             cairo_context->set_source_rgb( 0 , 0 , 0 );
             cairo_context->paint();
             cairo_context->restore();
-            this->backup_image = Gdk::Pixbuf::create( surface , 0  , 0 , this->pixel_size , this->pixel_size );
+            auto backup_image = Gdk::Pixbuf::create( surface , 0  , 0 , this->pixel_size , this->pixel_size );
+            this->image_resource[ResourcesManager::get_image( "backup" , 1 )] = backup_image;
 
             std::vector<std::string> image_paths = ResourcesManager::get_images();
             for ( auto& image_path : image_paths )
@@ -108,12 +109,12 @@ namespace MagicTower
                 catch ( const Gdk::PixbufError& e )
                 {
                     g_log( __func__ , G_LOG_LEVEL_WARNING , "from \'%s\' create gdkpixbuf failure,error code:%d,fallback to backup image." , image_path.c_str() , e.code() );
-                    pixbuf = this->backup_image;
+                    pixbuf = backup_image;
                 }
                 catch ( const Glib::FileError& e )
                 {
                     g_log( __func__ , G_LOG_LEVEL_WARNING , "open \'%s\' failure,error code:%d,fallback to backup image." , image_path.c_str() , e.code() );
-                    pixbuf = this->backup_image;
+                    pixbuf = backup_image;
                 }
                 this->image_resource[image_path] = pixbuf;
             }
@@ -144,7 +145,7 @@ namespace MagicTower
             catch ( const std::out_of_range& e)
             {
                 g_log( __func__ , G_LOG_LEVEL_WARNING , "image resource \'%s\' not found,fallback to backup image." , image_path.c_str() );
-                bg_pixbuf = this->backup_image;
+                bg_pixbuf = this->image_resource[ResourcesManager::get_image( "backup" , 1 )];
             }
 
             for ( size_t y = 0 ; y < height ; y++ )
@@ -210,6 +211,35 @@ namespace MagicTower
             return { offset_x , offset_y };
         }
 
+        /*  coordinate system (y,x):
+            (0,0),(0,1),(0,2)
+            (1,0),(1,1),(1,2)
+            (2,0),(2,1),(2,2)
+        */
+        bool is_visible( std::uint32_t x , std::uint32_t y )
+        {
+            auto& field_vision = this->game_object->game_map.map[ this->game_object->hero.floors ].field_vision;
+            if ( !field_vision.has_value() )
+            {
+                return true;
+            }
+            auto offsets = this->get_draw_offsets();
+            std::uint32_t origin_x = this->game_object->hero.x - offsets.first;
+            std::uint32_t origin_y = this->game_object->hero.y - offsets.second;
+
+            if ( std::abs( (std::int64_t)origin_x - (std::int64_t)x ) > field_vision.value().x )
+            {
+                return false;
+            }
+
+            if ( std::abs( (std::int64_t)origin_y - (std::int64_t)y ) > field_vision.value().y )
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         bool refresh_draw( void )
         {
             if ( this->game_object->game_status == GAME_STATUS::GAME_END )
@@ -265,7 +295,7 @@ namespace MagicTower
             catch ( const std::out_of_range& e)
             {
                 g_log( __func__ , G_LOG_LEVEL_WARNING , "image resource \'%s\' not found,fallback to backup image." , image_file_name.c_str() );
-                element = this->backup_image;
+                element = this->image_resource[ResourcesManager::get_image( "backup" , 1 )];
             }
             Gdk::Cairo::set_source_pixbuf( cairo_context , element , x*this->pixel_size , y*this->pixel_size );
             cairo_context->paint();
@@ -319,6 +349,11 @@ namespace MagicTower
             {
                 for ( size_t x = 0 ; x < this->max_grid_y ; x++ )
                 {
+                    if ( !this->is_visible( x , y ) )
+                    {
+                        this->draw_grid_image( cairo_context , x , y , "backup" , 1 );
+                        continue;
+                    }
                     auto grid = game_object->game_map.get_grid( game_object->hero.floors , x + offset_x , y + offset_y );
                     switch( grid.type )
                     {
@@ -370,7 +405,7 @@ namespace MagicTower
                         }
                         default :
                         {
-                            this->draw_grid_image( cairo_context , x , y , "boundary" , 1 );
+                            this->draw_grid_image( cairo_context , x , y , "backup" , 1 );
                             break;
                         }
                     }
@@ -1034,6 +1069,10 @@ namespace MagicTower
                         {
                             if ( ( event->button == 3 ) && ( game_object->game_status == GAME_STATUS::NORMAL ) )
                             {
+                                if ( !this->is_visible( x/this->pixel_size , y/this->pixel_size ) )
+                                {
+                                    break;
+                                }
                                 this->click_x = x;
                                 this->click_y = y;
                                 game_object->game_status = GAME_STATUS::REVIEW_DETAIL;
@@ -1041,6 +1080,10 @@ namespace MagicTower
                             }
                             else if ( event->button == 1 )
                             {
+                                if ( !this->is_visible( x/this->pixel_size , y/this->pixel_size ) )
+                                {
+                                    break;
+                                }
                                 auto offsets = this->get_draw_offsets();
                                 game_object->path = find_path( game_object , { x/this->pixel_size + offsets.first , y/this->pixel_size + offsets.second } );
                                 game_object->game_status = GAME_STATUS::FIND_PATH;
@@ -1113,7 +1156,6 @@ namespace MagicTower
         Gtk::DrawingArea * game_area;
         Gtk::DrawingArea * info_area;
         std::map<std::string,Glib::RefPtr<Gdk::Pixbuf>> image_resource;
-        Glib::RefPtr<Gdk::Pixbuf> backup_image;
         Glib::RefPtr<Gdk::Pixbuf> info_frame;
         std::uint32_t pixel_size = 32;
         std::uint32_t click_x = 0;
