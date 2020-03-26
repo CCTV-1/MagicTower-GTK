@@ -789,8 +789,7 @@ namespace MagicTower
 
     void save_game( GameEnvironment * game_object , size_t save_id )
     {
-        std::string save_path = ResourcesManager::get_save_path( save_id );
-        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( save_path );
+        Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( ResourcesManager::get_save_path() );
         try
         {
             save_dir->make_directory_with_parents();
@@ -804,7 +803,7 @@ namespace MagicTower
         std::string fail_tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         try
         {
-            DataBase db( save_path );
+            DataBase db( ResourcesManager::get_save_path() + std::to_string( save_id ) + std::string( ".db" ) );
             db.set_tower_info( game_object->game_map );
             db.set_hero_info( game_object->hero , 0 );
             db.set_script_flags( game_object->script_flags );
@@ -822,9 +821,8 @@ namespace MagicTower
 
     void load_game( GameEnvironment * game_object , size_t save_id )
     {
-        std::string save_path = ResourcesManager::get_save_path( save_id );
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
-        Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( save_path );
+        Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( ResourcesManager::get_save_path() + std::to_string( save_id ) + std::string( ".db" ) );
         if ( db_file->query_exists() == false )
         {
             fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
@@ -833,7 +831,7 @@ namespace MagicTower
         }
         try
         {
-            DataBase db( save_path );
+            DataBase db( ResourcesManager::get_save_path() + std::to_string( save_id ) + std::string( ".db" ) );
             game_object->game_map = db.get_tower_info();
             game_object->hero = db.get_hero_info( 0 );
             game_object->script_flags = db.get_script_flags();

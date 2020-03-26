@@ -62,9 +62,9 @@ std::vector<std::string> ResourcesManager::get_musics_uri( void )
     return uri_list;
 }
 
-std::string ResourcesManager::get_save_path( std::uint32_t save_id )
+std::string ResourcesManager::get_save_path( void )
 {
-    return std::string( DATABSE_RESOURCES_PATH ) + std::to_string( save_id ) + std::string( ".db" );
+    return std::string( DATABSE_RESOURCES_PATH );
 }
 
 std::string ResourcesManager::get_script_path( void )
