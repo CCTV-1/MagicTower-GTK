@@ -285,6 +285,11 @@ gamemap =
             ["x"] = 5,                  --telepotr to this floor,position:(x,y) = (5,10)
             ["y"] = 10
         },
+        ["field_vision"] =               --optional,if does not exist,can view this floor all grid
+        {
+            ["x"] = 2,                   --(2,2) can view (2±2,2±2) grid(or until the this floor border)
+            ["y"] = 2
+        },
         ["content"] =
         {
             {  3 ,  2 } , {  1 ,  1 }   -- there are $(length) grid
