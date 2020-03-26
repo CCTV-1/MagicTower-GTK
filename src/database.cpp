@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cinttypes>
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -55,6 +56,10 @@ namespace MagicTower
                     length              INT (32),
                     width               INT (32),
                     default_floorid     INT (32),
+                    tp_x                INT (32),
+                    tp_y                INT (32),
+                    fv_x                INT (32),
+                    fv_y                INT (32),
                     name                TEXT,
                     content             BLOB
                 );
@@ -151,7 +156,7 @@ namespace MagicTower
 
     TowerMap DataBase::get_tower_info()
     {
-        const char sql_statement[] = "SELECT id,length,width,default_floorid,name,content FROM towerfloor";
+        const char sql_statement[] = "SELECT id,length,width,default_floorid,tp_x,tp_y,fv_x,fv_y,name,content FROM towerfloor";
         this->sqlite3_error_code = sqlite3_prepare_v2( db_handler , sql_statement
             , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
         if ( this->sqlite3_error_code != SQLITE_OK )
@@ -160,35 +165,52 @@ namespace MagicTower
             throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
 
-        TowerMap towers = { 0 , 0 , {} };
+        TowerMap towers = {};
         //id should be unique,so hero will not be repeat setting
         while ( ( this->sqlite3_error_code = sqlite3_step( this->sql_statement_handler ) ) == SQLITE_ROW )
         {
-            if ( sqlite3_column_count( this->sql_statement_handler ) != 6 )
+            if ( sqlite3_column_count( this->sql_statement_handler ) != 10 )
             {
                 sqlite3_finalize( this->sql_statement_handler );
                 throw std::runtime_error( std::string( sql_statement ) );
             }
+
             std::uint32_t floor_id = sqlite3_column_int( this->sql_statement_handler , 0 );
             std::uint32_t floor_length = sqlite3_column_int( this->sql_statement_handler , 1 );
             std::uint32_t floor_width = sqlite3_column_int( this->sql_statement_handler , 2 );
             std::uint32_t default_floorid = sqlite3_column_int( this->sql_statement_handler , 3 );
-            std::string floor_name( reinterpret_cast< const char * >( sqlite3_column_text( this->sql_statement_handler , 4 ) ) );
+            decltype( TowerFloor::teleport_point ) tp_point;
+            if ( ( sqlite3_column_type( this->sql_statement_handler , 4 ) == SQLITE_NULL ) || 
+                 ( sqlite3_column_type( this->sql_statement_handler , 5 ) == SQLITE_NULL )
+            )
+            {
+                tp_point = std::nullopt;
+            }
+            else
+            {
+                tp_point = { sqlite3_column_int( this->sql_statement_handler , 4 ) , sqlite3_column_int( this->sql_statement_handler , 5 ) };
+            }
+            decltype( TowerFloor::field_vision ) field_vision;
+            if ( ( sqlite3_column_type( this->sql_statement_handler , 6 ) == SQLITE_NULL ) || 
+                 ( sqlite3_column_type( this->sql_statement_handler , 7 ) == SQLITE_NULL )
+            )
+            {
+                field_vision = std::nullopt;
+            }
+            else
+            {
+                field_vision = { sqlite3_column_int( this->sql_statement_handler , 6 ) , sqlite3_column_int( this->sql_statement_handler , 7 ) };
+            }
+            std::string floor_name( reinterpret_cast< const char * >( sqlite3_column_text( this->sql_statement_handler , 8 ) ) );
             //default vector size is 0,resize to >= maps size
             //data size is agreed in advance,so don't call sqlite3_column_bytes.
-            struct TowerGrid * data = reinterpret_cast<struct TowerGrid *>( const_cast<void *>( sqlite3_column_blob( this->sql_statement_handler , 5 ) ) );
+            struct TowerGrid * data = reinterpret_cast<struct TowerGrid *>( const_cast<void *>( sqlite3_column_blob( this->sql_statement_handler , 9 ) ) );
             decltype( TowerFloor::content ) temp( data + 0 , data + floor_length*floor_width );
-            if ( towers.MAX_LENGTH < floor_length )
-            {
-                towers.MAX_LENGTH = floor_length;
-            }
-            if ( towers.MAX_WIDTH < floor_width )
-            {
-                towers.MAX_WIDTH = floor_width;
-            }
             towers.map[floor_id].length = floor_length;
             towers.map[floor_id].width = floor_width;
             towers.map[floor_id].default_floorid = default_floorid;
+            towers.map[floor_id].teleport_point = tp_point;
+            towers.map[floor_id].field_vision = field_vision;
             towers.map[floor_id].name = floor_name;
             towers.map[floor_id].content = temp;
         }
@@ -342,7 +364,7 @@ namespace MagicTower
 
     void DataBase::set_tower_info( const TowerMap& tower )
     {
-        const char sql_statement[] = "INSERT OR REPLACE INTO towerfloor(id,length,width,default_floorid,name,content) VALUES( ? , ? , ? , ? , ? , ? )";
+        const char sql_statement[] = "INSERT OR REPLACE INTO towerfloor(id,length,width,default_floorid,tp_x,tp_y,fv_x,fv_y,name,content) VALUES( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )";
         this->sqlite3_error_code = sqlite3_prepare_v2( this->db_handler , 
         sql_statement , sizeof( sql_statement ) , &( this->sql_statement_handler ) , nullptr );
 
@@ -352,7 +374,7 @@ namespace MagicTower
             throw std::runtime_error( std::string( "prepare statement:" ) + std::string( sql_statement ) + std::string( " failure,slite3 error code:" ) + std::to_string( this->sqlite3_error_code ) );
         }
         
-        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 6 )
+        if ( sqlite3_bind_parameter_count( this->sql_statement_handler ) != 10 )
         {
             sqlite3_finalize( this->sql_statement_handler );
             throw std::runtime_error( std::string( "sql statement:\"" ) + std::string( sql_statement ) + std::string( "\" bind argument count out of expectation" ) );
@@ -364,8 +386,28 @@ namespace MagicTower
             sqlite3_bind_int( this->sql_statement_handler , 2 , floor.second.length );
             sqlite3_bind_int( this->sql_statement_handler , 3 , floor.second.width );
             sqlite3_bind_int( this->sql_statement_handler , 4 , floor.second.default_floorid );
-            sqlite3_bind_text( this->sql_statement_handler , 5 , floor.second.name.c_str() , floor.second.name.size() , SQLITE_STATIC );
-            sqlite3_bind_blob( this->sql_statement_handler , 6 , floor.second.content.data() ,
+            if ( floor.second.teleport_point.has_value() )
+            {
+                sqlite3_bind_int( this->sql_statement_handler , 5 , floor.second.teleport_point.value().x );
+                sqlite3_bind_int( this->sql_statement_handler , 6 , floor.second.teleport_point.value().y );
+            }
+            else
+            {
+                sqlite3_bind_null( this->sql_statement_handler , 5 );
+                sqlite3_bind_null( this->sql_statement_handler , 6 );
+            }
+            if ( floor.second.field_vision.has_value() )
+            {
+                sqlite3_bind_int( this->sql_statement_handler , 7 , floor.second.field_vision.value().x );
+                sqlite3_bind_int( this->sql_statement_handler , 8 , floor.second.field_vision.value().y );
+            }
+            else
+            {
+                sqlite3_bind_null( this->sql_statement_handler , 7 );
+                sqlite3_bind_null( this->sql_statement_handler , 8 );
+            }
+            sqlite3_bind_text( this->sql_statement_handler , 9 , floor.second.name.c_str() , floor.second.name.size() , SQLITE_STATIC );
+            sqlite3_bind_blob( this->sql_statement_handler , 10 , floor.second.content.data() ,
                 sizeof( MagicTower::TowerGrid )*floor.second.length*floor.second.width , SQLITE_STATIC );
 
             //UPDATE not return data so sqlite3_step not return SQLITE_ROW
