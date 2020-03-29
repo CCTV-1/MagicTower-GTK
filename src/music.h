@@ -44,11 +44,9 @@ namespace MagicTower
 
         bool play( std::size_t id );
         bool play( std::string uri );
-        bool play_next();
-        void play_stop();
-        void play_pause();
-        void play_restart();
-        void play_resume();
+        bool next();
+        void pause();
+        void resume();
 
         PLAY_STATE get_state();
         double get_volume();

@@ -18,6 +18,7 @@ namespace MagicTower
     {
         MusicImp():
             mode( PLAY_MODE::RANDOM_PLAYING ),
+            state( PLAY_STATE::STOP ),
             play_id( 0 ),
             handler_id( 0 ),
             music_uri_list( {} ),
@@ -73,6 +74,7 @@ namespace MagicTower
         }
 
         PLAY_MODE mode;
+        PLAY_STATE state;
         std::size_t play_id;
         gulong handler_id;
         std::vector<std::string> music_uri_list;
@@ -106,6 +108,11 @@ namespace MagicTower
             return false;
         }
 
+        if ( this->imp_ptr->state == PLAY_STATE::PAUSE )
+        {
+            return false;
+        }
+
         this->imp_ptr->play_id = id;
         g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , this->imp_ptr->music_uri_list[ id ].c_str() , nullptr );
         GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
@@ -114,6 +121,7 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
             return false;
         }
+        this->imp_ptr->state = PLAY_STATE::PLAYING;
         return true;
     }
 
@@ -125,6 +133,11 @@ namespace MagicTower
             return false;
         }
 
+        if ( this->imp_ptr->state == PLAY_STATE::PAUSE )
+        {
+            return false;
+        }
+
         gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_NULL );
         g_object_set( G_OBJECT( this->imp_ptr->source ) , "uri" , uri.c_str() , nullptr );
         GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
@@ -133,67 +146,66 @@ namespace MagicTower
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
             return false;
         }
+        this->imp_ptr->state = PLAY_STATE::PLAYING;
         return true;
     }
 
-    bool Music::play_next()
+    bool Music::next()
     {
+        if ( this->imp_ptr->state == PLAY_STATE::PAUSE )
+        {
+            return false;
+        }
         std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
         gst_bus_post( bus.get() , gst_message_new_eos( GST_OBJECT( bus.get() ) ) );
+        this->imp_ptr->state = PLAY_STATE::PLAYING;
         return true;
     }
-
-    void Music::play_stop()
-    {
-        gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_READY );
-    }
     
-    void Music::play_pause()
-    {
-        gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PAUSED );
-    }
-
-    void Music::play_resume()
-    {
-        GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
-        if ( ret == GST_STATE_CHANGE_FAILURE )
-        {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
-            return ;
-        }
-    }
-
-    void Music::play_restart()
-    {
-        gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_READY );
-        GstStateChangeReturn ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
-        if ( ret == GST_STATE_CHANGE_FAILURE )
-        {
-            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
-            return ;
-        }
-    }
-
-    enum PLAY_STATE Music::get_state()
+    void Music::pause()
     {
         GstState state = GST_STATE_NULL;
         GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( this->imp_ptr->pipeline ) , &state , nullptr , -1 );
         if ( ret == GST_STATE_CHANGE_FAILURE )
         {
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable get the playing state" );
-            return PLAY_STATE::STOP;
+            return ;
         }
-    
-        switch ( state )
+        if ( state == GST_STATE_PLAYING )
         {
-            case GST_STATE_PAUSED:
-                return PLAY_STATE::PAUSE;
-            case GST_STATE_PLAYING:
-                return PLAY_STATE::PLAYING;
-            default:
-                return PLAY_STATE::STOP;
+            gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PAUSED );
         }
-        return PLAY_STATE::STOP;
+        this->imp_ptr->state = PLAY_STATE::PAUSE;
+    }
+
+    void Music::resume()
+    {
+        if ( this->imp_ptr->state != PLAY_STATE::PAUSE )
+        {
+            return ;
+        }
+        GstState state = GST_STATE_NULL;
+        GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( this->imp_ptr->pipeline ) , &state , nullptr , -1 );
+        if ( ret == GST_STATE_CHANGE_FAILURE )
+        {
+            g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable get the playing state" );
+            return ;
+        }
+        if ( state == GST_STATE_PAUSED )
+        {
+            ret = gst_element_set_state( this->imp_ptr->pipeline , GST_STATE_PLAYING );
+            if ( ret == GST_STATE_CHANGE_FAILURE )
+            {
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "unable to set the pipeline to the playing state" );
+                return ;
+            }
+        }
+        this->imp_ptr->state = PLAY_STATE::PLAYING;
+    }
+
+    PLAY_STATE Music::get_state()
+    {
+        return this->imp_ptr->state;
     }
 
     void Music::set_volume( double volume )
@@ -231,7 +243,7 @@ namespace MagicTower
         add_music_uri_list( std::move( uri_list ) );
     }
 
-    std::vector<std::string > Music::get_music_uri_list()
+    std::vector<std::string> Music::get_music_uri_list()
     {
         return this->imp_ptr->music_uri_list;
     }

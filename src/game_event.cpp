@@ -288,7 +288,7 @@ namespace MagicTower
                 {
                     lua_settop( L , 0 );
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.play_next();
+                    game_object->music.next();
                     return 0;
                 }
             },
@@ -298,7 +298,7 @@ namespace MagicTower
                 {
                     lua_settop( L , 0 );
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.play_pause();
+                    game_object->music.pause();
                     return 0;
                 }
             },
@@ -308,7 +308,7 @@ namespace MagicTower
                 {
                     lua_settop( L , 0 );
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.play_resume();
+                    game_object->music.resume();
                     return 0;
                 }
             },
@@ -1604,16 +1604,30 @@ namespace MagicTower
         });
         game_object->menu_items.push_back({
             [ game_object ](){
-                if ( game_object->music.get_state() == PLAY_STATE::PLAYING )
-                    return std::string( "背景音乐: 开" );
-                else
+                if ( game_object->music.get_state() == PLAY_STATE::PAUSE )
                     return std::string( "背景音乐: 关" );
+                else
+                    return std::string( "背景音乐: 开" );
             },
             [ game_object ](){
-                if ( game_object->music.get_state() == PLAY_STATE::PLAYING )
-                    game_object->music.play_pause();
+                if ( game_object->music.get_state() == PLAY_STATE::PAUSE )
+                    game_object->music.resume();
                 else
-                    game_object->music.play_resume();
+                    game_object->music.pause();
+            }
+        });
+        game_object->menu_items.push_back({
+            [ game_object ](){
+                if ( game_object->soundeffect_player.get_state() == PLAY_STATE::PAUSE )
+                    return std::string( "游戏音效: 关" );
+                else
+                    return std::string( "游戏音效: 开" );
+            },
+            [ game_object ](){
+                if ( game_object->soundeffect_player.get_state() == PLAY_STATE::PAUSE )
+                    game_object->soundeffect_player.resume();
+                else
+                    game_object->soundeffect_player.pause();
             }
         });
         game_object->menu_items.push_back({
