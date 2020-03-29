@@ -11,7 +11,7 @@ namespace MagicTower
     class GameWindow
     {
     public:
-        GameWindow( std::string program_name = std::string( "./" ) );
+        GameWindow();
         ~GameWindow();
         void run();
 

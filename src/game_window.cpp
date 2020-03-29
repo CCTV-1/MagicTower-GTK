@@ -1163,10 +1163,8 @@ namespace MagicTower
         std::uint8_t max_grid_y = 10;
     };
 
-    GameWindow::GameWindow( std::string program_name )
+    GameWindow::GameWindow()
     {
-        std::unique_ptr< char , decltype( &g_free ) > self_dir_path( g_path_get_dirname( program_name.c_str() ) , g_free );
-        g_chdir( self_dir_path.get() );
         this->imp_ptr = new GameWindowImp;
     }
     GameWindow::~GameWindow()
