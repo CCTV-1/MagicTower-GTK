@@ -1082,8 +1082,9 @@ namespace MagicTower
                             {
                                 auto offsets = this->get_draw_offsets();
                                 game_object->path = find_path( game_object , { x/this->pixel_size + offsets.first , y/this->pixel_size + offsets.second } , 
-                                    [this]( std::uint32_t x , std::uint32_t y ) -> bool {
-                                        return this->is_visible( x , y );
+                                    [ this , offsets ]( std::uint32_t x , std::uint32_t y ) -> bool {
+                                        //check screen position
+                                        return this->is_visible( x - offsets.first , y - offsets.second );
                                 });
                                 game_object->game_status = GAME_STATUS::FIND_PATH;
                                 if ( !this->findpath_connection.connected() )
