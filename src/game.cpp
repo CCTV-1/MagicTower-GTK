@@ -10,7 +10,7 @@ static std::vector<Glib::ustring> log_content;
 
 static GLogWriterOutput mt_log_writer( GLogLevelFlags log_level, const GLogField *fields , gsize n_fields , gpointer )
 {
-    log_content.push_back( Glib::ustring( g_log_writer_format_fields( log_level , fields , n_fields , false ) ) );
+    log_content.push_back( Glib::ustring( g_log_writer_format_fields( log_level , fields , n_fields , false ) ) + "\n" );
 
     return G_LOG_WRITER_HANDLED;
 }
