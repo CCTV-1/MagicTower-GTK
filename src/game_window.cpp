@@ -132,47 +132,6 @@ namespace MagicTower
             this->main_loop.run( std::ref( *this->window ) );
         }
 
-    protected:
-        Glib::RefPtr<Gdk::Pixbuf> info_background_image_factory( size_t width , size_t height )
-        {
-            Glib::RefPtr<Gdk::Pixbuf> info_frame = Gdk::Pixbuf::create( Gdk::Colorspace::COLORSPACE_RGB , TRUE , 8 , width*this->pixel_size , height*this->pixel_size );
-            std::string image_path = ResourcesManager::get_image( "floor" , 11 );
-            Glib::RefPtr<Gdk::Pixbuf> bg_pixbuf;
-            try
-            {
-                bg_pixbuf = this->image_resource.at(image_path);
-            }
-            catch ( const std::out_of_range& e)
-            {
-                g_log( __func__ , G_LOG_LEVEL_WARNING , "image resource \'%s\' not found,fallback to backup image." , image_path.c_str() );
-                bg_pixbuf = this->image_resource[ResourcesManager::get_image( "backup" , 1 )];
-            }
-
-            for ( size_t y = 0 ; y < height ; y++ )
-            {
-                for ( size_t x = 0 ; x < width ; x++ )
-                {
-                    bg_pixbuf->composite( info_frame , x*this->pixel_size , y*this->pixel_size , this->pixel_size , this->pixel_size ,
-                    x*this->pixel_size , y*this->pixel_size , 1.0 , 1.0 , Gdk::InterpType::INTERP_BILINEAR , 255 );
-                }
-            }
-
-            return info_frame;
-        }
-
-        Gdk::Rectangle get_menu_ractangle( void )
-        {
-            Gtk::Allocation allocation = this->game_area->get_allocation();
-            const int widget_width = allocation.get_width();
-            const int widget_height = allocation.get_height();
-            const int box_start_x = widget_height/6;
-            const int box_start_y = widget_width/6;
-
-            const int box_height = widget_height*2/3;
-            const int box_width = widget_width*2/3;
-            return { box_start_x , box_start_y , box_width , box_height };
-        }
-
         std::pair<std::uint8_t,std::uint8_t> get_draw_offsets( void )
         {
             std::uint32_t floor_length = this->game_object->game_map.map[ this->game_object->hero.floors ].length;
@@ -238,6 +197,47 @@ namespace MagicTower
             }
 
             return true;
+        }
+
+    protected:
+        Glib::RefPtr<Gdk::Pixbuf> info_background_image_factory( size_t width , size_t height )
+        {
+            Glib::RefPtr<Gdk::Pixbuf> info_frame = Gdk::Pixbuf::create( Gdk::Colorspace::COLORSPACE_RGB , TRUE , 8 , width*this->pixel_size , height*this->pixel_size );
+            std::string image_path = ResourcesManager::get_image( "floor" , 11 );
+            Glib::RefPtr<Gdk::Pixbuf> bg_pixbuf;
+            try
+            {
+                bg_pixbuf = this->image_resource.at(image_path);
+            }
+            catch ( const std::out_of_range& e)
+            {
+                g_log( __func__ , G_LOG_LEVEL_WARNING , "image resource \'%s\' not found,fallback to backup image." , image_path.c_str() );
+                bg_pixbuf = this->image_resource[ResourcesManager::get_image( "backup" , 1 )];
+            }
+
+            for ( size_t y = 0 ; y < height ; y++ )
+            {
+                for ( size_t x = 0 ; x < width ; x++ )
+                {
+                    bg_pixbuf->composite( info_frame , x*this->pixel_size , y*this->pixel_size , this->pixel_size , this->pixel_size ,
+                    x*this->pixel_size , y*this->pixel_size , 1.0 , 1.0 , Gdk::InterpType::INTERP_BILINEAR , 255 );
+                }
+            }
+
+            return info_frame;
+        }
+
+        Gdk::Rectangle get_menu_ractangle( void )
+        {
+            Gtk::Allocation allocation = this->game_area->get_allocation();
+            const int widget_width = allocation.get_width();
+            const int widget_height = allocation.get_height();
+            const int box_start_x = widget_height/6;
+            const int box_start_y = widget_width/6;
+
+            const int box_height = widget_height*2/3;
+            const int box_width = widget_width*2/3;
+            return { box_start_x , box_start_y , box_width , box_height };
         }
 
         bool refresh_draw( void )
@@ -1080,12 +1080,11 @@ namespace MagicTower
                             }
                             else if ( event->button == 1 )
                             {
-                                if ( !this->is_visible( x/this->pixel_size , y/this->pixel_size ) )
-                                {
-                                    break;
-                                }
                                 auto offsets = this->get_draw_offsets();
-                                game_object->path = find_path( game_object , { x/this->pixel_size + offsets.first , y/this->pixel_size + offsets.second } );
+                                game_object->path = find_path( game_object , { x/this->pixel_size + offsets.first , y/this->pixel_size + offsets.second } , 
+                                    [this]( std::uint32_t x , std::uint32_t y ) -> bool {
+                                        return this->is_visible( x , y );
+                                });
                                 game_object->game_status = GAME_STATUS::FIND_PATH;
                                 if ( !this->findpath_connection.connected() )
                                 {

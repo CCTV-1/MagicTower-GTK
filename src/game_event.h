@@ -22,7 +22,7 @@ namespace MagicTower
 
     void scriptengines_register_eventfunc( GameEnvironment * game_object );
 
-    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal );
+    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal , std::function<bool(std::uint32_t x , std::uint32_t y)> is_visible );
 
     std::int64_t get_combat_damage( GameEnvironment * game_object , std::uint32_t monster_id );
 

@@ -738,10 +738,14 @@ namespace MagicTower
         lua_pop( L , 1 );
     }
 
-    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal )
+    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal , std::function<bool(std::uint32_t x , std::uint32_t y)> is_visible )
     {
         Hero& hero = game_object->hero;
         TowerMap& tower = game_object->game_map;
+        if ( ( is_visible != nullptr ) && ( !is_visible( goal.x , goal.y ) ) )
+        {
+            return {};
+        }
         TowerGridLocation start = { hero.x , hero.y };
         if ( start == goal )
             return {};
@@ -763,6 +767,11 @@ namespace MagicTower
         {
             for ( std::uint32_t x = 0 ; x < width ; x++ )
             {
+                if ( ( is_visible != nullptr ) && ( !is_visible( x , y ) ) )
+                {
+                    game_map.walls.insert( { std::int64_t( x ) , std::int64_t( y ) } );
+                    continue;
+                }
                 auto grid = tower.get_grid( hero.floors , x , y );
                 switch ( grid.type )
                 {
