@@ -40,8 +40,8 @@ namespace MagicTower
             scriptengines_register_eventfunc( game_object );
 
             std::vector<std::string> music_list = ResourcesManager::get_musics_uri();
-            this->game_object->music.set_play_mode( PLAY_MODE::RANDOM_PLAYING );
-            this->game_object->music.set_music_uri_list( music_list );
+            this->game_object->music.set_playmode( PLAY_MODE::RANDOM_PLAYING );
+            this->game_object->music.set_playlist( music_list );
             this->game_object->music.play( 0 );
 
             Glib::RefPtr<Gdk::DisplayManager> display_manager = Gdk::DisplayManager::get();

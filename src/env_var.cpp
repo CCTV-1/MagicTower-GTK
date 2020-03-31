@@ -364,7 +364,7 @@ namespace MagicTower
         initial_sandbox( L );
         this->initial_gamedata();
 
-        soundeffect_player.set_play_mode(PLAY_MODE::SINGLE_PLAY);
+        soundeffect_player.set_playmode(PLAY_MODE::SINGLE_PLAY);
     }
 
     GameEnvironment::~GameEnvironment()

@@ -11,12 +11,12 @@ namespace MagicTower
     static void pad_added_handler( GstElement * , GstPad * new_pad , GstElement * conver );
     static gboolean single_play( GstBus * , GstMessage * , GstElement * );
     static gboolean single_cycle( GstBus * bus , GstMessage * msg , GstElement * pipeline );
-    static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
-    static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicImp * imp_ptr );
+    static gboolean list_cycle( GstBus * bus , GstMessage * msg , MusicPlayerImp * imp_ptr );
+    static gboolean random_playing( GstBus * bus , GstMessage * msg , MusicPlayerImp * imp_ptr );
 
-    struct MusicImp
+    struct MusicPlayerImp
     {
-        MusicImp():
+        MusicPlayerImp():
             mode( PLAY_MODE::RANDOM_PLAYING ),
             state( PLAY_STATE::STOP ),
             play_id( 0 ),
@@ -28,28 +28,28 @@ namespace MagicTower
             if ( !gst_is_initialized() )
                 init_status = gst_init_check( nullptr , nullptr , nullptr );
             if ( !init_status )
-                throw music_init_failure( std::string( "gstreamer initial failure" ) );
+                throw std::runtime_error( std::string( "gstreamer initial failure" ) );
             if ( ( this->pipeline = gst_pipeline_new( "audio-player" ) ) == nullptr )
             {
-                throw music_init_failure( std::string( "gstreamer pipeline could not be created" ) );
+                throw std::runtime_error( std::string( "gstreamer pipeline could not be created" ) );
             }
             if ( ( this->source = gst_element_factory_make( "uridecodebin" , "source" ) ) == nullptr )
             {
                 gst_object_unref( this->pipeline );
-                throw music_init_failure( std::string( "gstreamer element uridecodebin could not be created" ) );
+                throw std::runtime_error( std::string( "gstreamer element uridecodebin could not be created" ) );
             }
             if ( ( this->conver = gst_element_factory_make( "audioconvert" , "conver" ) ) == nullptr )
             {
                 gst_object_unref( this->pipeline );
                 gst_object_unref( this->source );
-                throw music_init_failure( std::string( "gstreamer element audioconvert could not be created" ) );
+                throw std::runtime_error( std::string( "gstreamer element audioconvert could not be created" ) );
             }
             if ( ( this->sink = gst_element_factory_make( "playsink" , "sink" ) ) == nullptr )
             {
                 gst_object_unref( this->pipeline );
                 gst_object_unref( this->source );
                 gst_object_unref( this->conver );
-                throw music_init_failure( std::string( "gstreamer element playsink could not be created" ) );
+                throw std::runtime_error( std::string( "gstreamer element playsink could not be created" ) );
             }
     
             gst_bin_add_many( GST_BIN( this->pipeline ) , this->source , this->conver , this->sink , nullptr );
@@ -59,11 +59,11 @@ namespace MagicTower
                 gst_object_unref( this->source );
                 gst_object_unref( this->conver );
                 gst_object_unref( this->sink );
-                throw music_init_failure( std::string( "elements could not be linked" ) );
+                throw std::runtime_error( std::string( "elements could not be linked" ) );
             }
             g_signal_connect( this->source , "pad-added" , G_CALLBACK( pad_added_handler ) , this->conver );
         }
-        ~MusicImp()
+        ~MusicPlayerImp()
         {
             gst_element_set_state( this->pipeline , GST_STATE_NULL );
             gst_object_unref( this->pipeline );
@@ -85,22 +85,22 @@ namespace MagicTower
         std::unique_ptr< GRand , decltype( &g_rand_free ) > grand_gen;
     };
 
-    Music::Music( std::vector<std::string> _music_uri_list ):
-        imp_ptr( new MusicImp )
+    MusicPlayer::MusicPlayer( std::vector<std::string> _music_uri_list ):
+        imp_ptr( new MusicPlayerImp )
     {
         if ( _music_uri_list.empty() )
             return ;
-        set_play_mode( this->imp_ptr->mode );
-        add_music_uri_list( _music_uri_list );
+        set_playmode( this->imp_ptr->mode );
+        add_playlist( _music_uri_list );
         play( this->imp_ptr->play_id );
     }
 
-    Music::~Music()
+    MusicPlayer::~MusicPlayer()
     {
         delete this->imp_ptr;
     }
 
-    bool Music::play( std::size_t id )
+    bool MusicPlayer::play( std::size_t id )
     {
         if ( this->imp_ptr->music_uri_list.empty() )
         {
@@ -125,7 +125,7 @@ namespace MagicTower
         return true;
     }
 
-    bool Music::play( std::string uri )
+    bool MusicPlayer::play( std::string uri )
     {
         if ( uri.empty() )
         {
@@ -150,7 +150,7 @@ namespace MagicTower
         return true;
     }
 
-    bool Music::next()
+    bool MusicPlayer::next()
     {
         if ( this->imp_ptr->state == PLAY_STATE::PAUSE )
         {
@@ -162,7 +162,7 @@ namespace MagicTower
         return true;
     }
     
-    void Music::pause()
+    void MusicPlayer::pause()
     {
         GstState state = GST_STATE_NULL;
         GstStateChangeReturn ret = gst_element_get_state( GST_ELEMENT( this->imp_ptr->pipeline ) , &state , nullptr , -1 );
@@ -178,7 +178,7 @@ namespace MagicTower
         this->imp_ptr->state = PLAY_STATE::PAUSE;
     }
 
-    void Music::resume()
+    void MusicPlayer::resume()
     {
         if ( this->imp_ptr->state != PLAY_STATE::PAUSE )
         {
@@ -203,24 +203,24 @@ namespace MagicTower
         this->imp_ptr->state = PLAY_STATE::PLAYING;
     }
 
-    PLAY_STATE Music::get_state()
+    PLAY_STATE MusicPlayer::get_state()
     {
         return this->imp_ptr->state;
     }
 
-    void Music::set_volume( double volume )
+    void MusicPlayer::set_volume( double volume )
     {
         g_object_set( G_OBJECT( this->imp_ptr->sink ) , "volume" , volume , NULL );
     }
 
-    double Music::get_volume()
+    double MusicPlayer::get_volume()
     {
         gdouble volume;
         g_object_get( G_OBJECT( this->imp_ptr->sink ) , "volume" , &volume , NULL );
         return volume;
     }
 
-    void Music::add_music_uri_list( std::vector<std::string> uri_list )
+    void MusicPlayer::add_playlist( std::vector<std::string> uri_list )
     {
         for ( auto uri : uri_list )
         {
@@ -237,18 +237,18 @@ namespace MagicTower
         }
     }
     
-    void Music::set_music_uri_list( std::vector<std::string> uri_list )
+    void MusicPlayer::set_playlist( std::vector<std::string> uri_list )
     {
         this->imp_ptr->music_uri_list.clear();
-        add_music_uri_list( std::move( uri_list ) );
+        add_playlist( std::move( uri_list ) );
     }
 
-    std::vector<std::string> Music::get_music_uri_list()
+    std::vector<std::string> MusicPlayer::get_playlist()
     {
         return this->imp_ptr->music_uri_list;
     }
 
-    void Music::set_play_mode( PLAY_MODE mode )
+    void MusicPlayer::set_playmode( PLAY_MODE mode )
     {
         this->imp_ptr->mode = mode;
         std::unique_ptr< GstBus , decltype( &gst_object_unref ) > bus( gst_element_get_bus( this->imp_ptr->pipeline ) , gst_object_unref );
@@ -281,7 +281,7 @@ namespace MagicTower
         }
     }
 
-    bool Music::is_music_file( std::string& file_uri )
+    bool MusicPlayer::is_music_file( std::string& file_uri )
     {
         GstCaps * caps = nullptr;
         std::unique_ptr< gchar , decltype( &g_free ) > filename( g_filename_from_uri( file_uri.c_str() , nullptr , nullptr ) , g_free );
@@ -398,7 +398,7 @@ namespace MagicTower
         return TRUE;
     }
 
-    static gboolean list_cycle( GstBus * , GstMessage * , MusicImp * imp_ptr )
+    static gboolean list_cycle( GstBus * , GstMessage * , MusicPlayerImp * imp_ptr )
     {
         GstElement * pipeline = imp_ptr->pipeline;
         GstElement * source = imp_ptr->source;
@@ -422,7 +422,7 @@ namespace MagicTower
         return TRUE;
     }
 
-    static gboolean random_playing( GstBus * , GstMessage * , MusicImp * imp_ptr )
+    static gboolean random_playing( GstBus * , GstMessage * , MusicPlayerImp * imp_ptr )
     {
         GstElement * pipeline = imp_ptr->pipeline;
         GstElement * source = imp_ptr->source;

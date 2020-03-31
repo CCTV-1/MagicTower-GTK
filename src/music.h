@@ -2,9 +2,6 @@
 #ifndef MUSIC_H
 #define MUSIC_H
 
-//in mingw64,std::random_device not working,do not use
-//#include <random>
-
 #include <cstdint>
 
 #include <vector>
@@ -13,12 +10,6 @@
 
 namespace MagicTower
 {
-    class music_init_failure : public std::runtime_error
-    {
-    public:
-        explicit music_init_failure( const std::string &s ) : std::runtime_error(s) {}
-    };
-
     enum class PLAY_STATE:std::uint32_t
     {
         PLAYING = 0,
@@ -34,13 +25,13 @@ namespace MagicTower
         RANDOM_PLAYING,
     };
 
-    struct MusicImp;
+    struct MusicPlayerImp;
 
-    class Music
+    class MusicPlayer
     {
     public:
-        Music( std::vector<std::string> _play_list = {} );
-        ~Music();
+        MusicPlayer( std::vector<std::string> _play_list = {} );
+        ~MusicPlayer();
 
         bool play( std::size_t id );
         bool play( std::string uri );
@@ -50,22 +41,22 @@ namespace MagicTower
 
         PLAY_STATE get_state();
         double get_volume();
-        std::vector<std::string> get_music_uri_list();
+        std::vector<std::string> get_playlist();
 
         void set_volume( double volume );
-        void set_music_uri_list( std::vector<std::string> uri_list );
-        void set_play_mode( PLAY_MODE mode );
+        void set_playlist( std::vector<std::string> uri_list );
+        void set_playmode( PLAY_MODE mode );
 
-        void add_music_uri_list( std::vector<std::string> uri_list );
+        void add_playlist( std::vector<std::string> uri_list );
 
         static bool is_music_file( std::string& file_uri );
 
-        Music( const Music& rhs )=delete;
-        Music( Music&& rhs )=delete;
-        Music& operator=( const Music& rhs )=delete;
-        Music& operator=( Music&& rhs )=delete;
+        MusicPlayer( const MusicPlayer& rhs )=delete;
+        MusicPlayer( MusicPlayer&& rhs )=delete;
+        MusicPlayer& operator=( const MusicPlayer& rhs )=delete;
+        MusicPlayer& operator=( MusicPlayer&& rhs )=delete;
     private:
-        MusicImp * imp_ptr;
+        MusicPlayerImp * imp_ptr;
     };
 }
 

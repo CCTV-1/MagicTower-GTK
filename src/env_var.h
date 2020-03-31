@@ -64,8 +64,8 @@ namespace MagicTower
         std::unique_ptr< lua_State , decltype( &lua_close ) > script_engines;
         std::vector<TowerGridLocation> path;
         Menu_t menu_items;
-        Music music;
-        Music soundeffect_player;
+        MusicPlayer music;
+        MusicPlayer soundeffect_player;
         Hero hero;
         TowerMap game_map;
         GAME_STATUS game_status;

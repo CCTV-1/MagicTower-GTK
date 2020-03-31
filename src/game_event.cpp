@@ -258,7 +258,7 @@ namespace MagicTower
                     lua_settop( L , 1 );
                     PLAY_MODE mode_value = static_cast<PLAY_MODE>( luaL_checkinteger( L , 1 ) );
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.set_play_mode( mode_value );
+                    game_object->music.set_playmode( mode_value );
                     return 0;
                 }
             },
@@ -278,7 +278,7 @@ namespace MagicTower
                         new_playlist.push_back( std::string( luaL_checkstring( L , i ) ) );
                     }
                     GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.set_music_uri_list( new_playlist );
+                    game_object->music.set_playlist( new_playlist );
                     return 0;
                 }
             },
