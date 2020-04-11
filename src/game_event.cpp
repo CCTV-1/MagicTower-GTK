@@ -130,7 +130,6 @@ namespace MagicTower
         }
     };
 
-
     struct GridWithWeights : SquareGrid
     {
         std::set<TowerGridLocation> forests;
@@ -148,6 +147,9 @@ namespace MagicTower
     {
         std::vector<Location> path;
         Location current = goal;
+        //path not found return
+        if ( came_from.find( current ) == came_from.end() )
+            return {};
         while ( current != start )
         {
             path.push_back( current );
@@ -156,16 +158,12 @@ namespace MagicTower
             if ( came_from.find( current ) == came_from.end() )
                 return {};
         }
-        path.push_back( start ); // optional
-        //remove self location
-        path.pop_back();
-        //std::reverse( path.begin() , path.end() );
         return path;
     }
 
     static inline double heuristic( TowerGridLocation a , TowerGridLocation b )
     {
-        return std::abs( a.x -  b.x ) + std::abs( a.y -  b.y );
+        return std::abs( a.x - b.x ) + std::abs( a.y - b.y );
     }
 
     template <typename Location, typename Graph>
