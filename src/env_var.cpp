@@ -345,7 +345,7 @@ namespace MagicTower
         return towers;
     }
 
-    GameEnvironment::GameEnvironment( std::vector<std::string> music_list ):
+    GameStatus::GameStatus( std::vector<std::string> music_list ):
         draw_path( true ),
         focus_item_id(),
         game_message( {} ),
@@ -357,7 +357,7 @@ namespace MagicTower
         menu_items( {} ),
         music( music_list ),
         soundeffect_player( std::vector<std::string>({}) ),
-        game_status()
+        state()
     {
         lua_State * L = this->script_engines.get();
         luaL_openlibs( L );
@@ -367,7 +367,7 @@ namespace MagicTower
         soundeffect_player.set_playmode(PLAY_MODE::SINGLE_PLAY);
     }
 
-    GameEnvironment::~GameEnvironment()
+    GameStatus::~GameStatus()
     {
         lua_State * L = this->script_engines.get();
         for ( auto& func : this->refmap )
@@ -376,7 +376,7 @@ namespace MagicTower
         }
     }
 
-    void GameEnvironment::initial_gamedata()
+    void GameStatus::initial_gamedata()
     {
         lua_State * L = this->script_engines.get();
         this->items = initial_items( L , this->refmap );
@@ -387,7 +387,7 @@ namespace MagicTower
         this->game_map = initial_gamemap( L );
 
         this->focus_item_id = 0;
-        this->game_status = GAME_STATUS::NORMAL;
+        this->state = GAME_STATE::NORMAL;
         this->path = {};
     }
 }

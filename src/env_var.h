@@ -22,7 +22,7 @@
 
 namespace MagicTower
 {
-    enum class GAME_STATUS:std::uint32_t
+    enum class GAME_STATE:std::uint32_t
     {
         NORMAL = 0,
         FIND_PATH,
@@ -42,10 +42,10 @@ namespace MagicTower
 
     typedef std::vector< std::pair<std::function< std::string(void) > , std::function< void(void) > > > Menu_t;
 
-    struct GameEnvironment
+    struct GameStatus
     {
-        GameEnvironment( std::vector<std::string> music_list = {} );
-        ~GameEnvironment();
+        GameStatus( std::vector<std::string> music_list = {} );
+        ~GameStatus();
 
         void initial_gamedata();
 
@@ -68,7 +68,7 @@ namespace MagicTower
         MusicPlayer soundeffect_player;
         Hero hero;
         TowerMap game_map;
-        GAME_STATUS game_status;
+        GAME_STATE state;
     };
 }
 

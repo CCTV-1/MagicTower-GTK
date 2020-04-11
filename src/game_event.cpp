@@ -26,21 +26,21 @@ namespace MagicTower
     //floor , x , y
     position_t temp_pos;
 
-    static bool open_door( GameEnvironment * game_object , position_t position );
-    static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id );
+    static bool open_door( GameStatus * game_status , position_t position );
+    static bool change_floor( GameStatus * game_status , std::uint32_t stair_id );
     static std::int64_t get_combat_damage_of_last  ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_normal( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_first ( const Hero& hero , const Monster& monster );
     static std::int64_t get_combat_damage_of_double( const Hero& hero , const Monster& monster );
-    static bool get_item( GameEnvironment * game_object , std::uint32_t item_id );
-    static void set_grid_type( GameEnvironment * game_object , position_t position , GRID_TYPE type_id = GRID_TYPE::FLOOR );
-    static void set_tips( GameEnvironment * game_object , std::string tips_content );
-    static void set_jump_menu( GameEnvironment * game_object );
-    static void set_start_menu( GameEnvironment * game_object );
-    static void set_game_menu( GameEnvironment * game_object );
-    static void set_inventories_menu( GameEnvironment * game_object );
-    static void set_store_menu( GameEnvironment * game_object );
-    static void set_sub_store_menu( GameEnvironment * game_object , std::uint32_t store_id );
+    static bool get_item( GameStatus * game_status , std::uint32_t item_id );
+    static void set_grid_type( GameStatus * game_status , position_t position , GRID_TYPE type_id = GRID_TYPE::FLOOR );
+    static void set_tips( GameStatus * game_status , std::string tips_content );
+    static void set_jump_menu( GameStatus * game_status );
+    static void set_start_menu( GameStatus * game_status );
+    static void set_game_menu( GameStatus * game_status );
+    static void set_inventories_menu( GameStatus * game_status );
+    static void set_store_menu( GameStatus * game_status );
+    static void set_sub_store_menu( GameStatus * game_status , std::uint32_t store_id );
 
     // Helpers for TowerGridLocation
     static bool operator==( TowerGridLocation a , TowerGridLocation b )
@@ -210,7 +210,7 @@ namespace MagicTower
         return !( lhs == rhs );
     }
 
-    void scriptengines_register_eventfunc( GameEnvironment * game_object )
+    void scriptengines_register_eventfunc( GameStatus * game_status )
     {
         const luaL_Reg funcs[] =
         {
@@ -227,8 +227,8 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     double volume = luaL_checknumber( L , 1 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.set_volume( volume );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->music.set_volume( volume );
                     return 0;
                 }
             },
@@ -238,8 +238,8 @@ namespace MagicTower
                 {
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    double volume = game_object->music.get_volume();
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    double volume = game_status->music.get_volume();
                     lua_pushnumber( L , volume );
                     return 1;
                 }
@@ -257,8 +257,8 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     PLAY_MODE mode_value = static_cast<PLAY_MODE>( luaL_checkinteger( L , 1 ) );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.set_playmode( mode_value );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->music.set_playmode( mode_value );
                     return 0;
                 }
             },
@@ -277,8 +277,8 @@ namespace MagicTower
                     {
                         new_playlist.push_back( std::string( luaL_checkstring( L , i ) ) );
                     }
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.set_playlist( new_playlist );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->music.set_playlist( new_playlist );
                     return 0;
                 }
             },
@@ -287,8 +287,8 @@ namespace MagicTower
                 "play_next" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.next();
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->music.next();
                     return 0;
                 }
             },
@@ -297,8 +297,8 @@ namespace MagicTower
                 "play_pause" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.pause();
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->music.pause();
                     return 0;
                 }
             },
@@ -307,8 +307,8 @@ namespace MagicTower
                 "play_resume" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->music.resume();
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->music.resume();
                     return 0;
                 }
             },
@@ -325,8 +325,8 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     const char * tips = luaL_checkstring( L , 1 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    set_tips( game_object , tips );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    set_tips( game_status , tips );
                     return 0;
                 }
             },
@@ -351,8 +351,8 @@ namespace MagicTower
                     std::uint32_t x = luaL_checkinteger( L , 4 );
                     std::uint32_t y = luaL_checkinteger( L , 5 );
                     GRID_TYPE grid_type = static_cast<GRID_TYPE>( type_value );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    set_grid_type( game_object , { floor , x , y  } , grid_type );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    set_grid_type( game_status , { floor , x , y  } , grid_type );
                     return 0;
                 }
             },
@@ -375,8 +375,8 @@ namespace MagicTower
                     std::uint32_t floor = luaL_checkinteger( L , 2 );
                     std::uint32_t x = luaL_checkinteger( L , 3 );
                     std::uint32_t y = luaL_checkinteger( L , 4 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    TowerGrid grid = game_status->game_map.get_grid( floor , x , y );
                     lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
                     return 1;
                 }
@@ -405,8 +405,8 @@ namespace MagicTower
                     std::uint32_t y = luaL_checkinteger( L , 5 );
                     GRID_TYPE grid_type = static_cast<GRID_TYPE>( luaL_checkinteger( L , 6 ) );
                     std::uint32_t grid_id = luaL_checkinteger( L , 7 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->game_map.set_grid( floor , x , y , { grid_type , grid_id } );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->game_map.set_grid( floor , x , y , { grid_type , grid_id } );
                     return 0;
                 }
             },
@@ -429,8 +429,8 @@ namespace MagicTower
                     std::uint32_t floor = luaL_checkinteger( L , 2 );
                     std::uint32_t x = luaL_checkinteger( L , 3 );
                     std::uint32_t y = luaL_checkinteger( L , 4 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    TowerGrid grid = game_object->game_map.get_grid( floor , x , y );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    TowerGrid grid = game_status->game_map.get_grid( floor , x , y );
                     lua_newtable( L );
                     lua_pushinteger( L , static_cast<std::uint32_t>( grid.type ) );
                     lua_setfield( L , 5 , "type" );
@@ -446,8 +446,8 @@ namespace MagicTower
                     //arguments number impossible less than 0,don't need check
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    Hero& hero = game_object->hero;
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    Hero& hero = game_status->hero;
                     lua_pushhero( L , hero );
                     return 1;
                 }
@@ -464,8 +464,8 @@ namespace MagicTower
                     }
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->hero = lua_gethero( L , 1 );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->hero = lua_gethero( L , 1 );
                     return 0;
                 }
             },
@@ -483,13 +483,13 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::string flags_name( luaL_checkstring( L , 1 ) );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    if ( game_object->script_flags.find( flags_name ) == game_object->script_flags.end() )
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    if ( game_status->script_flags.find( flags_name ) == game_status->script_flags.end() )
                     {
                         lua_pushnil( L );
                         return 1;
                     }
-                    std::int64_t value = game_object->script_flags[flags_name];
+                    std::int64_t value = game_status->script_flags[flags_name];
                     lua_pushinteger( L , value );
                     return 1;
                 }
@@ -508,8 +508,8 @@ namespace MagicTower
                     lua_settop( L , 2 );
                     std::string flags_name( luaL_checkstring( L , 1 ) );
                     std::int64_t value = lua_tointeger( L , 2 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->script_flags[flags_name] = value;
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->script_flags[flags_name] = value;
                     return 0;
                 }
             },
@@ -528,9 +528,9 @@ namespace MagicTower
                     {
                         messages.push_back( luaL_checkstring( L , i ) );
                     }
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->game_message = messages;
-                    game_object->game_status = GAME_STATUS::MESSAGE;
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->game_message = messages;
+                    game_status->state = GAME_STATE::MESSAGE;
                     return 0;
                 }
             },
@@ -547,8 +547,8 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     luaL_checktype( L , 1 , LUA_TTABLE );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->menu_items = {};
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->menu_items = {};
                     lua_pushnil( L );
                     while( lua_next( L , 1 ) )
                     {
@@ -556,17 +556,17 @@ namespace MagicTower
                         {
                             std::string item_name( lua_tostring( L , 2 ) );
                             std::uint32_t refvalue = 0;
-                            if ( game_object->refmap.find( item_name ) != game_object->refmap.end() )
+                            if ( game_status->refmap.find( item_name ) != game_status->refmap.end() )
                             {
-                                refvalue = game_object->refmap[ item_name ];
+                                refvalue = game_status->refmap[ item_name ];
                                 lua_pop( L , 1 );
                             }
                             else
                             {
                                 refvalue = luaL_ref( L , LUA_REGISTRYINDEX );
-                                game_object->refmap[ item_name ] = refvalue;
+                                game_status->refmap[ item_name ] = refvalue;
                             }
-                            game_object->menu_items.push_back({
+                            game_status->menu_items.push_back({
                                 [ item_name ](){ return item_name; },
                                 [ L , refvalue ](){
                                     lua_rawgeti( L , LUA_REGISTRYINDEX , refvalue );
@@ -580,12 +580,12 @@ namespace MagicTower
                             lua_pop( L , 1 );
                         }
                     }
-                    game_object->menu_items.push_back({
+                    game_status->menu_items.push_back({
                         [](){ return std::string( "关闭菜单" ); },
-                        [ game_object ](){ game_object->game_status = GAME_STATUS::NORMAL; }
+                        [ game_status ](){ game_status->state = GAME_STATE::NORMAL; }
                     });
-                    game_object->game_status = GAME_STATUS::GAME_MENU;
-                    game_object->focus_item_id = 0;
+                    game_status->state = GAME_STATE::GAME_MENU;
+                    game_status->focus_item_id = 0;
                     return 0;
                 }
             },
@@ -594,10 +594,10 @@ namespace MagicTower
                 "close_menu" , []( lua_State * L ) -> int
                 {
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    if ( game_object->game_status == GAME_STATUS::GAME_MENU )
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    if ( game_status->state == GAME_STATE::GAME_MENU )
                     {
-                        game_object->game_status = GAME_STATUS::NORMAL;
+                        game_status->state = GAME_STATE::NORMAL;
                     }
                     return 0;
                 }
@@ -615,8 +615,8 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::uint32_t item_id = luaL_checkinteger( L , 1 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    get_item( game_object , item_id );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    get_item( game_status , item_id );
                     return 0;
                 }
             },
@@ -633,12 +633,12 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::uint32_t store_id = luaL_checkinteger( L , 1 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->stores[ store_id ].usability = true;
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->stores[ store_id ].usability = true;
                     std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
-                    game_object->script_flags[ flag_name ] = 1;
-                    std::string tips = std::string( "解锁商店:" ) + ( game_object->stores[ store_id ] ).store_name;
-                    set_tips( game_object , tips );
+                    game_status->script_flags[ flag_name ] = 1;
+                    std::string tips = std::string( "解锁商店:" ) + ( game_status->stores[ store_id ] ).store_name;
+                    set_tips( game_status , tips );
                     return 0;
                 }
             },
@@ -655,12 +655,12 @@ namespace MagicTower
                     //discard any extra arguments passed
                     lua_settop( L , 1 );
                     std::uint32_t store_id = luaL_checkinteger( L , 1 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_object->stores[ store_id ].usability = false;
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_status->stores[ store_id ].usability = false;
                     std::string flag_name = std::string( "store_" ) + std::to_string( store_id );
-                    game_object->script_flags.erase( flag_name );
-                    std::string tips = std::string( "锁定商店:" ) + ( game_object->stores[ store_id ] ).store_name;
-                    set_tips( game_object , tips );
+                    game_status->script_flags.erase( flag_name );
+                    std::string tips = std::string( "锁定商店:" ) + ( game_status->stores[ store_id ] ).store_name;
+                    set_tips( game_status , tips );
                     return 0;
                 }
             },
@@ -683,17 +683,17 @@ namespace MagicTower
                     std::uint32_t floor = luaL_checkinteger( L , 2 );
                     std::uint32_t x = luaL_checkinteger( L , 3 );
                     std::uint32_t y = luaL_checkinteger( L , 4 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    if ( floor > game_object->game_map.map.size() )
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    if ( floor > game_status->game_map.map.size() )
                     {
-                        set_tips( game_object , std::string( "floor id: '" ) + std::to_string( floor ) + std::string( "' illegal" ) );
+                        set_tips( game_status , std::string( "floor id: '" ) + std::to_string( floor ) + std::string( "' illegal" ) );
                         return 0;
                     }
-                    if ( game_object->game_status == GAME_STATUS::FIND_PATH )
+                    if ( game_status->state == GAME_STATE::FIND_PATH )
                     {
-                        game_object->game_status = GAME_STATUS::NORMAL;
+                        game_status->state = GAME_STATE::NORMAL;
                     }
-                    Hero& hero = game_object->hero;
+                    Hero& hero = game_status->hero;
                     hero.x = x;
                     hero.y = y;
                     hero.floors = floor;
@@ -707,8 +707,8 @@ namespace MagicTower
                     //arguments number impossible less than 0,don't need check
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_win( game_object );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_win( game_status );
                     return 0;
                 }
             },
@@ -719,29 +719,29 @@ namespace MagicTower
                     //arguments number impossible less than 0,don't need check
                     //discard any extra arguments passed
                     lua_settop( L , 0 );
-                    GameEnvironment * game_object = ( GameEnvironment * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
-                    game_lose( game_object );
+                    GameStatus * game_status = ( GameStatus * )( lua_topointer( L , lua_upvalueindex( 1 ) ) );
+                    game_lose( game_status );
                     return 0;
                 }
             }
         };
-        lua_State * L = game_object->script_engines.get();
+        lua_State * L = game_status->script_engines.get();
         int top = lua_gettop( L );
         lua_getglobal( L , "_G" );
         for ( std::size_t i = 0 ; i < sizeof( funcs )/sizeof( luaL_Reg ) ; i++ )
         {
             lua_pushstring( L , funcs[i].name );
-            lua_pushlightuserdata( L , ( void * )game_object );
+            lua_pushlightuserdata( L , ( void * )game_status );
             lua_pushcclosure( L , funcs[i].func , 1 );
             lua_rawset( L , top + 1 );
         }
         lua_pop( L , 1 );
     }
 
-    std::vector<TowerGridLocation> find_path( GameEnvironment * game_object , TowerGridLocation goal , std::function<bool(std::uint32_t x , std::uint32_t y)> is_visible )
+    std::vector<TowerGridLocation> find_path( GameStatus * game_status , TowerGridLocation goal , std::function<bool(std::uint32_t x , std::uint32_t y)> is_visible )
     {
-        Hero& hero = game_object->hero;
-        TowerMap& tower = game_object->game_map;
+        Hero& hero = game_status->hero;
+        TowerMap& tower = game_status->game_map;
         if ( ( is_visible != nullptr ) && ( !is_visible( goal.x , goal.y ) ) )
         {
             return {};
@@ -796,7 +796,7 @@ namespace MagicTower
         return path;
     }
 
-    void save_game( GameEnvironment * game_object , size_t save_id )
+    void save_game( GameStatus * game_status , size_t save_id )
     {
         Glib::RefPtr<Gio::File> save_dir = Gio::File::create_for_path( ResourcesManager::get_save_path() );
         try
@@ -813,44 +813,44 @@ namespace MagicTower
         try
         {
             DataBase db( ResourcesManager::get_save_path() + std::to_string( save_id ) + std::string( ".db" ) );
-            db.set_tower_info( game_object->game_map );
-            db.set_hero_info( game_object->hero , 0 );
-            db.set_script_flags( game_object->script_flags );
-            db.set_inventories( game_object->inventories );
+            db.set_tower_info( game_status->game_map );
+            db.set_hero_info( game_status->hero , 0 );
+            db.set_script_flags( game_status->script_flags );
+            db.set_inventories( game_status->inventories );
         }
         catch ( const std::runtime_error& e )
         {
-            set_tips( game_object , fail_tips );
+            set_tips( game_status , fail_tips );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s" , e.what() );
             return ;
         }
         std::string tips = std::string( "保存存档:" ) + std::to_string( save_id ) + std::string( "成功" );
-        set_tips( game_object , tips );
+        set_tips( game_status , tips );
     }
 
-    void load_game( GameEnvironment * game_object , size_t save_id )
+    void load_game( GameStatus * game_status , size_t save_id )
     {
         std::string fail_tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "失败" );
         Glib::RefPtr<Gio::File> db_file = Gio::File::create_for_path( ResourcesManager::get_save_path() + std::to_string( save_id ) + std::string( ".db" ) );
         if ( db_file->query_exists() == false )
         {
             fail_tips = std::string( "存档:" ) + std::to_string( save_id ) + std::string( "不存在" );
-            set_tips( game_object , fail_tips );
+            set_tips( game_status , fail_tips );
             return ;
         }
         try
         {
             DataBase db( ResourcesManager::get_save_path() + std::to_string( save_id ) + std::string( ".db" ) );
-            game_object->game_map = db.get_tower_info();
-            game_object->hero = db.get_hero_info( 0 );
-            game_object->script_flags = db.get_script_flags();
-            game_object->inventories = db.get_inventories();
+            game_status->game_map = db.get_tower_info();
+            game_status->hero = db.get_hero_info( 0 );
+            game_status->script_flags = db.get_script_flags();
+            game_status->inventories = db.get_inventories();
 
             //store unlock flag
-            for ( auto& store : game_object->stores )
+            for ( auto& store : game_status->stores )
             {
                 std::string flag_name = std::string( "store_" ) + std::to_string( store.first );
-                if ( game_object->script_flags.find( flag_name ) != game_object->script_flags.end() )
+                if ( game_status->script_flags.find( flag_name ) != game_status->script_flags.end() )
                 {
                     store.second.usability = true;
                 }
@@ -862,37 +862,37 @@ namespace MagicTower
             }
 
             //floor jump unlock flag
-            for ( std::uint32_t i = 0 ; i < game_object->game_map.map.size() ; i++ )
+            for ( std::uint32_t i = 0 ; i < game_status->game_map.map.size() ; i++ )
             {
                 std::string floor_flag = std::string( "floors_" ) + std::to_string( i );
-                if ( game_object->script_flags.find( floor_flag ) != game_object->script_flags.end() )
+                if ( game_status->script_flags.find( floor_flag ) != game_status->script_flags.end() )
                 {
-                    game_object->access_floor[i] = true;
+                    game_status->access_floor[i] = true;
                 }
                 else
                 {
-                    game_object->access_floor[i] = false;
+                    game_status->access_floor[i] = false;
                 }
             }
         }
         catch ( const std::runtime_error& e )
         {
-            set_tips( game_object , fail_tips );
+            set_tips( game_status , fail_tips );
             g_log( __func__ , G_LOG_LEVEL_MESSAGE , "%s" , e.what() );
             return ;
         }
         std::string tips = std::string( "读取存档:" ) + std::to_string( save_id ) + std::string( "成功" );
-        set_tips( game_object , tips );
+        set_tips( game_status , tips );
     }
 
-    std::int64_t get_combat_damage( GameEnvironment * game_object , std::uint32_t monster_id )
+    std::int64_t get_combat_damage( GameStatus * game_status , std::uint32_t monster_id )
     {
-        if ( game_object->monsters.find( monster_id ) == game_object->monsters.end() )
+        if ( game_status->monsters.find( monster_id ) == game_status->monsters.end() )
         {
             return -1;
         }
-        Hero& hero = game_object->hero;
-        Monster& monster = game_object->monsters[ monster_id ];
+        Hero& hero = game_status->hero;
+        Monster& monster = game_status->monsters[ monster_id ];
         switch( static_cast< std::uint32_t >( monster.type ) )
         {
             case static_cast<std::uint32_t>( ATTACK_TYPE::FIRST_ATTACK ):
@@ -928,29 +928,29 @@ namespace MagicTower
         return -1;
     }
 
-    bool battle( GameEnvironment * game_object , std::uint32_t monster_id )
+    bool battle( GameStatus * game_status , std::uint32_t monster_id )
     {
-        if ( game_object->monsters.find( monster_id ) == game_object->monsters.end() )
+        if ( game_status->monsters.find( monster_id ) == game_status->monsters.end() )
             return false;
-        Hero& hero = game_object->hero;
-        Monster& monster = game_object->monsters[ monster_id ];
-        std::int64_t damage = get_combat_damage( game_object , monster_id );
+        Hero& hero = game_status->hero;
+        Monster& monster = game_status->monsters[ monster_id ];
+        std::int64_t damage = get_combat_damage( game_status , monster_id );
         if ( ( damage < 0 ) || ( damage >= hero.life ) )
             return false;
-        game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "attack" ) );
+        game_status->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "attack" ) );
         hero.life =  hero.life - damage;
         hero.gold = hero.gold + monster.gold;
         hero.experience = hero.experience + monster.experience;
         std::string tips = std::string( "击杀:" ) + monster.name + std::string( ",获取金币:" ) + std::to_string( monster.gold )
             + std::string( ",经验:" ) + std::to_string( monster.experience );
-        set_tips( game_object , tips );
+        set_tips( game_status , tips );
         return true;
     }
 
-    bool move_hero( GameEnvironment * game_object , const position_t& new_pos )
+    bool move_hero( GameStatus * game_status , const position_t& new_pos )
     {
-        Hero& hero = game_object->hero;
-        TowerMap& tower = game_object->game_map;
+        Hero& hero = game_status->hero;
+        TowerMap& tower = game_status->game_map;
         if ( tower.map.find( new_pos.floor ) == tower.map.end() )
             return false;
         if ( new_pos.x >= tower.map[new_pos.floor].length )
@@ -965,15 +965,15 @@ namespace MagicTower
         hero.x = new_pos.x;
         hero.y = new_pos.y;
 
-        Glib::ustring script_name = Glib::ustring::compose( "%1F%2_%3_%4.lua" , ResourcesManager::get_script_path() , game_object->hero.floors ,
-            game_object->hero.x , game_object->hero.y );
-        int res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
+        Glib::ustring script_name = Glib::ustring::compose( "%1F%2_%3_%4.lua" , ResourcesManager::get_script_path() , game_status->hero.floors ,
+            game_status->hero.x , game_status->hero.y );
+        int res = luaL_loadfilex( game_status->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
         {
-            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
+            if ( lua_pcall( game_status->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
-                lua_pop( game_object->script_engines.get() , 1 );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_status->script_engines.get() , -1 ) );
+                lua_pop( game_status->script_engines.get() , 1 );
             }
         }
         else
@@ -981,9 +981,9 @@ namespace MagicTower
             //if undefined this position script,ignore
             if ( res != LUA_ERRFILE )
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "loading script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "loading script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_status->script_engines.get() , -1 ) );
             }
-            lua_pop( game_object->script_engines.get() , 1 );
+            lua_pop( game_status->script_engines.get() , 1 );
         }
         if ( new_pos != position_t({ hero.floors , hero.x , hero.y }) )
         {
@@ -1001,12 +1001,12 @@ namespace MagicTower
             }
             case GRID_TYPE::STAIRS:
             {
-                state = change_floor( game_object , grid.id );
+                state = change_floor( game_status , grid.id );
                 break;
             }
             case GRID_TYPE::DOOR:
             {
-                open_door( game_object , { hero.floors , hero.x , hero.y } );
+                open_door( game_status , { hero.floors , hero.x , hero.y } );
                 state = false;
                 break;
             }
@@ -1017,24 +1017,24 @@ namespace MagicTower
             }
             case GRID_TYPE::MONSTER:
             {
-                state = battle( game_object , grid.id );
+                state = battle( game_status , grid.id );
                 if ( state )
-                    set_grid_type( game_object , { hero.floors , hero.x , hero.y } );
+                    set_grid_type( game_status , { hero.floors , hero.x , hero.y } );
                 else
                 {
-                    game_lose( game_object );
+                    game_lose( game_status );
                 }
                 state = false;
                 break;
             }
             case GRID_TYPE::ITEM:
             {
-                state = get_item( game_object , grid.id );
+                state = get_item( game_status , grid.id );
                 if ( state )
-                    set_grid_type( game_object , { hero.floors , hero.x , hero.y } );
+                    set_grid_type( game_status , { hero.floors , hero.x , hero.y } );
                 else
                 {
-                    set_tips( game_object , "你太弱了 拿不起来" );
+                    set_tips( game_status , "你太弱了 拿不起来" );
                 }
                 break;
             }
@@ -1045,15 +1045,15 @@ namespace MagicTower
             }
         }
 
-        script_name = Glib::ustring::compose( "%1L%2_%3_%4.lua" , ResourcesManager::get_script_path() , game_object->hero.floors ,
-            game_object->hero.x , game_object->hero.y );
-        res = luaL_loadfilex( game_object->script_engines.get() , script_name.data() , "t" );
+        script_name = Glib::ustring::compose( "%1L%2_%3_%4.lua" , ResourcesManager::get_script_path() , game_status->hero.floors ,
+            game_status->hero.x , game_status->hero.y );
+        res = luaL_loadfilex( game_status->script_engines.get() , script_name.data() , "t" );
         if ( res == LUA_OK )
         {
-            if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
+            if ( lua_pcall( game_status->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
-                lua_pop( game_object->script_engines.get() , 1 );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "execute script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_status->script_engines.get() , -1 ) );
+                lua_pop( game_status->script_engines.get() , 1 );
             }
         }
         else
@@ -1061,9 +1061,9 @@ namespace MagicTower
             //if undefined this position script,ignore
             if ( res != LUA_ERRFILE )
             {
-                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "loading script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_object->script_engines.get() , -1 ) );
+                g_log( __func__ , G_LOG_LEVEL_MESSAGE , "loading script:'%s' failure,error message:'%s'" , script_name.data() , lua_tostring( game_status->script_engines.get() , -1 ) );
             }
-            lua_pop( game_object->script_engines.get() , 1 );
+            lua_pop( game_status->script_engines.get() , 1 );
         }
         if ( !state )
         {
@@ -1076,200 +1076,200 @@ namespace MagicTower
         return true;
     }
 
-    bool use_item( GameEnvironment * game_object , std::uint32_t item_id )
+    bool use_item( GameStatus * game_status , std::uint32_t item_id )
     {
-        if ( game_object->items.find( item_id ) == game_object->items.end() )
+        if ( game_status->items.find( item_id ) == game_status->items.end() )
             return false;
-        Item& item = game_object->items[ item_id ];
+        Item& item = game_status->items[ item_id ];
 
-        if ( game_object->refmap.find( item.item_detail ) == game_object->refmap.end() )
+        if ( game_status->refmap.find( item.item_detail ) == game_status->refmap.end() )
         {
             return false;
         }
-        std::uint32_t refvalue = game_object->refmap[item.item_detail];
+        std::uint32_t refvalue = game_status->refmap[item.item_detail];
         if ( refvalue == 0 )
         {
             return false;
         }
-        lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
+        lua_rawgeti( game_status->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
         
-        if ( lua_pcall( game_object->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
+        if ( lua_pcall( game_status->script_engines.get() , 0 , 0 , 0 ) != LUA_OK )
         {
-            set_tips( game_object , lua_tostring( game_object->script_engines.get() , -1 ) );
-            lua_pop( game_object->script_engines.get() , 1 );
+            set_tips( game_status , lua_tostring( game_status->script_engines.get() , -1 ) );
+            lua_pop( game_status->script_engines.get() , 1 );
             return false;
         }
         return true;
     }
 
-    void open_floor_jump( GameEnvironment * game_object )
+    void open_floor_jump( GameStatus * game_status )
     {
-        switch ( game_object->game_status )
+        switch ( game_status->state )
         {
-            case GAME_STATUS::GAME_LOSE:
-            case GAME_STATUS::GAME_WIN:
-            case GAME_STATUS::GAME_MENU:
-            case GAME_STATUS::STORE_MENU:
-            case GAME_STATUS::JUMP_MENU:
+            case GAME_STATE::GAME_LOSE:
+            case GAME_STATE::GAME_WIN:
+            case GAME_STATE::GAME_MENU:
+            case GAME_STATE::STORE_MENU:
+            case GAME_STATE::JUMP_MENU:
                 return ;
             default:
                 break;
         }
 
-        if ( game_object->game_map.map.find( game_object->hero.floors ) == game_object->game_map.map.end() )
+        if ( game_status->game_map.map.find( game_status->hero.floors ) == game_status->game_map.map.end() )
         {
-            set_tips( game_object , "这层楼禁止使用楼层跳跃器！" );
+            set_tips( game_status , "这层楼禁止使用楼层跳跃器！" );
             return ;
         }
 
-        game_object->game_status = GAME_STATUS::JUMP_MENU;
-        game_object->focus_item_id = 0;
+        game_status->state = GAME_STATE::JUMP_MENU;
+        game_status->focus_item_id = 0;
         //save initial position
-        temp_pos= { game_object->hero.floors , game_object->hero.x , game_object->hero.y };
+        temp_pos= { game_status->hero.floors , game_status->hero.x , game_status->hero.y };
         //hidden hero
-        game_object->hero.x = game_object->game_map.map[ game_object->hero.floors ].length;
-        game_object->hero.y = game_object->game_map.map[ game_object->hero.floors ].width;
-        set_jump_menu( game_object );
+        game_status->hero.x = game_status->game_map.map[ game_status->hero.floors ].length;
+        game_status->hero.y = game_status->game_map.map[ game_status->hero.floors ].width;
+        set_jump_menu( game_status );
     }
 
-    void close_floor_jump( GameEnvironment * game_object )
+    void close_floor_jump( GameStatus * game_status )
     {
-        if ( game_object->game_status != GAME_STATUS::JUMP_MENU )
+        if ( game_status->state != GAME_STATE::JUMP_MENU )
             return ;
-        game_object->hero.floors = temp_pos.floor;
-        game_object->hero.x = temp_pos.x;
-        game_object->hero.y = temp_pos.y;
-        game_object->game_status = GAME_STATUS::NORMAL;
+        game_status->hero.floors = temp_pos.floor;
+        game_status->hero.x = temp_pos.x;
+        game_status->hero.y = temp_pos.y;
+        game_status->state = GAME_STATE::NORMAL;
     }
 
-    void open_store_menu( GameEnvironment * game_object )
+    void open_store_menu( GameStatus * game_status )
     {
-        switch ( game_object->game_status )
+        switch ( game_status->state )
         {
-            case GAME_STATUS::GAME_LOSE:
-            case GAME_STATUS::GAME_WIN:
-            case GAME_STATUS::GAME_MENU:
-            case GAME_STATUS::STORE_MENU:
-            case GAME_STATUS::JUMP_MENU:
+            case GAME_STATE::GAME_LOSE:
+            case GAME_STATE::GAME_WIN:
+            case GAME_STATE::GAME_MENU:
+            case GAME_STATE::STORE_MENU:
+            case GAME_STATE::JUMP_MENU:
                 return ;
             default:
                 break;
         }
 
-        game_object->game_status = GAME_STATUS::STORE_MENU;
-        game_object->focus_item_id = 0;
-        set_store_menu( game_object );
+        game_status->state = GAME_STATE::STORE_MENU;
+        game_status->focus_item_id = 0;
+        set_store_menu( game_status );
     }
 
-    void close_store_menu( GameEnvironment * game_object )
+    void close_store_menu( GameStatus * game_status )
     {
-        if ( game_object->game_status != GAME_STATUS::STORE_MENU )
+        if ( game_status->state != GAME_STATE::STORE_MENU )
             return ;
-        game_object->game_status = GAME_STATUS::NORMAL;
+        game_status->state = GAME_STATE::NORMAL;
     }
 
-    void open_start_menu( GameEnvironment * game_object )
+    void open_start_menu( GameStatus * game_status )
     {
-        switch ( game_object->game_status )
+        switch ( game_status->state )
         {
-            case GAME_STATUS::GAME_LOSE:
-            case GAME_STATUS::GAME_WIN:
+            case GAME_STATE::GAME_LOSE:
+            case GAME_STATE::GAME_WIN:
                 break;
             default:
                 return ;
         }
 
-        game_object->game_status = GAME_STATUS::START_MENU;
-        game_object->focus_item_id = 0;
-        set_start_menu( game_object );
+        game_status->state = GAME_STATE::START_MENU;
+        game_status->focus_item_id = 0;
+        set_start_menu( game_status );
     }
 
-    void open_game_menu( GameEnvironment * game_object )
+    void open_game_menu( GameStatus * game_status )
     {
-        switch ( game_object->game_status )
+        switch ( game_status->state )
         {
-            case GAME_STATUS::GAME_LOSE:
-            case GAME_STATUS::GAME_WIN:
-            case GAME_STATUS::GAME_MENU:
-            case GAME_STATUS::STORE_MENU:
-            case GAME_STATUS::JUMP_MENU:
+            case GAME_STATE::GAME_LOSE:
+            case GAME_STATE::GAME_WIN:
+            case GAME_STATE::GAME_MENU:
+            case GAME_STATE::STORE_MENU:
+            case GAME_STATE::JUMP_MENU:
                 return ;
             default:
                 break;
         }
 
-        game_object->game_status = GAME_STATUS::GAME_MENU;
-        game_object->focus_item_id = 0;
-        set_game_menu( game_object );
+        game_status->state = GAME_STATE::GAME_MENU;
+        game_status->focus_item_id = 0;
+        set_game_menu( game_status );
     }
 
-    void close_game_menu( GameEnvironment * game_object )
+    void close_game_menu( GameStatus * game_status )
     {
-        if ( game_object->game_status != GAME_STATUS::GAME_MENU )
+        if ( game_status->state != GAME_STATE::GAME_MENU )
             return ;
-        game_object->game_status = GAME_STATUS::NORMAL;
+        game_status->state = GAME_STATE::NORMAL;
     }
 
-    void open_inventories_menu( GameEnvironment * game_object )
+    void open_inventories_menu( GameStatus * game_status )
     {
-        game_object->game_status = GAME_STATUS::INVENTORIES_MENU;
-        game_object->focus_item_id = 0;
-        set_inventories_menu( game_object );
+        game_status->state = GAME_STATE::INVENTORIES_MENU;
+        game_status->focus_item_id = 0;
+        set_inventories_menu( game_status );
     }
 
-    void close_inventories_menu( GameEnvironment * game_object )
+    void close_inventories_menu( GameStatus * game_status )
     {
-        if ( game_object->game_status != GAME_STATUS::INVENTORIES_MENU )
+        if ( game_status->state != GAME_STATE::INVENTORIES_MENU )
             return ;
-        game_object->game_status = GAME_STATUS::NORMAL;
+        game_status->state = GAME_STATE::NORMAL;
     }
 
-    void game_win( GameEnvironment * game_object )
+    void game_win( GameStatus * game_status )
     {
-        switch ( game_object->game_status )
+        switch ( game_status->state )
         {
-            case GAME_STATUS::GAME_LOSE:
-            case GAME_STATUS::GAME_WIN:
-            case GAME_STATUS::GAME_MENU:
-            case GAME_STATUS::STORE_MENU:
-            case GAME_STATUS::JUMP_MENU:
+            case GAME_STATE::GAME_LOSE:
+            case GAME_STATE::GAME_WIN:
+            case GAME_STATE::GAME_MENU:
+            case GAME_STATE::STORE_MENU:
+            case GAME_STATE::JUMP_MENU:
                 return ;
             default:
                 break;
         }
 
-        game_object->game_message.push_back( "恭喜通关" );
-        game_object->game_message.push_back(
+        game_status->game_message.push_back( "恭喜通关" );
+        game_status->game_message.push_back(
             std::string( "你的得分为:" ) + std::to_string(
-                game_object->hero.life + ( game_object->hero.attack +
-                game_object->hero.defense )*10 + ( game_object->hero.level )*100
+                game_status->hero.life + ( game_status->hero.attack +
+                game_status->hero.defense )*10 + ( game_status->hero.level )*100
             )
         );
-        game_object->game_status = GAME_STATUS::GAME_WIN;
+        game_status->state = GAME_STATE::GAME_WIN;
     }
 
-    void game_lose( GameEnvironment * game_object )
+    void game_lose( GameStatus * game_status )
     {
-        switch ( game_object->game_status )
+        switch ( game_status->state )
         {
-            case GAME_STATUS::GAME_LOSE:
-            case GAME_STATUS::GAME_WIN:
-            case GAME_STATUS::GAME_MENU:
-            case GAME_STATUS::STORE_MENU:
-            case GAME_STATUS::JUMP_MENU:
+            case GAME_STATE::GAME_LOSE:
+            case GAME_STATE::GAME_WIN:
+            case GAME_STATE::GAME_MENU:
+            case GAME_STATE::STORE_MENU:
+            case GAME_STATE::JUMP_MENU:
                 return ;
             default:
                 break;
         }
 
-        game_object->game_message.push_back( "游戏失败" );
-        game_object->game_message.push_back(
+        game_status->game_message.push_back( "游戏失败" );
+        game_status->game_message.push_back(
             std::string( "你的得分为:" ) + std::to_string(
-                game_object->hero.life + ( game_object->hero.attack +
-                game_object->hero.defense )*( game_object->hero.level )
+                game_status->hero.life + ( game_status->hero.attack +
+                game_status->hero.defense )*( game_status->hero.level )
             )
         );
-        game_object->game_status = GAME_STATUS::GAME_LOSE;
+        game_status->state = GAME_STATE::GAME_LOSE;
     }
 
     static std::int64_t get_combat_damage_of_last( const Hero& hero , const Monster& monster )
@@ -1361,35 +1361,35 @@ namespace MagicTower
         return -1;
     }
 
-    static void set_grid_type( GameEnvironment * game_object , position_t position , GRID_TYPE type_id )
+    static void set_grid_type( GameStatus * game_status , position_t position , GRID_TYPE type_id )
     {
-        if ( game_object->game_map.map.find( position.floor ) == game_object->game_map.map.end() )
+        if ( game_status->game_map.map.find( position.floor ) == game_status->game_map.map.end() )
         {
             //do nothing
             return ;
         }
         //TowerMap::set_grid check x , y overflow,no need to check here
-        std::uint32_t defaultid = game_object->game_map.map[ position.floor ].default_floorid;
-        game_object->game_map.set_grid( position.floor , position.x , position.y , { type_id , defaultid } );
+        std::uint32_t defaultid = game_status->game_map.map[ position.floor ].default_floorid;
+        game_status->game_map.set_grid( position.floor , position.x , position.y , { type_id , defaultid } );
     }
 
-    static void set_tips( GameEnvironment * game_object , std::string tips_content )
+    static void set_tips( GameStatus * game_status , std::string tips_content )
     {
-        game_object->tips_content.push_back( tips_content );
+        game_status->tips_content.push_back( tips_content );
         Glib::signal_timeout().connect_once( 
-            [ game_object ]()
+            [ game_status ]()
             {
-                if ( game_object->tips_content.empty() )
+                if ( game_status->tips_content.empty() )
                     return ;
-                game_object->tips_content.pop_front();
+                game_status->tips_content.pop_front();
             }
         , 1000 );
     }
 
-    static bool open_door( GameEnvironment * game_object , position_t position )
+    static bool open_door( GameStatus * game_status , position_t position )
     {
-        Hero& hero = game_object->hero;
-        TowerMap& tower = game_object->game_map;
+        Hero& hero = game_status->hero;
+        TowerMap& tower = game_status->game_map;
         auto grid = tower.get_grid( position.floor , position.x , position.y );
         if ( grid.type != GRID_TYPE::DOOR )
             return false;
@@ -1400,9 +1400,9 @@ namespace MagicTower
             {
                 if ( hero.yellow_key >= 1 )
                 {
-                    set_grid_type( game_object , position );
+                    set_grid_type( game_status , position );
                     hero.yellow_key--;
-                    game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
+                    game_status->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
                 }
                 break;
             }
@@ -1410,9 +1410,9 @@ namespace MagicTower
             {
                 if ( hero.blue_key >= 1 )
                 {
-                    set_grid_type( game_object , position );
+                    set_grid_type( game_status , position );
                     hero.blue_key--;
-                    game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
+                    game_status->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
                 }
                 break;
             }
@@ -1420,9 +1420,9 @@ namespace MagicTower
             {
                 if ( hero.red_key >= 1 )
                 {
-                    set_grid_type( game_object , position );
+                    set_grid_type( game_status , position );
                     hero.red_key--;
-                    game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
+                    game_status->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "door" ) );
                 }
                 break;
             }
@@ -1435,12 +1435,12 @@ namespace MagicTower
         return false;
     }
 
-    static bool change_floor( GameEnvironment * game_object , std::uint32_t stair_id )
+    static bool change_floor( GameStatus * game_status , std::uint32_t stair_id )
     {
-        if ( game_object->stairs.find( stair_id ) == game_object->stairs.end() )
+        if ( game_status->stairs.find( stair_id ) == game_status->stairs.end() )
             return false;
-        Stairs stair = game_object->stairs[ stair_id ];
-        TowerMap& tower = game_object->game_map;
+        Stairs stair = game_status->stairs[ stair_id ];
+        TowerMap& tower = game_status->game_map;
 
         if ( tower.map.find( stair.floors ) == tower.map.end() )
             return false;
@@ -1449,59 +1449,59 @@ namespace MagicTower
         if ( stair.y >= tower.map[stair.floors].width )
             return false;
 
-        game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "floor" ) );
-        game_object->hero.floors = stair.floors;
-        game_object->hero.x = stair.x;
-        game_object->hero.y = stair.y;
+        game_status->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "floor" ) );
+        game_status->hero.floors = stair.floors;
+        game_status->hero.x = stair.x;
+        game_status->hero.y = stair.y;
 
-        game_object->access_floor[ stair.floors ] = true;
+        game_status->access_floor[ stair.floors ] = true;
         std::string floor_flag = std::string( "floors_" ) + std::to_string( stair.floors );
-        game_object->script_flags[floor_flag] = 1;
+        game_status->script_flags[floor_flag] = 1;
 
         return true;
     }
 
-    static bool get_item( GameEnvironment * game_object , std::uint32_t item_id )
+    static bool get_item( GameStatus * game_status , std::uint32_t item_id )
     {
-        if ( game_object->items.find( item_id ) == game_object->items.end() )
+        if ( game_status->items.find( item_id ) == game_status->items.end() )
             return false;
-        Item& item = game_object->items[ item_id ];
+        Item& item = game_status->items[ item_id ];
 
         if ( !item.needactive )
         {
-            if ( !use_item( game_object , item_id ) )
+            if ( !use_item( game_status , item_id ) )
             {
                 return false;
             }
         }
         else
         {
-            game_object->inventories[item_id]++;
+            game_status->inventories[item_id]++;
         }
 
-        game_object->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "item" ) );
+        game_status->soundeffect_player.play( ResourcesManager::get_soundeffect_uri( "item" ) );
         std::string tips = std::string( "获得:'" ) + item.item_name + std::string( "'" );
-        set_tips( game_object , tips );
+        set_tips( game_status , tips );
         return true;
     }
 
-    static void set_jump_menu( GameEnvironment * game_object )
+    static void set_jump_menu( GameStatus * game_status )
     {
-        game_object->menu_items.clear();
-        game_object->menu_items.push_back({
+        game_status->menu_items.clear();
+        game_status->menu_items.push_back({
             [](){ return std::string( "最上层" ); },
-            [ game_object ](){
-                auto end_iter = game_object->game_map.map.end();
-                game_object->hero.floors = ( std::prev( end_iter ) )->first;
+            [ game_status ](){
+                auto end_iter = game_status->game_map.map.end();
+                game_status->hero.floors = ( std::prev( end_iter ) )->first;
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "上一层" ); },
-            [ game_object ](){
-                auto current_iter = game_object->game_map.map.find( game_object->hero.floors );
-                if ( ( current_iter = std::next( current_iter ) ) != game_object->game_map.map.end() )
+            [ game_status ](){
+                auto current_iter = game_status->game_map.map.find( game_status->hero.floors );
+                if ( ( current_iter = std::next( current_iter ) ) != game_status->game_map.map.end() )
                 {
-                    game_object->hero.floors = current_iter->first;
+                    game_status->hero.floors = current_iter->first;
                 }
                 else
                 {
@@ -1509,146 +1509,146 @@ namespace MagicTower
                 }
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "下一层" ); },
-            [ game_object ](){
-                auto current_iter = game_object->game_map.map.find( game_object->hero.floors );
-                if ( current_iter != game_object->game_map.map.begin() )
+            [ game_status ](){
+                auto current_iter = game_status->game_map.map.find( game_status->hero.floors );
+                if ( current_iter != game_status->game_map.map.begin() )
                 {
                     current_iter = std::prev( current_iter );
-                    game_object->hero.floors = current_iter->first;
+                    game_status->hero.floors = current_iter->first;
                 }
                 else
                 {
                     std::string tips = std::string( "已是最下层" );
-                    set_tips( game_object , tips );
+                    set_tips( game_status , tips );
                 }
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "最下层" ); },
-            [ game_object ](){
-                auto begin_iter = game_object->game_map.map.begin();
-                game_object->hero.floors = begin_iter->first;
+            [ game_status ](){
+                auto begin_iter = game_status->game_map.map.begin();
+                game_status->hero.floors = begin_iter->first;
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "确定跳跃" ); },
-            [ game_object ](){
+            [ game_status ](){
                 //floor change menu have done the check
-                //don't need check game_object->game_map.map.find( game_object->hero.floors ) != game_object->game_map.map.end();
-                auto& floor_ref = game_object->game_map.map[ game_object->hero.floors ];
+                //don't need check game_status->game_map.map.find( game_status->hero.floors ) != game_status->game_map.map.end();
+                auto& floor_ref = game_status->game_map.map[ game_status->hero.floors ];
                 if ( !floor_ref.teleport_point.has_value() )
                 {
-                    set_tips( game_object , std::string( "所选择的楼层禁止跃入" ) );
+                    set_tips( game_status , std::string( "所选择的楼层禁止跃入" ) );
                     return ;
                 }
-                if ( !game_object->access_floor[ game_object->hero.floors ] )
+                if ( !game_status->access_floor[ game_status->hero.floors ] )
                 {
-                    set_tips( game_object , std::string( "所选择的楼层当前禁止跃入" ) );
+                    set_tips( game_status , std::string( "所选择的楼层当前禁止跃入" ) );
                     return ;
                 }
-                std::uint32_t floor = game_object->hero.floors;
+                std::uint32_t floor = game_status->hero.floors;
                 std::uint32_t x = floor_ref.teleport_point.value().x;
                 std::uint32_t y = floor_ref.teleport_point.value().y;
                 //close_floor_jump rollback hero position
-                close_floor_jump( game_object );
-                game_object->hero.floors = floor;
-                game_object->hero.x = x;
-                game_object->hero.y = y;
+                close_floor_jump( game_status );
+                game_status->hero.floors = floor;
+                game_status->hero.x = x;
+                game_status->hero.y = y;
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "取消跳跃" ); },
-            [ game_object ](){
-                close_floor_jump( game_object );
+            [ game_status ](){
+                close_floor_jump( game_status );
             }
         });
     }
 
-    static void set_start_menu( GameEnvironment * game_object )
+    static void set_start_menu( GameStatus * game_status )
     {
-        game_object->menu_items.clear();
-        game_object->menu_items.push_back({
+        game_status->menu_items.clear();
+        game_status->menu_items.push_back({
             [](){ return std::string( "重新游戏" ); },
-            [ game_object ](){
-                game_object->initial_gamedata();
+            [ game_status ](){
+                game_status->initial_gamedata();
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "读取存档" ); },
-            [ game_object ](){
-                load_game( game_object , 1 );
-                game_object->game_status = GAME_STATUS::NORMAL;
+            [ game_status ](){
+                load_game( game_status , 1 );
+                game_status->state = GAME_STATE::NORMAL;
             }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "退出游戏" ); },
-            [ game_object ](){
-                game_object->game_status = GAME_STATUS::GAME_END;
+            [ game_status ](){
+                game_status->state = GAME_STATE::GAME_END;
             }
         });
     }
 
-    static void set_game_menu( GameEnvironment * game_object )
+    static void set_game_menu( GameStatus * game_status )
     {
-        game_object->menu_items.clear();
+        game_status->menu_items.clear();
 
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "保存存档" ); },
-            [ game_object ](){ save_game( game_object , 1 ); }
+            [ game_status ](){ save_game( game_status , 1 ); }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "读取存档" ); },
-            [ game_object ](){ load_game( game_object , 1 ); }
+            [ game_status ](){ load_game( game_status , 1 ); }
         });
-        game_object->menu_items.push_back({
-            [ game_object ](){
-                if ( game_object->music.get_state() == PLAY_STATE::PAUSE )
+        game_status->menu_items.push_back({
+            [ game_status ](){
+                if ( game_status->music.get_state() == PLAY_STATE::PAUSE )
                     return std::string( "背景音乐: 关" );
                 else
                     return std::string( "背景音乐: 开" );
             },
-            [ game_object ](){
-                if ( game_object->music.get_state() == PLAY_STATE::PAUSE )
-                    game_object->music.resume();
+            [ game_status ](){
+                if ( game_status->music.get_state() == PLAY_STATE::PAUSE )
+                    game_status->music.resume();
                 else
-                    game_object->music.pause();
+                    game_status->music.pause();
             }
         });
-        game_object->menu_items.push_back({
-            [ game_object ](){
-                if ( game_object->soundeffect_player.get_state() == PLAY_STATE::PAUSE )
+        game_status->menu_items.push_back({
+            [ game_status ](){
+                if ( game_status->soundeffect_player.get_state() == PLAY_STATE::PAUSE )
                     return std::string( "游戏音效: 关" );
                 else
                     return std::string( "游戏音效: 开" );
             },
-            [ game_object ](){
-                if ( game_object->soundeffect_player.get_state() == PLAY_STATE::PAUSE )
-                    game_object->soundeffect_player.resume();
+            [ game_status ](){
+                if ( game_status->soundeffect_player.get_state() == PLAY_STATE::PAUSE )
+                    game_status->soundeffect_player.resume();
                 else
-                    game_object->soundeffect_player.pause();
+                    game_status->soundeffect_player.pause();
             }
         });
-        game_object->menu_items.push_back({
-            [ game_object ](){
-                if ( game_object->draw_path )
+        game_status->menu_items.push_back({
+            [ game_status ](){
+                if ( game_status->draw_path )
                     return std::string( "寻路指示: 开" );
                 else
                     return std::string( "寻路指示: 关" );
             },
-            [ game_object ](){ game_object->draw_path = !game_object->draw_path; }
+            [ game_status ](){ game_status->draw_path = !game_status->draw_path; }
         });
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_game_menu( game_object ); }
+            [ game_status ](){ close_game_menu( game_status ); }
         });
     }
 
-    static void set_inventories_menu( GameEnvironment * game_object )
+    static void set_inventories_menu( GameStatus * game_status )
     {
-        game_object->menu_items.clear();
-        for ( auto& item : game_object->inventories )
+        game_status->menu_items.clear();
+        for ( auto& item : game_status->inventories )
         {
             std::uint32_t item_id = item.first;
             std::uint32_t & item_number = item.second;
@@ -1656,29 +1656,29 @@ namespace MagicTower
             {
                 continue;
             }
-            std::string item_name = game_object->items[item.first].item_name;
-            game_object->menu_items.push_back({
+            std::string item_name = game_status->items[item.first].item_name;
+            game_status->menu_items.push_back({
                 [ item_name , &item_number ](){ return item_name + std::string( " X " ) + std::to_string( item_number ); },
-                [ game_object , item_id ](){
-                    if ( game_object->inventories[item_id] == 0 )
+                [ game_status , item_id ](){
+                    if ( game_status->inventories[item_id] == 0 )
                         return ;
-                    if ( use_item( game_object , item_id ) )
+                    if ( use_item( game_status , item_id ) )
                     {
-                        game_object->inventories[item_id]--;
+                        game_status->inventories[item_id]--;
                     }
                 }
             });
         }
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_inventories_menu( game_object ); }
+            [ game_status ](){ close_inventories_menu( game_status ); }
         });
     }
 
-    static void set_store_menu( GameEnvironment * game_object )
+    static void set_store_menu( GameStatus * game_status )
     {
-        game_object->menu_items.clear();
-        for ( auto& store : game_object->stores )
+        game_status->menu_items.clear();
+        for ( auto& store : game_status->stores )
         {
             if ( !store.second.usability )
             {
@@ -1687,50 +1687,50 @@ namespace MagicTower
 
             std::string store_name = store.second.store_name;
             std::uint32_t store_id = store.first;
-            game_object->menu_items.push_back({
+            game_status->menu_items.push_back({
                 [ store_name ](){ return store_name; },
-                [ game_object , store_id ](){ set_sub_store_menu( game_object , store_id ); }
+                [ game_status , store_id ](){ set_sub_store_menu( game_status , store_id ); }
             });
         }
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_store_menu( game_object ); }
+            [ game_status ](){ close_store_menu( game_status ); }
         });
     }
 
-    static void set_sub_store_menu( GameEnvironment * game_object , std::uint32_t store_id )
+    static void set_sub_store_menu( GameStatus * game_status , std::uint32_t store_id )
     {
-        game_object->focus_item_id = 0;
+        game_status->focus_item_id = 0;
 
-        game_object->menu_items.clear();
-        game_object->menu_items.push_back({
+        game_status->menu_items.clear();
+        game_status->menu_items.push_back({
             [](){ return std::string( "返回上级菜单" ); },
-            [ game_object ](){ set_store_menu( game_object ); }
+            [ game_status ](){ set_store_menu( game_status ); }
         });
-        Store& store = game_object->stores[store_id];
+        Store& store = game_status->stores[store_id];
         for ( auto& commoditie : store.commodities )
         {
-            game_object->menu_items.push_back({
+            game_status->menu_items.push_back({
                 [ commoditie ](){ return commoditie; },
-                [ game_object , commoditie ](){
-                    if ( game_object->refmap.find( commoditie ) == game_object->refmap.end() )
+                [ game_status , commoditie ](){
+                    if ( game_status->refmap.find( commoditie ) == game_status->refmap.end() )
                     {
                         return ;
                     }
-                    std::uint32_t refvalue = game_object->refmap[commoditie];
+                    std::uint32_t refvalue = game_status->refmap[commoditie];
                     if ( refvalue == 0 )
                     {
                         return ;
                     }
-                    lua_rawgeti( game_object->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
-                    lua_call( game_object->script_engines.get() , 0 , 0 );
+                    lua_rawgeti( game_status->script_engines.get() , LUA_REGISTRYINDEX , refvalue );
+                    lua_call( game_status->script_engines.get() , 0 , 0 );
                 }
             });
         }
 
-        game_object->menu_items.push_back({
+        game_status->menu_items.push_back({
             [](){ return std::string( "关闭菜单" ); },
-            [ game_object ](){ close_store_menu( game_object ); }
+            [ game_status ](){ close_store_menu( game_status ); }
         });
     }
 }
