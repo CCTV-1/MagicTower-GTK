@@ -267,12 +267,48 @@ namespace MagicTower
             DIRECTION new_direction = game_status->hero.direction;
             if ( game_status->hero.x == (std::uint32_t)goal.x )
             {
-                new_direction = ( game_status->hero.y > (std::uint32_t)goal.y ) ? DIRECTION::UP : DIRECTION::DOWN;
+                if ( game_status->hero.y == (std::uint32_t)goal.y + 1 )
+                {
+                    new_direction = DIRECTION::UP;
+                }
+                else if ( game_status->hero.y + 1 == (std::uint32_t)goal.y )
+                {
+                    new_direction = DIRECTION::DOWN;
+                }
+                else
+                {
+                    g_log( __func__ , G_LOG_LEVEL_WARNING , "wrong path:( %" PRIu32 " , %" PRIu32 " ) to ( %" PRIu32 " , %" PRIu32 " )" ,
+                            game_status->hero.x , game_status->hero.y , (std::uint32_t)goal.x , (std::uint32_t)goal.y );
+                    game_status->path = {};
+                    return false;
+                }
             }
             else if ( game_status->hero.y == (std::uint32_t)goal.y )
             {
-                new_direction = ( game_status->hero.x > (std::uint32_t)goal.x ) ? DIRECTION::LEFT : DIRECTION::RIGHT;
+                if ( game_status->hero.x == (std::uint32_t)goal.x + 1 )
+                {
+                    new_direction = DIRECTION::LEFT;
+                }
+                else if ( game_status->hero.x + 1 == (std::uint32_t)goal.x )
+                {
+                    new_direction = DIRECTION::RIGHT;
+                }
+                else
+                {
+                    g_log( __func__ , G_LOG_LEVEL_WARNING , "wrong path:( %" PRIu32 " , %" PRIu32 " ) to ( %" PRIu32 " , %" PRIu32 " )" ,
+                            game_status->hero.x , game_status->hero.y , (std::uint32_t)goal.x , (std::uint32_t)goal.y );
+                    game_status->path = {};
+                    return false;
+                }
             }
+            else
+            {
+                g_log( __func__ , G_LOG_LEVEL_WARNING , "wrong path:( %" PRIu32 " , %" PRIu32 " ) to ( %" PRIu32 " , %" PRIu32 " )" ,
+                        game_status->hero.x , game_status->hero.y , (std::uint32_t)goal.x , (std::uint32_t)goal.y );
+                game_status->path = {};
+                return false;
+            }
+
             game_status->path.pop_back();
             if ( !move_hero( game_status , { game_status->hero.floors , (std::uint32_t)goal.x , (std::uint32_t)goal.y } ) )
             {
